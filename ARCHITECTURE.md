@@ -20,6 +20,7 @@ org.openfocus.app
 ├── focus/       FocusManager (session lifecycle) + FocusService (foreground countdown)
 ├── work/        DailyWorker: day rollover, evening reminder, outbox flush
 └── ui/          Compose screens, one package per tab
+    └── pixel/   SpriteCatalog (sheet registry) + PixelSprite (crisp, whole-number-scaled, layered renderer)
 ```
 
 ## How blocking works

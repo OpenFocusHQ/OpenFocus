@@ -1,8 +1,12 @@
 package org.openfocus.app.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -14,10 +18,13 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.openfocus.app.core.ShopCatalog
+import org.openfocus.app.ui.pixel.PixelSprite
+import org.openfocus.app.ui.pixel.SpriteCatalog
 
 /**
- * PLACEHOLDER ART: the hero is drawn from simple shapes so the project ships without any
- * third-party art. Replace with sprite sheets keyed by ShopItem ids when real art is available.
+ * The hero: a backdrop circle with layered pixel-art sprites (body, cloak, hat) on top.
+ * Sprites are looked up by ShopItem id in [SpriteCatalog]; if one is missing the shape-drawn
+ * fallback is used, so new items can ship before their art does.
  */
 @Composable
 fun HeroAvatar(
@@ -26,34 +33,50 @@ fun HeroAvatar(
     backdropId: String?,
     modifier: Modifier = Modifier,
     size: Dp = 72.dp,
+    resting: Boolean = false,
+    animate: Boolean = true,
 ) {
-    val cloak = Color(ShopCatalog.byId(colorId)?.color ?: ShopCatalog.defaultColor.color)
-    val backdrop = ShopCatalog.byId(backdropId)
-    val hat = ShopCatalog.byId(hatId)
-    Canvas(modifier.size(size)) {
-        val w = this.size.width
-        val bg = backdrop?.let { Color(it.color) } ?: Color(0xFFDCD6FF)
-        drawCircle(Brush.verticalGradient(listOf(bg.copy(alpha = 0.55f), bg)), radius = w / 2)
-        when (backdrop?.id) {
-            "bg_night" -> repeat(7) { i ->
-                drawCircle(Color.White, radius = w * 0.012f, center = Offset(w * (0.15f + 0.11f * i), w * (0.18f + 0.07f * ((i * 3) % 4))))
-            }
-            "bg_forest" -> for (i in 0..2) drawTree(Offset(w * (0.15f + 0.35f * i), w * 0.72f), w * 0.14f)
-            "bg_sunrise" -> drawCircle(Color(0xFFFFE08A), radius = w * 0.14f, center = Offset(w * 0.78f, w * 0.3f))
-            "bg_ocean" -> drawRect(Color(0xFF7FC8F8), topLeft = Offset(0f, w * 0.68f), size = Size(w, w * 0.32f))
-        }
-        // Body / cloak
-        drawRoundRect(cloak, topLeft = Offset(w * 0.27f, w * 0.52f), size = Size(w * 0.46f, w * 0.4f), cornerRadius = CornerRadius(w * 0.18f))
-        // Head
-        val headC = Offset(w / 2, w * 0.42f)
-        drawCircle(Color(0xFFFFD9B8), radius = w * 0.17f, center = headC)
-        // Eyes + smile
-        drawCircle(Color(0xFF2B2440), radius = w * 0.022f, center = headC + Offset(-w * 0.06f, -w * 0.01f))
-        drawCircle(Color(0xFF2B2440), radius = w * 0.022f, center = headC + Offset(w * 0.06f, -w * 0.01f))
-        drawArc(Color(0xFF2B2440), 20f, 140f, false, topLeft = headC + Offset(-w * 0.05f, w * 0.01f), size = Size(w * 0.1f, w * 0.07f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.015f))
-        hat?.let { drawHat(it.id, Color(it.color), headC, w) }
+    val layers = remember(colorId, hatId, resting) {
+        SpriteCatalog.heroLayers(colorId, hatId, if (resting) SpriteCatalog.REST else SpriteCatalog.IDLE)
     }
+    Box(modifier.size(size)) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawBackdrop(ShopCatalog.byId(backdropId))
+            if (layers == null) drawVectorHero(colorId, hatId)
+        }
+        if (layers != null) {
+            // The sprite fills ~90% of the circle; PixelSprite snaps it to a whole-number scale.
+            PixelSprite(layers, Modifier.fillMaxSize(0.9f).align(Alignment.Center), animate = animate)
+        }
+    }
+}
+
+private fun DrawScope.drawBackdrop(backdrop: org.openfocus.app.core.ShopItem?) {
+    val w = this.size.width
+    val bg = backdrop?.let { Color(it.color) } ?: Color(0xFFDCD6FF)
+    drawCircle(Brush.verticalGradient(listOf(bg.copy(alpha = 0.55f), bg)), radius = w / 2)
+    when (backdrop?.id) {
+        "bg_night" -> repeat(7) { i ->
+            drawCircle(Color.White, radius = w * 0.012f, center = Offset(w * (0.15f + 0.11f * i), w * (0.18f + 0.07f * ((i * 3) % 4))))
+        }
+        "bg_forest" -> for (i in 0..2) drawTree(Offset(w * (0.15f + 0.35f * i), w * 0.72f), w * 0.14f)
+        "bg_sunrise" -> drawCircle(Color(0xFFFFE08A), radius = w * 0.14f, center = Offset(w * 0.78f, w * 0.3f))
+        "bg_ocean" -> drawRect(Color(0xFF7FC8F8), topLeft = Offset(0f, w * 0.68f), size = Size(w, w * 0.32f))
+    }
+}
+
+/** Fallback hero drawn from shapes, used when a cosmetic has no sprite yet. */
+private fun DrawScope.drawVectorHero(colorId: String?, hatId: String?) {
+    val w = this.size.width
+    val cloak = Color(ShopCatalog.byId(colorId)?.color ?: ShopCatalog.defaultColor.color)
+    drawRoundRect(cloak, topLeft = Offset(w * 0.27f, w * 0.52f), size = Size(w * 0.46f, w * 0.4f), cornerRadius = CornerRadius(w * 0.18f))
+    val headC = Offset(w / 2, w * 0.42f)
+    drawCircle(Color(0xFFFFD9B8), radius = w * 0.17f, center = headC)
+    drawCircle(Color(0xFF2B2440), radius = w * 0.022f, center = headC + Offset(-w * 0.06f, -w * 0.01f))
+    drawCircle(Color(0xFF2B2440), radius = w * 0.022f, center = headC + Offset(w * 0.06f, -w * 0.01f))
+    drawArc(Color(0xFF2B2440), 20f, 140f, false, topLeft = headC + Offset(-w * 0.05f, w * 0.01f), size = Size(w * 0.1f, w * 0.07f),
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.015f))
+    ShopCatalog.byId(hatId)?.let { drawHat(it.id, Color(it.color), headC, w) }
 }
 
 private fun DrawScope.drawTree(base: Offset, h: Float) {

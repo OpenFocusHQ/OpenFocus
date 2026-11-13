@@ -1,0 +1,33 @@
+GIMP Palette
+Name: OpenFocus
+Columns: 8
+#
+ 43  36  64	outline
+255 255 255	white
+255 217 184	skin light
+232 180 143	skin shadow
+247 161 161	blush
+107  66  38	hair
+ 78  46  25	hair shadow
+ 74  58  92	boots
+255 200  87	gold
+224 165  38	gold mid
+255 224 138	gold light
+240  80 110	ruby
+ 77 163 240	sky blue
+232  93 117	rose
+184  64  90	rose dark
+ 91  75 196	violet deep
+124 108 242	violet
+163 151 255	violet cloak light
+124 108 242	violet cloak mid
+ 85  69 192	violet cloak dark
+ 95 214 198	teal cloak light
+ 43 179 163	teal cloak mid
+ 28 127 116	teal cloak dark
+255 154 126	ember cloak light
+240 106  77	ember cloak mid
+184  68  45	ember cloak dark
+255 214 107	gold cloak light
+224 165  38	gold cloak mid
+168 116  26	gold cloak dark

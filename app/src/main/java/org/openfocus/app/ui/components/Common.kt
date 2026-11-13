@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,7 +42,8 @@ import org.openfocus.app.AppContainer
 import org.openfocus.app.OpenFocusApp
 import org.openfocus.app.core.GameRules
 import org.openfocus.app.data.db.ProfileEntity
-import org.openfocus.app.ui.theme.Coin
+import org.openfocus.app.ui.pixel.PixelSprite
+import org.openfocus.app.ui.pixel.SpriteCatalog
 import org.openfocus.app.ui.theme.Hp
 import org.openfocus.app.ui.theme.Xp
 
@@ -93,7 +93,7 @@ fun HeroCard(profile: ProfileEntity?, modifier: Modifier = Modifier, onClick: ((
                 StatBar(Icons.Filled.Bolt, "${lp.intoLevel}/${lp.levelSpan}", lp.fraction, Xp)
                 StatBar(Icons.Filled.Favorite, "${p.hp}/${p.maxHp}", p.hp / p.maxHp.toFloat().coerceAtLeast(1f), Hp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.MonetizationOn, null, tint = Coin, modifier = Modifier.size(16.dp))
+                    PixelSprite(SpriteCatalog.coin, "spin", Modifier.size(16.dp), animate = false, contentDescription = "Coins")
                     Spacer(Modifier.width(6.dp))
                     Text("${p.coins}", style = MaterialTheme.typography.labelLarge)
                     if (p.currentStreak > 0) {

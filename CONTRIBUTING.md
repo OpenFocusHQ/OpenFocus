@@ -9,12 +9,7 @@ Apps rename their internal view IDs fairly often. To update a rule:
 3. Say which app version you tested in the PR.
 
 ## Art
-All current art is placeholder vector or Canvas drawing:
-- the hero (`ui/components/Avatar.kt`)
-- the mountain (`ui/components/Mountain.kt`)
-- the launcher icon (`res/drawable/ic_launcher_foreground.xml`)
-
-Replacement art must be **CC0, CC-BY or CC-BY-SA**, or your own work released under one of those licences. Credit it in the README. Cosmetic items are keyed by the `ShopItem.id` values in `core/ShopCatalog.kt`.
+OpenFocus is moving to pixel art. All current art is placeholder. **[`art/README.md`](art/README.md)** covers the palette, sprite sizes, sheet layout, how hero layers and anchors work, the workflow, and which licences are accepted. Credit every file in [`art/CREDITS.md`](art/CREDITS.md).
 
 ## Game balance
 All the numbers live in `core/GameRules.kt` and are covered by `GameRulesTest`. If you change them, please explain why in the PR.

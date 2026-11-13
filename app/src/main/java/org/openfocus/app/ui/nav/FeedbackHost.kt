@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Celebration
-import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,13 +28,16 @@ import androidx.compose.ui.unit.dp
 import org.openfocus.app.core.Encouragement
 import org.openfocus.app.game.GameFeedback
 import org.openfocus.app.ui.components.AppIcons
+import org.openfocus.app.ui.components.HeroAvatar
 import org.openfocus.app.ui.components.appContainer
 import org.openfocus.app.ui.theme.Coin
 
 /** Shows game feedback: small wins as snackbars, big moments as a celebration dialog. */
 @Composable
 fun FeedbackHost(snackbar: SnackbarHostState) {
-    val game = appContainer().game
+    val container = appContainer()
+    val game = container.game
+    val profile = remember { container.db.profileDao().observe() }
     var big by remember { mutableStateOf<GameFeedback?>(null) }
     LaunchedEffect(Unit) {
         game.feedback.collect { fb ->
@@ -55,7 +58,14 @@ fun FeedbackHost(snackbar: SnackbarHostState) {
     big?.let { fb ->
         AlertDialog(
             onDismissRequest = { big = null },
-            icon = { Icon(if (fb.fainted) Icons.Filled.Hotel else Icons.Filled.Celebration, null, modifier = Modifier.size(40.dp)) },
+            icon = {
+                if (fb.fainted) {
+                    val p by profile.collectAsState(initial = null)
+                    HeroAvatar(p?.avatarColor, p?.avatarHat, p?.avatarBackdrop, size = 72.dp, resting = true)
+                } else {
+                    Icon(Icons.Filled.Celebration, null, modifier = Modifier.size(40.dp))
+                }
+            },
             title = {
                 Text(
                     when {

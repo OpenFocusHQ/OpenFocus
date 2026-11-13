@@ -71,6 +71,8 @@ The accessibility service only reads the package name of the app in front. Insid
 - **Code:** GPL-3.0-or-later (see [LICENSE](LICENSE)).
 - **Fonts:** [Nunito](https://github.com/googlefonts/nunito) and [Fredoka](https://github.com/hafontia/Fredoka-One), under the SIL Open Font License 1.1 (see [`licenses/`](licenses)).
 - **Icons:** [Material Icons](https://fonts.google.com/icons), Apache License 2.0.
-- **Art:** the hero, mountain and launcher art are **original placeholders** drawn in code, released as CC0. Real art is very welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Art:** pixel-art placeholders and code-drawn scenes, all CC0 (see [`art/CREDITS.md`](art/CREDITS.md)). Real pixel art is very welcome; see the [art guide](art/README.md).
+
+![Sprite gallery](docs/screenshots/sprites.png)
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for how the code is organised, including how multiplayer features could be added later.
