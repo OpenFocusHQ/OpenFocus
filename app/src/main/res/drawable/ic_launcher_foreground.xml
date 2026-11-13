@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder launcher art: a summit with a rising sun. Replace with final art. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFC857" android:pathData="M54,30m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+    <path android:fillColor="#FF7C6CF2" android:pathData="M22,78 L46,42 L58,58 L66,48 L86,78 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M46,42 L52,51 L48,50 L44,54 L41,50 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M66,48 L70,54 L67,53 L64,56 Z" />
+</vector>

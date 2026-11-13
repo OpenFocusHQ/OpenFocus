@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenFocus</string>
+    <string name="accessibility_service_label">OpenFocus Shield</string>
+    <string name="accessibility_service_description">OpenFocus Shield watches which app is in the foreground so it can pause apps you chose to block, stop short-form video feeds (Shorts, Reels, TikTok) and keep focus sessions distraction-free. It reads the app name and, only inside supported video apps, the screen layout ids needed to recognise a short-video feed. Nothing leaves your device.</string>
+</resources>

@@ -1,0 +1,136 @@
+package org.openfocus.app.blocking
+
+import android.accessibilityservice.AccessibilityService
+import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.view.accessibility.AccessibilityEvent
+import kotlinx.coroutines.launch
+import org.openfocus.app.OpenFocusApp
+import org.openfocus.app.core.Days
+import org.openfocus.app.game.EventTypes
+import java.time.LocalTime
+
+/**
+ * Watches foreground app changes and asks [BlockPolicy] whether to intervene. All decisions are
+ * local; no event content is stored or transmitted.
+ */
+class BlockerAccessibilityService : AccessibilityService() {
+
+    private val container by lazy { (application as OpenFocusApp).container }
+    private val handler = Handler(Looper.getMainLooper())
+
+    private var exempt: Set<String> = emptySet()
+    private var exemptRefreshedAt = 0L
+    private var currentPkg: String? = null
+    private var lastBlockPkg: String? = null
+    private var lastBlockAt = 0L
+    private var lastShortsCheckAt = 0L
+    private var lastShortsLogAt = 0L
+
+    private val recheck = object : Runnable {
+        override fun run() {
+            currentPkg?.let { evaluate(it) }
+            handler.postDelayed(this, RECHECK_MS)
+        }
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        running = true
+        refreshExempt(force = true)
+        handler.postDelayed(recheck, RECHECK_MS)
+    }
+
+    override fun onDestroy() {
+        running = false
+        handler.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
+    override fun onInterrupt() = Unit
+
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        val pkg = event?.packageName?.toString() ?: return
+        refreshExempt()
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            if (pkg != currentPkg) {
+                currentPkg = pkg
+                if (evaluate(pkg)) return
+            }
+        }
+        checkShorts(pkg)
+    }
+
+    /** @return true if the app was blocked. */
+    private fun evaluate(pkg: String): Boolean {
+        val config = container.blocks.config.value
+        val now = System.currentTimeMillis()
+        val decision = BlockPolicy.decide(
+            pkg = pkg,
+            config = config,
+            nowMillis = now,
+            epochDay = Days.today(),
+            minuteOfDay = LocalTime.now().let { it.hour * 60 + it.minute },
+            exempt = exempt,
+            usageMinutesToday = { container.usage.todayMinutes(it) },
+        ) ?: return false
+        if (pkg == lastBlockPkg && now - lastBlockAt < 1_500) return true
+        lastBlockPkg = pkg
+        lastBlockAt = now
+        performGlobalAction(GLOBAL_ACTION_HOME)
+        launchBlockScreen(pkg, decision)
+        return true
+    }
+
+    private fun checkShorts(pkg: String) {
+        val settings = container.settings.value
+        if (settings.shieldPaused && settings.activeFocus == null) return
+        val rule = ShortsDetector.ruleFor(pkg, settings.shorts) ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastShortsCheckAt < 300) return
+        lastShortsCheckAt = now
+        val detected = runCatching { ShortsDetector.isShortsOnScreen(rule, rootInActiveWindow) }.getOrDefault(false)
+        if (!detected) return
+        if (now - lastBlockAt < 1_200) return
+        lastBlockAt = now
+        lastBlockPkg = pkg
+        performGlobalAction(if (rule.wholeApp) GLOBAL_ACTION_HOME else GLOBAL_ACTION_BACK)
+        if (now - lastShortsLogAt > 5_000) {
+            lastShortsLogAt = now
+            container.appScope.launch { container.game.apply(EventTypes.SHORTS_BLOCKED, pkg, emit = false) }
+        }
+        launchBlockScreen(pkg, BlockDecision(BlockReason.SHORTS, rule.platform.label))
+    }
+
+    private fun launchBlockScreen(pkg: String, decision: BlockDecision) {
+        val intent = Intent(this, BlockActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+            .putExtra(BlockActivity.EXTRA_PACKAGE, pkg)
+            .putExtra(BlockActivity.EXTRA_REASON, decision.reason.name)
+            .putExtra(BlockActivity.EXTRA_DETAIL, decision.detail)
+        runCatching { startActivity(intent) }
+    }
+
+    private fun refreshExempt(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (force || now - exemptRefreshedAt > 5 * 60_000) {
+            exempt = InstalledApps.exemptPackages(this)
+            exemptRefreshedAt = now
+        }
+    }
+
+    companion object {
+        private const val RECHECK_MS = 15_000L
+        /** Best-effort flag for the UI; the authoritative check is [isEnabled]. */
+        @Volatile var running = false
+
+        fun isEnabled(context: android.content.Context): Boolean {
+            val enabled = android.provider.Settings.Secure.getString(
+                context.contentResolver, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+            ) ?: return false
+            val me = "${context.packageName}/${BlockerAccessibilityService::class.java.name}"
+            return enabled.split(':').any { it.equals(me, ignoreCase = true) }
+        }
+    }
+}
