@@ -36,6 +36,12 @@ class GeneratorSyncTest {
         assertEquals(AscentTrail.POINTS.map { it.x to it.y }, pts)
     }
 
+    @Test fun emptySceneOrderMatches() {
+        val names = Regex("\"(\\w+)\"").findAll(block("EMPTY_SCENES")).map { it.groupValues[1] }.toList()
+        val byCol = SpriteCatalog.empty.anims.entries.sortedBy { it.value.col }.map { it.key }
+        assertEquals(byCol, names)
+    }
+
     @Test fun idleBobMatchesHeadAnchor() {
         val bob = Regex("IDLE_BOB = \\[([\\d, ]+)]").find(generator)!!.groupValues[1].split(",").map { it.trim().toInt() }
         assertEquals(bob, SpriteCatalog.heroBody.anchors.getValue("head").getValue(SpriteCatalog.IDLE).map { it.y })

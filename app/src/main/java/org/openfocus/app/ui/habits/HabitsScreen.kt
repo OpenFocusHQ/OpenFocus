@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import org.openfocus.app.data.db.HabitFrequency
 import org.openfocus.app.ui.components.EmptyState
+import org.openfocus.app.ui.pixel.SpriteCatalog
 import org.openfocus.app.ui.components.SectionHeader
 import org.openfocus.app.ui.components.appViewModel
 
@@ -40,7 +41,8 @@ fun HabitsScreen(nav: NavController) {
             if (list.isEmpty()) {
                 item {
                     EmptyState(Icons.Filled.CheckCircle, "No habits yet",
-                        "Habits are small daily quests. Build good ones for XP and coins, track bad ones to break them.")
+                        "Habits are small daily quests. Build good ones for XP and coins, track bad ones to break them.",
+                        scene = SpriteCatalog.EMPTY_HABITS)
                 }
             }
             val groups = listOf(

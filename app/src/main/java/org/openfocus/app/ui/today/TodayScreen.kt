@@ -50,6 +50,7 @@ import org.openfocus.app.core.Encouragement
 import org.openfocus.app.data.db.GoalStatus
 import org.openfocus.app.data.db.HabitFrequency
 import org.openfocus.app.ui.components.EmptyState
+import org.openfocus.app.ui.pixel.SpriteCatalog
 import org.openfocus.app.ui.components.HeroCard
 import org.openfocus.app.ui.components.SectionHeader
 import org.openfocus.app.ui.components.appContainer
@@ -117,7 +118,11 @@ fun TodayScreen(nav: NavController) {
             }
         }
         if (habits != null && due.isEmpty() && breakHabits.isEmpty()) item {
-            EmptyState(Icons.Filled.ShieldMoon, "Your quest log is empty", "Add a habit or two — small and specific works best. \"Read 10 pages\" beats \"read more\".")
+            EmptyState(
+                Icons.Filled.ShieldMoon, "Your quest log is empty",
+                "Add a habit or two — small and specific works best. \"Read 10 pages\" beats \"read more\".",
+                scene = SpriteCatalog.EMPTY_QUESTS,
+            )
         }
         items(due, key = { it.habit.id }) { s ->
             HabitRow(s, onTap = { vm.tap(s.habit.id) }, onUndo = { vm.undo(s.habit.id) }, onOpen = { nav.navigate("habit/${s.habit.id}") })

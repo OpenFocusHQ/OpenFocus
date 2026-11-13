@@ -61,6 +61,15 @@ To add an achievement: add it to `Achievements.all`, add a matching `(id, tier)`
 
 `px_sparkle.png` (48×48, 8 frames at 10 fps) is drawn over the 48px hero avatar in the level-up and achievement dialog. It's the same logical size, so both snap to the same pixel scale.
 
+### Other sheets
+| Sheet | Frame | Use |
+|---|---|---|
+| `px_shield.png` | 48×48 × 4 @ 1 fps | Block screen and onboarding; the glow cycle lasts one 4 s breath |
+| `px_empty.png` | 64×48 atlas: `quests`, `habits`, `goals` | `EmptyState(scene = …)`; order must match `EMPTY_SCENES` |
+
+### Launcher icon
+The icon is drawn on a 54×54 canvas and exported at ×2/×3/×4/×6/×8 to `mipmap-*/ic_launcher_fg.png`, with a white `ic_launcher_mono.png` for Android 13+ themed icons. Keep content inside the central 36×36 (the adaptive-icon safe zone); the background is `@color/launcher_background`. `art/export/ic_launcher_store.png` (486 px, 54×9) is ready for store listings; pad it to 512 if a store requires that size. The notification icon is still the vector `drawable/ic_launcher_foreground.xml`.
+
 ### Rendering
 `PixelSprite` draws with nearest-neighbour filtering and rounds the scale down to a whole number, so every source pixel becomes an equal square block of screen pixels. Animations stop when the user has turned off system animations.
 
@@ -84,5 +93,5 @@ Every file must be listed in `CREDITS.md`.
 - [x] Phase 2: 3 skin tones (stored in the profile, DB v2), pixel backdrops, celebrate animation. Placeholder quality: hand-drawn replacements welcome.
 - [x] Phase 3: goal mountain scene: one 160×112 sheet per goal colour (climbing / summit rows), tents (unlit / lit flicker), climber, flag (red / gold)
 - [x] Phase 4: 20 achievement medals (bronze / silver / gold), locked silhouettes, level-up sparkle burst, coin in reward snackbars
-- [ ] Phase 5: block-screen shield, empty-state scenes, onboarding, launcher icon
+- [x] Phase 5: breathing block-screen shield, empty-state scenes (quests / habits / goals), onboarding art, pixel launcher icon (+ monochrome + 486px store export)
 - [ ] Phase 6: polish (timing, dark-mode review on devices)

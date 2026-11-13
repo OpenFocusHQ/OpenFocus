@@ -99,6 +99,11 @@ class ScreenshotTest {
     @Test fun goals() { seed(); shoot("goals", "goals") }
     @Test fun shield() { seed(); shoot("shield", "shield") }
     @Test fun goalDetail() { seed(); shoot("goal_detail", "goal/$goalId") }
+    @Test fun emptyToday() {
+        runBlocking { app.container.settings.update { it.copy(onboardingDone = true) } }
+        shoot("empty_today", null)
+    }
+
     @Test fun celebration() {
         seed()
         shoot("celebration", null) {

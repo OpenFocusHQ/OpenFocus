@@ -50,7 +50,7 @@ class SpriteGalleryTest {
 
     private val allSheets: List<SpriteSheet> =
         listOf(SpriteCatalog.coin) + SpriteCatalog.bodies.values + SpriteCatalog.cloaks.values + SpriteCatalog.hats.values +
-            SpriteCatalog.backdrops.values + SpriteCatalog.ascents + listOf(SpriteCatalog.tent, SpriteCatalog.climber, SpriteCatalog.flag, SpriteCatalog.badges, SpriteCatalog.sparkle)
+            SpriteCatalog.backdrops.values + SpriteCatalog.ascents + listOf(SpriteCatalog.tent, SpriteCatalog.climber, SpriteCatalog.flag, SpriteCatalog.badges, SpriteCatalog.sparkle, SpriteCatalog.shield, SpriteCatalog.empty)
 
     @Test fun sheetDimensionsMatchCatalog() {
         val res = ApplicationProvider.getApplicationContext<android.content.Context>().resources

@@ -124,14 +124,26 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier, action: @Composa
 }
 
 @Composable
-fun EmptyState(icon: ImageVector, title: String, body: String, modifier: Modifier = Modifier, action: @Composable (() -> Unit)? = null) {
+fun EmptyState(
+    icon: ImageVector,
+    title: String,
+    body: String,
+    modifier: Modifier = Modifier,
+    /** Pixel-art scene from [SpriteCatalog.empty]; falls back to [icon] when null. */
+    scene: String? = null,
+    action: @Composable (() -> Unit)? = null,
+) {
     Card(
         modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         shape = RoundedCornerShape(24.dp),
     ) {
         Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(icon, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
+            if (scene != null && scene in SpriteCatalog.empty.anims) {
+                PixelSprite(SpriteCatalog.empty, scene, Modifier.width(128.dp).height(96.dp), animate = false)
+            } else {
+                Icon(icon, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
+            }
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             action?.invoke()

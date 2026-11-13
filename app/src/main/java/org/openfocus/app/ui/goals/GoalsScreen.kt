@@ -37,6 +37,7 @@ import org.openfocus.app.data.db.GoalStatus
 import org.openfocus.app.data.repo.GoalState
 import org.openfocus.app.ui.components.AscentMountain
 import org.openfocus.app.ui.components.EmptyState
+import org.openfocus.app.ui.pixel.SpriteCatalog
 import org.openfocus.app.ui.components.Pill
 import org.openfocus.app.ui.components.SectionHeader
 import org.openfocus.app.ui.components.appContainer
@@ -57,7 +58,8 @@ fun GoalsScreen(nav: NavController) {
             val list = goals ?: return@LazyColumn
             if (list.isEmpty()) item {
                 EmptyState(Icons.Filled.Landscape, "Pick a summit",
-                    "What do you want to have achieved in 3, 6 or 12 months? Break it into milestones and link habits to it.")
+                    "What do you want to have achieved in 3, 6 or 12 months? Break it into milestones and link habits to it.",
+                    scene = SpriteCatalog.EMPTY_GOALS)
             }
             val sections = listOf(
                 "Climbing" to list.filter { it.goal.status == GoalStatus.ACTIVE },

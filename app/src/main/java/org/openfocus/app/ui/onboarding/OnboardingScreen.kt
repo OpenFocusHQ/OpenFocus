@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -44,6 +45,8 @@ import org.openfocus.app.data.db.Difficulty
 import org.openfocus.app.data.db.HabitEntity
 import org.openfocus.app.data.db.HabitKind
 import org.openfocus.app.ui.components.HeroAvatar
+import org.openfocus.app.ui.pixel.PixelSprite
+import org.openfocus.app.ui.pixel.SpriteCatalog
 import org.openfocus.app.ui.components.SkinTonePicker
 import org.openfocus.app.ui.components.appContainer
 
@@ -91,6 +94,7 @@ fun OnboardingScreen() {
                     Button(onClick = { page = 1 }, modifier = Modifier.fillMaxWidth()) { Text("Next") }
                 }
                 1 -> {
+                    PixelSprite(SpriteCatalog.empty, SpriteCatalog.EMPTY_QUESTS, Modifier.size(width = 192.dp, height = 144.dp), animate = false)
                     Text("Pick a few starter quests", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
                     Text("Start small. You can edit or add more any time.", textAlign = TextAlign.Center)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -105,6 +109,7 @@ fun OnboardingScreen() {
                     }
                 }
                 else -> {
+                    PixelSprite(SpriteCatalog.shield, SpriteCatalog.IDLE, Modifier.size(144.dp))
                     Text("Raise your Shield", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
                     Text(
                         "To block apps and Shorts/Reels, OpenFocus uses Android's accessibility service to see which app is in front. " +

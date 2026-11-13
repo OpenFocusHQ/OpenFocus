@@ -511,6 +511,157 @@ def sparkle_frames():
     return frames
 
 
+# --------------------------------------------------------------------------------------------
+# Small mask-based drawing toolkit for the larger scenes below.
+# --------------------------------------------------------------------------------------------
+def poly_mask(pts, w, h):
+    def inside(px, py):
+        c = False
+        for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1]):
+            if (y1 > py) != (y2 > py) and px < (x2 - x1) * (py - y1) / (y2 - y1) + x1:
+                c = not c
+        return c
+    return {(x, y) for y in range(h) for x in range(w) if inside(x + .5, y + .5)}
+
+
+def ellipse_mask(cx, cy, rx, ry, w, h):
+    return {(x, y) for y in range(h) for x in range(w) if ((x + .5 - cx) / rx) ** 2 + ((y + .5 - cy) / ry) ** 2 <= 1}
+
+
+def rect_mask(x0, y0, x1, y1):
+    return {(x, y) for y in range(y0, y1) for x in range(x0, x1)}
+
+
+def dilate(mask, n=1):
+    for _ in range(n):
+        mask = mask | {(x + dx, y + dy) for (x, y) in mask for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))}
+    return mask
+
+
+def stamp(g, mask, fill, outline="o", shade=None):
+    """Fill a mask (optionally shading pixels where shade(x, y) is truthy) and outline its edge."""
+    h, w = len(g), len(g[0])
+    for (x, y) in mask:
+        if not (0 <= x < w and 0 <= y < h):
+            continue
+        edge = outline and any((x + dx, y + dy) not in mask for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+        g[y][x] = outline if edge else (shade(x, y) if shade and shade(x, y) else fill)
+
+
+def blank(w, h):
+    return [["."] * w for _ in range(h)]
+
+
+# --------------------------------------------------------------------------------------------
+# Block-screen shield, 48x48, 4 frames (1 fps "breathing" glow).
+# --------------------------------------------------------------------------------------------
+def shield_frames():
+    body = poly_mask([(10, 8), (38, 8), (38, 26), (34, 34), (24, 42), (14, 34), (10, 26)], 48, 48)
+    inner = poly_mask([(14, 12), (34, 12), (34, 25), (31, 31), (24, 37), (17, 31), (14, 25)], 48, 48)
+    peak = poly_mask([(17, 30), (24, 17), (31, 30)], 48, 48)
+    snow = poly_mask([(21, 23), (24, 17), (27, 23), (25, 22), (24, 24), (23, 22)], 48, 48)
+    frames = []
+    for k, glow in enumerate([0, 2, 4, 2]):
+        g = blank(48, 48)
+        if glow:
+            ring = dilate(body, glow) - dilate(body, glow - 1)
+            for (x, y) in ring:
+                if 0 <= x < 48 and 0 <= y < 48 and (glow == 2 or (x + y) % 2 == 0):
+                    g[y][x] = "v" if glow == 2 else "l"  # solid inner glow, dithered outer haze
+            if glow == 4:
+                for (x, y) in dilate(body, 2) - dilate(body, 1):
+                    g[y][x] = "v"
+        stamp(g, body, "g", shade=lambda x, y: "G" if x >= 25 else None)
+        stamp(g, inner, "v", shade=lambda x, y: "V" if x >= 25 else None)
+        stamp(g, peak, "w", shade=lambda x, y: "L" if x >= 25 else None)
+        stamp(g, snow, "w", outline=None)
+        frames.append(g)
+    return frames
+
+
+# --------------------------------------------------------------------------------------------
+# Empty-state scenes, 64x48 each, transparent background. Atlas columns: quests, habits, goals.
+# --------------------------------------------------------------------------------------------
+EMPTY_SCENES = ["quests", "habits", "goals"]  # MUST match SpriteCatalog.empty
+
+
+def empty_quests():
+    g = blank(64, 48)
+    stamp(g, ellipse_mask(32, 43, 26, 3.5, 64, 48), "l", outline=None)
+    stamp(g, rect_mask(12, 12, 50, 38), "u")
+    for cx in (12, 50):
+        stamp(g, ellipse_mask(cx + .5, 25, 3.5, 14, 64, 48), "A", shade=lambda x, y: "K" if y > 30 else None)
+    for i, y in enumerate((17, 22, 27, 32)):
+        stamp(g, rect_mask(18, y - 1, 21, y + 2), "w")
+        for x in range(24, 44 - (i % 2) * 6):
+            g[y][x] = "h" if x % 5 else "u"
+    quill = poly_mask([(52, 2), (56, 4), (44, 24), (42, 25), (43, 22)], 64, 48)
+    stamp(g, quill, "w", shade=lambda x, y: "L" if x + y > 54 else None)
+    g[26][42] = g[27][41] = "o"
+    return g
+
+
+def empty_habits():
+    g = blank(64, 48)
+    stamp(g, ellipse_mask(32, 43, 28, 3.5, 64, 48), "l", outline=None)
+    for i, (cx, stem) in enumerate(((14, 4), (32, 10), (50, 16))):
+        top = 30 - stem
+        for y in range(top, 31):
+            g[y][cx] = "F"
+            g[y][cx - 1] = "o" if y > top else g[y][cx - 1]
+            g[y][cx + 1] = "o" if y > top else g[y][cx + 1]
+        for side in (-1, 1):
+            leaf = ellipse_mask(cx + side * 3.5 + .5, top + 3 + i, 3, 1.8, 64, 48)
+            stamp(g, leaf, "F", shade=lambda x, y: "T" if y > top + 3 + i else None)
+        if i == 2:
+            stamp(g, ellipse_mask(cx + .5, top - 1, 3.2, 3.2, 64, 48), "r")
+            g[top - 1][cx] = "y"
+        pot = poly_mask([(cx - 6, 30), (cx + 7, 30), (cx + 5, 41), (cx - 4, 41)], 64, 48)
+        stamp(g, pot, "K", shade=lambda x, y, c=cx: "q" if x > c + 2 else None)
+        stamp(g, rect_mask(cx - 7, 29, cx + 8, 33), "G")
+    return g
+
+
+def empty_goals():
+    g = blank(64, 48)
+    stamp(g, ellipse_mask(32, 43, 30, 3.5, 64, 48), "f", outline=None)
+    mount = poly_mask([(30, 41), (47, 10), (64, 41)], 64, 48)
+    stamp(g, mount, "v", shade=lambda x, y: "V" if x > 47 + (y - 10) * 0.15 else None)
+    stamp(g, poly_mask([(42, 19), (47, 10), (52, 19), (49, 17), (47, 20), (45, 17)], 64, 48), "w", outline=None)
+    for i, (x, y) in enumerate(line_points((8, 46), (40, 34)) + line_points((40, 34), (44, 26))):
+        if i % 3 < 2 and g[y][x] in ".fv":
+            g[y][x] = "u"
+    stamp(g, rect_mask(15, 14, 19, 44), "h")
+    stamp(g, poly_mask([(5, 14), (26, 14), (31, 18), (26, 22), (5, 22)], 64, 48), "G", shade=lambda x, y: "g" if y < 17 else None)
+    for x in range(9, 24, 2):
+        g[18][x] = "h"
+    return g
+
+
+# --------------------------------------------------------------------------------------------
+# Launcher icon: 54x54 canvas (x2/x3/x4/x6/x8 = 108..432 px for mdpi..xxxhdpi). Content stays in
+# the adaptive-icon safe zone (central 36x36). Background colour comes from @color/launcher_background.
+# --------------------------------------------------------------------------------------------
+LAUNCHER_BG = "2D2A6E"
+DENSITIES = {"mdpi": 2, "hdpi": 3, "xhdpi": 4, "xxhdpi": 6, "xxxhdpi": 8}
+
+
+def launcher_icon():
+    g = blank(54, 54)
+    stamp(g, ellipse_mask(33.5, 18.5, 6.5, 6.5, 54, 54), "g", shade=lambda x, y: "y" if x + y < 49 else None)
+    stamp(g, poly_mask([(26, 42), (36, 26), (46, 42)], 54, 54), "m", shade=lambda x, y: "N" if x > 37 else None)
+    main = poly_mask([(9, 42), (22, 16), (35, 42)], 54, 54)
+    stamp(g, main, "v", shade=lambda x, y: "V" if x > 22 + (y - 16) * 0.2 else None)
+    stamp(g, poly_mask([(17, 26), (22, 16), (27, 26), (24, 24), (22, 27), (20, 24)], 54, 54), "w", outline=None)
+    for x in range(9, 46):
+        g[42][x] = "o"
+    return g
+
+
+def scaled(g, k):
+    return [[ch for ch in row for _ in range(k)] for row in g for _ in range(k)]
+
+
 TENT = {  # 8x8, feet at (4, 6). Row 0 unlit, row 1 lit (2-frame flicker).
     "unlit": [{1: "oo", 2: "oKKo", 3: "oKKKKo", 4: "oKKooKKo", 5: "oKKooKKo", 6: "oooooooo"}],
     "lit": [{1: "oo", 2: "oKKo", 3: "oKKKKo", 4: "oKKyyKKo", 5: "oKKyyKKo", 6: "oooooooo"},
@@ -622,6 +773,25 @@ def main():
 
     write_png(os.path.join(OUT, "px_coin.png"), sheet([coin_frames()], 16, 16), colors)
 
+    write_png(os.path.join(OUT, "px_shield.png"), sheet([shield_frames()], 48, 48), colors)
+    write_png(os.path.join(OUT, "px_empty.png"), sheet([[empty_quests(), empty_habits(), empty_goals()]], 64, 48), colors)
+
+    icon = launcher_icon()
+    mono = [["#FFFFFF" if ch != "." else "." for ch in row] for row in icon]
+    res = os.path.join(ROOT, "app", "src", "main", "res")
+    for density, k in DENSITIES.items():
+        d = os.path.join(res, f"mipmap-{density}")
+        os.makedirs(d, exist_ok=True)
+        write_png(os.path.join(d, "ic_launcher_fg.png"), scaled(icon, k), colors)
+        write_png(os.path.join(d, "ic_launcher_mono.png"), scaled(mono, k), {})
+    store = [["#" + LAUNCHER_BG] * 54 for _ in range(54)]
+    for y in range(54):
+        for x in range(54):
+            if icon[y][x] != ".":
+                store[y][x] = icon[y][x]
+    os.makedirs(os.path.join(ROOT, "art", "export"), exist_ok=True)
+    write_png(os.path.join(ROOT, "art", "export", "ic_launcher_store.png"), scaled(store, 9), colors)  # 486 px
+
     rows = [BADGES[i:i + BADGE_COLS] for i in range(0, len(BADGES), BADGE_COLS)]
     out = [["."] * (24 * BADGE_COLS) for _ in range(24 * len(rows))]
     for r, row in enumerate(rows):
@@ -648,7 +818,7 @@ def main():
               sheet([[[list(r) for r in f] for f in FLAG], [[list(r) for r in f] for f in gold]], 8, 8), colors)
 
     # Palette exports (base palette + cloak ramps).
-    entries = [(v[0], v[1]) for v in PALETTE.values()]
+    entries = [(v[0], v[1]) for v in PALETTE.values()] + [(LAUNCHER_BG, "launcher background")]
     for i, base in enumerate(GOAL_COLORS):
         for key, hexv in scene_colors(base).items():
             entries.append((hexv, f"goal {i} ramp {key}"))
