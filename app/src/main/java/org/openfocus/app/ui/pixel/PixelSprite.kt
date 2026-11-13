@@ -66,6 +66,11 @@ fun PixelSprite(
     colorFilter: ColorFilter? = null,
     /** Pin every layer to this frame (galleries, still images). */
     frame: Int? = null,
+    /**
+     * Keep pixels perfectly even by using a whole-number scale (default). Set false for large
+     * hero images that should fill their width; nearest-neighbour still keeps edges crisp.
+     */
+    integerScale: Boolean = true,
 ) {
     if (layers.isEmpty()) return
     val images: List<ImageBitmap> = layers.map { ImageBitmap.imageResource(it.sheet.resId) }
@@ -95,7 +100,7 @@ fun PixelSprite(
         }
 
         val fit = min(size.width / logicalW, size.height / logicalH)
-        val scale = if (fit >= 1f) floor(fit) else fit // integer scale whenever there's room
+        val scale = if (integerScale && fit >= 1f) floor(fit) else fit
         val left = ((size.width - logicalW * scale) / 2f).roundToInt()
         val top = ((size.height - logicalH * scale) / 2f).roundToInt()
 

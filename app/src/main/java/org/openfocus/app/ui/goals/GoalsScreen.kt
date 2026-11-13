@@ -82,8 +82,10 @@ private fun GoalCard(g: GoalState, onClick: () -> Unit) {
     val color = paletteColor(g.goal.colorIndex)
     Card(onClick = onClick, shape = RoundedCornerShape(24.dp)) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            AscentMountain(g.progress, g.milestones.map { it.done }, color,
-                Modifier.size(88.dp).clip(RoundedCornerShape(16.dp)))
+            AscentMountain(
+                g.milestones.map { it.done }, g.goal.status == GoalStatus.COMPLETED, g.goal.colorIndex,
+                Modifier.width(108.dp).height(76.dp).clip(RoundedCornerShape(12.dp)), animate = false,
+            )
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(g.goal.title, style = MaterialTheme.typography.titleMedium)

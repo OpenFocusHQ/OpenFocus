@@ -236,6 +236,125 @@ def backdrop(kind, frame=0):
 
 BACKDROPS = {"default": 1, "sunrise": 1, "forest": 1, "ocean": 1, "night": 2}
 
+# --------------------------------------------------------------------------------------------
+# Goal "ascent" scene, 160x112. One sheet per goal colour; row 0 = climbing, row 1 = summit reached.
+# --------------------------------------------------------------------------------------------
+GOAL_COLORS = ["7C6CF2", "2BB3A3", "F06A4D", "E0A526", "4DA3F0", "E85D75", "3E8E5E", "9B59B6"]  # = PaletteColors (Theme.kt)
+SCENE_W, SCENE_H = 160, 112
+PEAK = (88, 10)
+# Where the climber's feet go, base to summit. MUST match AscentTrail.POINTS in Kotlin.
+TRAIL = [(30, 104), (118, 92), (52, 78), (112, 62), (66, 46), (98, 32), (88, 18)]
+
+
+def mix(hexv, other, t):
+    a = [int(hexv[i:i + 2], 16) for i in (0, 2, 4)]
+    b = [int(other[i:i + 2], 16) for i in (0, 2, 4)]
+    return "".join(f"{round(x + (y - x) * t):02X}" for x, y in zip(a, b))
+
+
+def scene_colors(base):
+    """Per-scene ramp: 1/2 sky, 3 back range, 4 lit face, 5 shaded face."""
+    return {
+        "1": mix(base, "FFFFFF", 0.86), "2": mix(base, "FFFFFF", 0.74),
+        "3": mix(base, "FFFFFF", 0.45), "4": base, "5": mix(base, "000000", 0.32),
+    }
+
+
+def peak_bounds(y):
+    xl = 6 + (111 - y) * 82 / 101
+    xr = 154 - (111 - y) * 66 / 101
+    return xl, xr
+
+
+def line_points(a, b):
+    (x0, y0), (x1, y1) = a, b
+    n = max(abs(x1 - x0), abs(y1 - y0))
+    return [(round(x0 + (x1 - x0) * i / n), round(y0 + (y1 - y0) * i / n)) for i in range(n + 1)]
+
+
+def ascent_scene(summit):
+    import math
+    W, H = SCENE_W, SCENE_H
+    g = [["." for _ in range(W)] for _ in range(H)]
+    for y in range(H):
+        for x in range(W):
+            if summit:
+                c = "A" if y < 40 else "K"
+                if y in (38, 39) and (x + y) % 2 == 0:
+                    c = "K"
+            else:
+                c = "1" if y < 44 else "2"
+                if y in (42, 43) and (x + y) % 2 == 0:
+                    c = "2"
+            g[y][x] = c
+    if summit:
+        for y in range(H):
+            for x in range(W):
+                if (x - 132) ** 2 + (y - 30) ** 2 <= 80:
+                    g[y][x] = "y"
+    else:
+        for cx, cy, rx in ((28, 22, 12), (136, 30, 9)):
+            for y in range(cy - 4, cy + 4):
+                for x in range(cx - rx, cx + rx):
+                    if ((x - cx) / rx) ** 2 + ((y - cy) / 4) ** 2 <= 1 and not (y == cy + 3 and (x + y) % 2):
+                        g[y][x] = "w"
+    # Back range
+    for x in range(W):
+        top = int(62 + 9 * math.sin(x / 13) + 5 * math.sin(x / 5.3 + 1))
+        for y in range(top, H):
+            g[y][x] = "o" if y == top else "3"
+    # Main peak with outline, lit left face, shaded right face, snow cap
+    inside = [[False] * W for _ in range(H)]
+    for y in range(PEAK[1], H):
+        xl, xr = peak_bounds(y)
+        for x in range(W):
+            inside[y][x] = xl <= x <= xr
+    for y in range(PEAK[1], H):
+        ridge = PEAK[0] + (y - PEAK[1]) * 0.12
+        for x in range(W):
+            if not inside[y][x]:
+                continue
+            edge = not (inside[y - 1][x] and inside[y][max(0, x - 1)] and inside[y][min(W - 1, x + 1)])
+            snowline = 27 + 3 * math.sin(x / 3.1)
+            if edge:
+                c = "o"
+            elif y < snowline:
+                c = "w" if x <= ridge else "L"
+            else:
+                c = "4" if x <= ridge else "5"
+            g[y][x] = c
+    # Dashed trail
+    step = 0
+    for a, b in zip(TRAIL, TRAIL[1:]):
+        for (x, y) in line_points(a, b)[:-1]:
+            if step % 4 < 2:
+                g[y][x] = "h" if g[y][x] in ("w", "L") else "u"
+            step += 1
+    for (x, y) in TRAIL:
+        assert inside[y][x], f"trail point {(x, y)} is off the mountain"
+    return g
+
+
+TENT = {  # 8x8, feet at (4, 6). Row 0 unlit, row 1 lit (2-frame flicker).
+    "unlit": [{1: "oo", 2: "oKKo", 3: "oKKKKo", 4: "oKKooKKo", 5: "oKKooKKo", 6: "oooooooo"}],
+    "lit": [{1: "oo", 2: "oKKo", 3: "oKKKKo", 4: "oKKyyKKo", 5: "oKKyyKKo", 6: "oooooooo"},
+            {1: "oo", 2: "oKKo", 3: "oKKKKo", 4: "oKKgyKKo", 5: "oKKyyKKo", 6: "oooooooo"}],
+}
+
+# 10x12 mini climber, feet at (5, 11). Explicit rows (not centred).
+CLIMBER = [
+    ["...oooo...", "..ohhhho..", "..osssso..", "..osooso..", "..osssso..", "...oooo...",
+     "..orrrro..", ".orrrrrro.", ".osrrrrso.", "..orrrro..", "..ob..bo..", "..oo..oo.."],
+    ["...oooo...", "..ohhhho..", "..osssso..", "..osooso..", "..osssso..", "...oooo...",
+     "..orrrro..", ".orrrrrro.", ".osrrrrso.", "..orrrro..", ".ob....bo.", ".oo....oo."],
+]
+
+# 8x8 summit flag, pole at x=0 (placed so the pole stands on the peak). Row 0 red, row 1 gold.
+FLAG = [
+    ["orrrrr..", "orrrrrr.", "orrrrr..", "o.......", "o.......", "o.......", "o.......", "o......."],
+    ["orrrr...", "orrrrrr.", "orrrrrrr", "o.......", "o.......", "o.......", "o.......", "o......."],
+]
+
 
 def split(g, keep):
     return [[ch if keep(ch) else "." for ch in row] for row in g]
@@ -327,8 +446,22 @@ def main():
 
     write_png(os.path.join(OUT, "px_coin.png"), sheet([coin_frames()], 16, 16), colors)
 
+    climbing, summit = ascent_scene(False), ascent_scene(True)
+    for i, base in enumerate(GOAL_COLORS):
+        write_png(os.path.join(OUT, f"px_ascent_{i}.png"), sheet([[climbing], [summit]], SCENE_W, SCENE_H),
+                  dict(colors, **scene_colors(base)))
+    write_png(os.path.join(OUT, "px_tent.png"),
+              sheet([[grid(f, 8, 8) for f in TENT["unlit"]], [grid(f, 8, 8) for f in TENT["lit"]]], 8, 8), colors)
+    write_png(os.path.join(OUT, "px_climber.png"), sheet([[[list(r) for r in f] for f in CLIMBER]], 10, 12), colors)
+    gold = [[r.replace("r", "g") for r in f] for f in FLAG]
+    write_png(os.path.join(OUT, "px_flag.png"),
+              sheet([[[list(r) for r in f] for f in FLAG], [[list(r) for r in f] for f in gold]], 8, 8), colors)
+
     # Palette exports (base palette + cloak ramps).
     entries = [(v[0], v[1]) for v in PALETTE.values()]
+    for i, base in enumerate(GOAL_COLORS):
+        for key, hexv in scene_colors(base).items():
+            entries.append((hexv, f"goal {i} ramp {key}"))
     for tone, ramp in SKIN_TONES.items():
         for shade, hexv in zip(("light", "shadow", "blush"), ramp):
             entries.append((hexv, f"skin {tone} {shade}"))

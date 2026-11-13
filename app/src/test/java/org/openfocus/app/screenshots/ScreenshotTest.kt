@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -37,6 +38,7 @@ import java.io.File
 class ScreenshotTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
+    private var goalId = ""
     private val app get() = ApplicationProvider.getApplicationContext<OpenFocusApp>()
 
     private fun seed() = runBlocking {
@@ -47,6 +49,8 @@ class ScreenshotTest {
         val created = System.currentTimeMillis() - 30L * 86_400_000
         val goal = GoalEntity(ownerId = "", title = "Run a half marathon", why = "Prove to myself I can stick with something hard.", summitName = "Half Marathon Peak", targetEpochDay = today + 120, colorIndex = 1)
         c.goals.save(goal, listOf("Run 5 km non-stop", "Run 10 km", "Sign up for a race", "Run 16 km", "Race day"))
+        c.db.goalDao().observeMilestones(goal.id).first().take(2).forEach { c.db.goalDao().upsertMilestone(it.copy(done = true)) }
+        goalId = goal.id
         val habits = listOf(
             HabitEntity(ownerId = "", title = "Read 10 pages", icon = "Book", colorIndex = 0, createdAt = created, difficulty = Difficulty.EASY),
             HabitEntity(ownerId = "", title = "Morning run", icon = "Run", colorIndex = 1, createdAt = created, goalId = goal.id, difficulty = Difficulty.HARD),
@@ -68,6 +72,7 @@ class ScreenshotTest {
         compose.setContent { OpenFocusTheme { OpenFocusRoot(pendingRoute = route, onRouteConsumed = {}) } }
         compose.waitForIdle()
         Thread.sleep(300)
+        compose.mainClock.advanceTimeBy(2_000) // let one-shot animations (e.g. the climber) settle
         compose.waitForIdle()
         val dir = File(System.getProperty("screenshots.dir") ?: "build/screenshots").apply { mkdirs() }
         val view = compose.activity.window.decorView
@@ -81,5 +86,6 @@ class ScreenshotTest {
     @Test fun focus() { seed(); shoot("focus", "focus") }
     @Test fun goals() { seed(); shoot("goals", "goals") }
     @Test fun shield() { seed(); shoot("shield", "shield") }
+    @Test fun goalDetail() { seed(); shoot("goal_detail", "goal/$goalId") }
     @Test fun hero() { seed(); runBlocking { app.container.game.syncAchievements() }; shoot("hero", "hero") }
 }

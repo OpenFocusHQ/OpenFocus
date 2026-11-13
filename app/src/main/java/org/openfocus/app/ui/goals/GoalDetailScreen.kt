@@ -82,8 +82,11 @@ fun GoalDetailScreen(nav: NavController, id: String) {
         val g = s.goal
         val color = paletteColor(g.colorIndex)
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            AscentMountain(s.progress, s.milestones.map { it.done }, color,
-                Modifier.fillMaxWidth().aspectRatio(1.4f).clip(RoundedCornerShape(24.dp)))
+            AscentMountain(
+                s.milestones.map { it.done }, g.status == GoalStatus.COMPLETED, g.colorIndex,
+                Modifier.fillMaxWidth().aspectRatio(160f / 112f).clip(RoundedCornerShape(20.dp)),
+                integerScale = false,
+            )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(g.summitName.ifBlank { "The summit" }, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 Text("${(s.progress * 100).toInt()}%", style = MaterialTheme.typography.headlineSmall, color = color)

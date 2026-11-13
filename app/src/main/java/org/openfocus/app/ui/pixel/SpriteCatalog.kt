@@ -44,6 +44,12 @@ object SpriteCatalog {
     const val IDLE = "idle"
     const val REST = "rest"
     const val CELEBRATE = "celebrate"
+    const val CLIMBING = "climbing"
+    const val SUMMIT = "summit"
+    const val UNLIT = "unlit"
+    const val LIT = "lit"
+    const val RED = "red"
+    const val GOLD = "gold"
 
     /** Head y-offsets per frame. MUST match IDLE_BOB / CELEBRATE_JUMP in build_placeholders.py. */
     private val HEAD = mapOf(
@@ -92,6 +98,18 @@ object SpriteCatalog {
 
     /** Where the 32x32 hero stands inside a 48x48 backdrop. */
     val HERO_IN_BACKDROP = IntOffset(8, 13)
+
+    /** Goal ascent scenes, indexed by goal colorIndex (see PaletteColors). */
+    val ascents: List<SpriteSheet> = listOf(
+        R.drawable.px_ascent_0, R.drawable.px_ascent_1, R.drawable.px_ascent_2, R.drawable.px_ascent_3,
+        R.drawable.px_ascent_4, R.drawable.px_ascent_5, R.drawable.px_ascent_6, R.drawable.px_ascent_7,
+    ).map { SpriteSheet(it, 160, 112, mapOf(CLIMBING to SpriteAnim(0, 1), SUMMIT to SpriteAnim(1, 1))) }
+
+    fun ascent(colorIndex: Int): SpriteSheet = ascents[((colorIndex % ascents.size) + ascents.size) % ascents.size]
+
+    val tent = SpriteSheet(R.drawable.px_tent, 8, 8, mapOf(UNLIT to SpriteAnim(0, 1), LIT to SpriteAnim(1, 2, 3f)))
+    val climber = SpriteSheet(R.drawable.px_climber, 10, 12, mapOf(IDLE to SpriteAnim(0, 2, 2f)))
+    val flag = SpriteSheet(R.drawable.px_flag, 8, 8, mapOf(RED to SpriteAnim(0, 2, 3f), GOLD to SpriteAnim(1, 2, 3f)))
 
     val coin = SpriteSheet(R.drawable.px_coin, 16, 16, mapOf("spin" to SpriteAnim(0, 6, 8f)))
 

@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
@@ -18,10 +20,13 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.openfocus.app.ui.components.AscentMountain
 import org.openfocus.app.ui.components.HeroAvatar
+import org.openfocus.app.ui.pixel.AscentTrail
 import org.openfocus.app.ui.pixel.HeroPose
 import org.openfocus.app.ui.pixel.PixelSprite
 import org.openfocus.app.ui.pixel.SkinTone
@@ -43,7 +48,7 @@ class SpriteGalleryTest {
 
     private val allSheets: List<SpriteSheet> =
         listOf(SpriteCatalog.coin) + SpriteCatalog.bodies.values + SpriteCatalog.cloaks.values + SpriteCatalog.hats.values +
-            SpriteCatalog.backdrops.values
+            SpriteCatalog.backdrops.values + SpriteCatalog.ascents + listOf(SpriteCatalog.tent, SpriteCatalog.climber, SpriteCatalog.flag)
 
     @Test fun sheetDimensionsMatchCatalog() {
         val res = ApplicationProvider.getApplicationContext<android.content.Context>().resources
@@ -54,6 +59,18 @@ class SpriteGalleryTest {
             val cols = sheet.anims.values.maxOf { it.frames }
             assertEquals(res.getResourceEntryName(sheet.resId) + " width", sheet.frameWidth * cols, bmp.width)
             assertEquals(res.getResourceEntryName(sheet.resId) + " height", sheet.frameHeight * rows, bmp.height)
+        }
+    }
+
+    /** The trail is baked into the scene by the generator; its waypoints must sit on the mountain, not the sky. */
+    @Test fun trailWaypointsAreOnTheMountain() {
+        val res = ApplicationProvider.getApplicationContext<android.content.Context>().resources
+        SpriteCatalog.ascents.forEach { sheet ->
+            val bmp = BitmapFactory.decodeResource(res, sheet.resId, BitmapFactory.Options().apply { inScaled = false })
+            val sky = setOf(bmp.getPixel(80, 2), bmp.getPixel(2, 50))
+            AscentTrail.POINTS.forEach { p ->
+                assertTrue("${res.getResourceEntryName(sheet.resId)} waypoint $p is in the sky", bmp.getPixel(p.x, p.y) !in sky)
+            }
         }
     }
 
@@ -83,6 +100,13 @@ class SpriteGalleryTest {
                     }
                     Text("Coin", style = MaterialTheme.typography.titleMedium)
                     Row { repeat(6) { f -> PixelSprite(listOf(SpriteLayer(SpriteCatalog.coin, "spin")), Modifier.size(32.dp), frame = f) } }
+                    Text("Goal ascents: 0, 2 of 4, all 4, summit", style = MaterialTheme.typography.titleMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        AscentMountain(listOf(false, false, false), false, 0, Modifier.width(92.dp).height(64.dp), animate = false)
+                        AscentMountain(listOf(true, true, false, false), false, 1, Modifier.width(92.dp).height(64.dp), animate = false)
+                        AscentMountain(listOf(true, true, true, true), false, 6, Modifier.width(92.dp).height(64.dp), animate = false)
+                        AscentMountain(listOf(true, true, true), true, 2, Modifier.width(92.dp).height(64.dp), animate = false)
+                    }
                     Text("Backdrops (as used in the app)", style = MaterialTheme.typography.titleMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         HeroAvatar("color_violet", null, null, size = 72.dp, animate = false)

@@ -43,6 +43,17 @@ Body and cloak sheets share this layout:
 
 **Hats** are drawn against the head in idle frame 0. The renderer moves them by the body's `head` anchor on each frame, so a hat bobs with the head without needing its own animation. If you change the body animation, update `HEAD_BOB` in `SpriteCatalog.kt` (and `IDLE_BOB` in the generator).
 
+### Goal ascent
+`px_ascent_<colorIndex>.png` is 160×224: row 0 is the climbing scene, row 1 the summit-reached scene. The dashed trail is baked into the art. Its waypoints are listed in **both** `TRAIL` in the generator and `AscentTrail.POINTS` in Kotlin, and a test checks that every waypoint lands on the mountain rather than the sky. If you redraw the mountain, update both lists.
+
+| Sheet | Frame | Rows | Placement |
+|---|---|---|---|
+| `px_tent.png` | 8×8 | `unlit` (1), `lit` (2 @ 3 fps) | feet at (4, 6); camp *i* of *n* sits at (i+1)/(n+1) along the trail |
+| `px_climber.png` | 10×12 | `idle` (2 @ 2 fps) | feet at (5, 11), 7px left of the camp it has reached |
+| `px_flag.png` | 8×8 | `red`, `gold` (2 @ 3 fps each) | pole base on the peak at (88, 10) |
+
+The detail screen stretches the scene to fill its width (`integerScale = false`). Thumbnails keep whole-number scaling.
+
 ### Rendering
 `PixelSprite` draws with nearest-neighbour filtering and rounds the scale down to a whole number, so every source pixel becomes an equal square block of screen pixels. Animations stop when the user has turned off system animations.
 
@@ -64,7 +75,7 @@ Every file must be listed in `CREDITS.md`.
 ## Roadmap
 - [x] Phase 1: renderer, palette, pipeline, placeholder hero, hats and coin
 - [x] Phase 2: 3 skin tones (stored in the profile, DB v2), pixel backdrops, celebrate animation. Placeholder quality: hand-drawn replacements welcome.
-- [ ] Phase 3: goal mountain scene (layers, camps, climber, flag)
+- [x] Phase 3: goal mountain scene: one 160×112 sheet per goal colour (climbing / summit rows), tents (unlit / lit flicker), climber, flag (red / gold)
 - [ ] Phase 4: 20 achievement badges, coin and level-up effects
 - [ ] Phase 5: block-screen shield, empty-state scenes, onboarding, launcher icon
 - [ ] Phase 6: polish (timing, dark-mode review on devices)

@@ -33,6 +33,46 @@ Columns: 8
 242 216 167	sand
  30  27  75	night
  46  42 107	night light
+237 234 253	goal 0 ramp 1
+221 217 252	goal 0 ramp 2
+183 174 248	goal 0 ramp 3
+124 108 242	goal 0 ramp 4
+ 84  73 165	goal 0 ramp 5
+225 244 242	goal 1 ramp 1
+200 235 231	goal 1 ramp 2
+138 213 204	goal 1 ramp 3
+ 43 179 163	goal 1 ramp 4
+ 29 122 111	goal 1 ramp 5
+253 234 230	goal 2 ramp 1
+251 216 209	goal 2 ramp 2
+247 173 157	goal 2 ramp 3
+240 106  77	goal 2 ramp 4
+163  72  52	goal 2 ramp 5
+251 242 225	goal 3 ramp 1
+247 232 199	goal 3 ramp 2
+238 206 136	goal 3 ramp 3
+224 165  38	goal 3 ramp 4
+152 112  26	goal 3 ramp 5
+230 242 253	goal 4 ramp 1
+209 231 251	goal 4 ramp 2
+157 204 247	goal 4 ramp 3
+ 77 163 240	goal 4 ramp 4
+ 52 111 163	goal 4 ramp 5
+252 232 236	goal 5 ramp 1
+249 213 219	goal 5 ramp 2
+242 166 179	goal 5 ramp 3
+232  93 117	goal 5 ramp 4
+158  63  80	goal 5 ramp 5
+228 239 232	goal 6 ramp 1
+205 226 213	goal 6 ramp 2
+149 193 166	goal 6 ramp 3
+ 62 142  94	goal 6 ramp 4
+ 42  97  64	goal 6 ramp 5
+241 232 245	goal 7 ramp 1
+229 212 236	goal 7 ramp 2
+200 164 215	goal 7 ramp 3
+155  89 182	goal 7 ramp 4
+105  61 124	goal 7 ramp 5
 255 217 184	skin light light
 232 180 143	skin light shadow
 247 161 161	skin light blush
