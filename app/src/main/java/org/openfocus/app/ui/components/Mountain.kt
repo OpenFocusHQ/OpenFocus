@@ -2,7 +2,9 @@ package org.openfocus.app.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
@@ -25,13 +27,21 @@ fun AscentMountain(
     animate: Boolean = true,
     integerScale: Boolean = true,
 ) {
+    // Follow the app theme (not just the system) so the scene never glares on a dark screen.
+    val night = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val n = milestones.size
     val done = milestones.count { it }
     val target = AscentTrail.climberFraction(done, n, completed)
     val f by animateFloatAsState(target, tween(if (animate) 900 else 0), label = "climb")
 
     val layers = buildList {
-        add(SpriteLayer(SpriteCatalog.ascent(colorIndex), if (completed) SpriteCatalog.SUMMIT else SpriteCatalog.CLIMBING))
+        val scene = when {
+            night && completed -> SpriteCatalog.SUMMIT_NIGHT
+            night -> SpriteCatalog.CLIMBING_NIGHT
+            completed -> SpriteCatalog.SUMMIT
+            else -> SpriteCatalog.CLIMBING
+        }
+        add(SpriteLayer(SpriteCatalog.ascent(colorIndex), scene))
         milestones.forEachIndexed { i, reached ->
             val p = AscentTrail.pointAt(AscentTrail.campFraction(i, n))
             add(SpriteLayer(SpriteCatalog.tent, if (reached) SpriteCatalog.LIT else SpriteCatalog.UNLIT, p - IntOffset(4, 6)))

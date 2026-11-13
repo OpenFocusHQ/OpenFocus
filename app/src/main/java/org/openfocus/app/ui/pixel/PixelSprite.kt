@@ -51,7 +51,7 @@ fun rememberReduceMotion(): Boolean {
  * One shared clock period. Every animation's loop length (frames / fps) should divide it evenly
  * so loops stay seamless; 12 s works for 1, 1.5, 2, 3, 4, 6 and 8 fps with typical frame counts.
  */
-private const val CLOCK_MS = 12_000
+internal const val CLOCK_MS = 12_000
 
 /**
  * Draws stacked pixel-art layers, crisp (nearest-neighbour) and at a WHOLE-NUMBER scale so every

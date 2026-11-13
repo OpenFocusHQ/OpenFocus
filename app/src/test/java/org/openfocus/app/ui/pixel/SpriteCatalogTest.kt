@@ -44,6 +44,25 @@ class SpriteCatalogTest {
         SpriteCatalog.cloaks.values.forEach { assertEquals(SpriteCatalog.heroBody.anims, it.anims) }
     }
 
+    @Test fun everyAscentHasDayAndNightScenes() {
+        val names = setOf(SpriteCatalog.CLIMBING, SpriteCatalog.SUMMIT, SpriteCatalog.CLIMBING_NIGHT, SpriteCatalog.SUMMIT_NIGHT)
+        SpriteCatalog.ascents.forEach { assertEquals(names, it.anims.keys) }
+        assertEquals(SpriteCatalog.ascent(1), SpriteCatalog.ascent(9)) // colour index wraps
+    }
+
+    /** A loop that doesn't divide the shared clock would visibly jump once every 12 s. */
+    @Test fun everyAnimationLoopsSeamlessly() {
+        val sheets = SpriteCatalog.bodies.values + SpriteCatalog.cloaks.values + SpriteCatalog.hats.values +
+            SpriteCatalog.backdrops.values + SpriteCatalog.ascents +
+            listOf(SpriteCatalog.tent, SpriteCatalog.climber, SpriteCatalog.flag, SpriteCatalog.coin,
+                SpriteCatalog.sparkle, SpriteCatalog.shield, SpriteCatalog.badges, SpriteCatalog.empty)
+        sheets.flatMap { it.anims.entries }.filter { it.value.frames > 1 }.forEach { (name, a) ->
+            val loopMs = a.frames * 1000.0 / a.fps
+            val loops = CLOCK_MS / loopMs
+            assertEquals("'$name' loop of ${loopMs}ms doesn't divide $CLOCK_MS ms", Math.round(loops).toDouble(), loops, 1e-6)
+        }
+    }
+
     @Test fun skinToneDefaultsToLight() {
         assertEquals(SkinTone.LIGHT, SkinTone.of(null))
         assertEquals(SkinTone.DEEP, SkinTone.of("deep"))

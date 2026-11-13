@@ -2,7 +2,9 @@ package org.openfocus.app.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -37,8 +39,9 @@ fun HeroAvatar(
     skinTone: String? = null,
     animate: Boolean = true,
 ) {
-    val layers = remember(colorId, hatId, backdropId, pose, skinTone) {
-        SpriteCatalog.heroLayers(colorId, hatId, pose, SkinTone.of(skinTone), withBackdrop = true, backdropId = backdropId)
+    val night = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val layers = remember(colorId, hatId, backdropId, pose, skinTone, night) {
+        SpriteCatalog.heroLayers(colorId, hatId, pose, SkinTone.of(skinTone), withBackdrop = true, backdropId = backdropId, night = night)
     }
     if (layers != null) {
         PixelSprite(layers, modifier.size(size), animate = animate, contentDescription = "Your hero")

@@ -39,41 +39,65 @@ Columns: 8
 183 174 248	goal 0 ramp 3
 124 108 242	goal 0 ramp 4
  84  73 165	goal 0 ramp 5
+ 39  34  69	goal 0 ramp 6
+ 51  45  94	goal 0 ramp 7
+ 72  63 136	goal 0 ramp 8
 225 244 242	goal 1 ramp 1
 200 235 231	goal 1 ramp 2
 138 213 204	goal 1 ramp 3
  43 179 163	goal 1 ramp 4
  29 122 111	goal 1 ramp 5
+ 24  47  55	goal 1 ramp 6
+ 27  66  71	goal 1 ramp 7
+ 32  98  97	goal 1 ramp 8
 253 234 230	goal 2 ramp 1
 251 216 209	goal 2 ramp 2
 247 173 157	goal 2 ramp 3
 240 106  77	goal 2 ramp 4
 163  72  52	goal 2 ramp 5
+ 60  34  39	goal 2 ramp 6
+ 86  44  45	goal 2 ramp 7
+130  62  54	goal 2 ramp 8
 251 242 225	goal 3 ramp 1
 247 232 199	goal 3 ramp 2
 238 206 136	goal 3 ramp 3
 224 165  38	goal 3 ramp 4
 152 112  26	goal 3 ramp 5
+ 57  44  32	goal 3 ramp 6
+ 81  62  33	goal 3 ramp 7
+122  92  34	goal 3 ramp 8
 230 242 253	goal 4 ramp 1
 209 231 251	goal 4 ramp 2
 157 204 247	goal 4 ramp 3
  77 163 240	goal 4 ramp 4
  52 111 163	goal 4 ramp 5
+ 30  44  69	goal 4 ramp 6
+ 37  62  94	goal 4 ramp 7
+ 48  90 136	goal 4 ramp 8
 252 232 236	goal 5 ramp 1
 249 213 219	goal 5 ramp 2
 242 166 179	goal 5 ramp 3
 232  93 117	goal 5 ramp 4
 158  63  80	goal 5 ramp 5
+ 58  32  46	goal 5 ramp 6
+ 84  40  57	goal 5 ramp 7
+126  56  74	goal 5 ramp 8
 228 239 232	goal 6 ramp 1
 205 226 213	goal 6 ramp 2
 149 193 166	goal 6 ramp 3
  62 142  94	goal 6 ramp 4
  42  97  64	goal 6 ramp 5
+ 28  40  42	goal 6 ramp 6
+ 33  55  50	goal 6 ramp 7
+ 41  80  62	goal 6 ramp 8
 241 232 245	goal 7 ramp 1
 229 212 236	goal 7 ramp 2
 200 164 215	goal 7 ramp 3
 155  89 182	goal 7 ramp 4
 105  61 124	goal 7 ramp 5
+ 44  31  58	goal 7 ramp 6
+ 60  39  76	goal 7 ramp 7
+ 88  54 106	goal 7 ramp 8
 240 181 126	medal bronze rim
 201 132  74	medal bronze face
 138  82  38	medal bronze shadow

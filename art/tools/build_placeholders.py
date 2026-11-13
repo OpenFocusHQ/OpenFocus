@@ -58,6 +58,9 @@ PALETTE = {
     "u": ("F2D8A7", "sand"),
     "z": ("1E1B4B", "night"),
     "Z": ("2E2A6B", "night light"),
+    # Translucent (RRGGBBAA): drawn over either theme. Not exported to the palette files.
+    "_": ("2B244038", "shadow (translucent outline)"),
+    "=": ("3E8E5E70", "grass (translucent)"),
 }
 
 # Skin ramps (light, shadow, blush). Template chars: s, S, p.
@@ -192,6 +195,8 @@ def backdrop(kind, frame=0):
     def fill(x, y):
         if kind == "default":
             return "L" if y < 30 else "l"
+        if kind == "default_night":
+            return "Z" if y < 30 else "z"
         if kind == "sunrise":
             if y >= 38:
                 return "k"
@@ -252,11 +257,15 @@ def mix(hexv, other, t):
     return "".join(f"{round(x + (y - x) * t):02X}" for x, y in zip(a, b))
 
 
+NIGHT = "14121F"  # = dark theme background
+
+
 def scene_colors(base):
-    """Per-scene ramp: 1/2 sky, 3 back range, 4 lit face, 5 shaded face."""
+    """Per-scene ramp: 1/2 sky, 3 back range, 4 lit face, 5 shaded face; 6/7/8 = night sky/range."""
     return {
         "1": mix(base, "FFFFFF", 0.86), "2": mix(base, "FFFFFF", 0.74),
         "3": mix(base, "FFFFFF", 0.45), "4": base, "5": mix(base, "000000", 0.32),
+        "6": mix(base, NIGHT, 0.82), "7": mix(base, NIGHT, 0.7), "8": mix(base, NIGHT, 0.5),
     }
 
 
@@ -272,13 +281,18 @@ def line_points(a, b):
     return [(round(x0 + (x1 - x0) * i / n), round(y0 + (y1 - y0) * i / n)) for i in range(n + 1)]
 
 
-def ascent_scene(summit):
+def ascent_scene(summit, night=False):
+    """night=True is the dark-theme variant: dusky sky, stars, and a moon instead of the sun."""
     import math
     W, H = SCENE_W, SCENE_H
     g = [["." for _ in range(W)] for _ in range(H)]
     for y in range(H):
         for x in range(W):
-            if summit:
+            if night:
+                c = ("z" if summit else "6") if y < 44 else ("Z" if summit else "7")
+                if y in (42, 43) and (x + y) % 2 == 0:
+                    c = "Z" if summit else "7"
+            elif summit:
                 c = "A" if y < 40 else "K"
                 if y in (38, 39) and (x + y) % 2 == 0:
                     c = "K"
@@ -287,7 +301,16 @@ def ascent_scene(summit):
                 if y in (42, 43) and (x + y) % 2 == 0:
                     c = "2"
             g[y][x] = c
-    if summit:
+    if night:
+        for i, (sx, sy) in enumerate(((12, 8), (40, 20), (62, 6), (120, 12), (148, 30), (24, 34), (136, 4), (100, 24))):
+            g[sy][sx] = "w" if i % 3 else "y"
+        for y in range(H):
+            for x in range(W):
+                in_moon = (x - 132) ** 2 + (y - 22) ** 2 <= 49
+                bite = (x - 135) ** 2 + (y - 20) ** 2 <= 42
+                if in_moon and not bite:
+                    g[y][x] = "g" if summit else "y"
+    elif summit:
         for y in range(H):
             for x in range(W):
                 if (x - 132) ** 2 + (y - 30) ** 2 <= 80:
@@ -302,7 +325,7 @@ def ascent_scene(summit):
     for x in range(W):
         top = int(62 + 9 * math.sin(x / 13) + 5 * math.sin(x / 5.3 + 1))
         for y in range(top, H):
-            g[y][x] = "o" if y == top else "3"
+            g[y][x] = "o" if y == top else ("8" if night else "3")
     # Main peak with outline, lit left face, shaded right face, snow cap
     inside = [[False] * W for _ in range(H)]
     for y in range(PEAK[1], H):
@@ -587,7 +610,7 @@ EMPTY_SCENES = ["quests", "habits", "goals"]  # MUST match SpriteCatalog.empty
 
 def empty_quests():
     g = blank(64, 48)
-    stamp(g, ellipse_mask(32, 43, 26, 3.5, 64, 48), "l", outline=None)
+    stamp(g, ellipse_mask(32, 43, 26, 3.5, 64, 48), "_", outline=None)
     stamp(g, rect_mask(12, 12, 50, 38), "u")
     for cx in (12, 50):
         stamp(g, ellipse_mask(cx + .5, 25, 3.5, 14, 64, 48), "A", shade=lambda x, y: "K" if y > 30 else None)
@@ -603,7 +626,7 @@ def empty_quests():
 
 def empty_habits():
     g = blank(64, 48)
-    stamp(g, ellipse_mask(32, 43, 28, 3.5, 64, 48), "l", outline=None)
+    stamp(g, ellipse_mask(32, 43, 28, 3.5, 64, 48), "_", outline=None)
     for i, (cx, stem) in enumerate(((14, 4), (32, 10), (50, 16))):
         top = 30 - stem
         for y in range(top, 31):
@@ -624,12 +647,12 @@ def empty_habits():
 
 def empty_goals():
     g = blank(64, 48)
-    stamp(g, ellipse_mask(32, 43, 30, 3.5, 64, 48), "f", outline=None)
+    stamp(g, ellipse_mask(32, 43, 30, 3.5, 64, 48), "=", outline=None)
     mount = poly_mask([(30, 41), (47, 10), (64, 41)], 64, 48)
     stamp(g, mount, "v", shade=lambda x, y: "V" if x > 47 + (y - 10) * 0.15 else None)
     stamp(g, poly_mask([(42, 19), (47, 10), (52, 19), (49, 17), (47, 20), (45, 17)], 64, 48), "w", outline=None)
     for i, (x, y) in enumerate(line_points((8, 46), (40, 34)) + line_points((40, 34), (44, 26))):
-        if i % 3 < 2 and g[y][x] in ".fv":
+        if i % 3 < 2 and g[y][x] in ".=v":
             g[y][x] = "u"
     stamp(g, rect_mask(15, 14, 19, 44), "h")
     stamp(g, poly_mask([(5, 14), (26, 14), (31, 18), (26, 22), (5, 22)], 64, 48), "G", shade=lambda x, y: "g" if y < 17 else None)
@@ -709,7 +732,7 @@ def write_png(path, pixels, colors):
                 raw += b"\x00\x00\x00\x00"
             else:
                 hexv = ch[1:] if ch.startswith("#") else colors[ch]
-                raw += bytes.fromhex(hexv) + b"\xff"
+                raw += bytes.fromhex(hexv) + (b"" if len(hexv) == 8 else b"\xff")  # RRGGBB or RRGGBBAA
 
     def chunk(tag, data):
         return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
@@ -766,7 +789,10 @@ def main():
                   sheet([[split(f, is_cloak) for f in row] for row in poses], 32, 32), cc)
 
     for kind, frames in BACKDROPS.items():
-        write_png(os.path.join(OUT, f"px_bg_{kind}.png"), sheet([[backdrop(kind, f) for f in range(frames)]], 48, 48), colors)
+        rows = [[backdrop(kind, f) for f in range(frames)]]
+        if kind == "default":  # row 1 = dark-theme version of the default backdrop
+            rows.append([backdrop("default_night")])
+        write_png(os.path.join(OUT, f"px_bg_{kind}.png"), sheet(rows, 48, 48), colors)
 
     for item, rows in HATS.items():
         write_png(os.path.join(OUT, f"px_{item}.png"), sheet([[grid(rows, 32, 32)]], 32, 32), colors)
@@ -806,9 +832,10 @@ def main():
     write_png(os.path.join(OUT, "px_badges.png"), out, {})
     write_png(os.path.join(OUT, "px_sparkle.png"), sheet([sparkle_frames()], 48, 48), colors)
 
-    climbing, summit = ascent_scene(False), ascent_scene(True)
+    # Rows: 0 climbing, 1 summit, 2 climbing (night / dark theme), 3 summit (night).
+    scenes = [[ascent_scene(False)], [ascent_scene(True)], [ascent_scene(False, True)], [ascent_scene(True, True)]]
     for i, base in enumerate(GOAL_COLORS):
-        write_png(os.path.join(OUT, f"px_ascent_{i}.png"), sheet([[climbing], [summit]], SCENE_W, SCENE_H),
+        write_png(os.path.join(OUT, f"px_ascent_{i}.png"), sheet(scenes, SCENE_W, SCENE_H),
                   dict(colors, **scene_colors(base)))
     write_png(os.path.join(OUT, "px_tent.png"),
               sheet([[grid(f, 8, 8) for f in TENT["unlit"]], [grid(f, 8, 8) for f in TENT["lit"]]], 8, 8), colors)
@@ -818,7 +845,7 @@ def main():
               sheet([[[list(r) for r in f] for f in FLAG], [[list(r) for r in f] for f in gold]], 8, 8), colors)
 
     # Palette exports (base palette + cloak ramps).
-    entries = [(v[0], v[1]) for v in PALETTE.values()] + [(LAUNCHER_BG, "launcher background")]
+    entries = [(v[0], v[1]) for v in PALETTE.values() if len(v[0]) == 6] + [(LAUNCHER_BG, "launcher background")]
     for i, base in enumerate(GOAL_COLORS):
         for key, hexv in scene_colors(base).items():
             entries.append((hexv, f"goal {i} ramp {key}"))

@@ -47,6 +47,9 @@ object SpriteCatalog {
     const val CELEBRATE = "celebrate"
     const val CLIMBING = "climbing"
     const val SUMMIT = "summit"
+    const val NIGHT = "night"
+    const val CLIMBING_NIGHT = "climbing_night"
+    const val SUMMIT_NIGHT = "summit_night"
     const val UNLIT = "unlit"
     const val LIT = "lit"
     const val RED = "red"
@@ -90,7 +93,7 @@ object SpriteCatalog {
 
     /** Round 48x48 backdrops. `null` key = the default backdrop when none is equipped. */
     val backdrops: Map<String?, SpriteSheet> = mapOf(
-        null to SpriteSheet(R.drawable.px_bg_default, 48, 48, still),
+        null to SpriteSheet(R.drawable.px_bg_default, 48, 48, mapOf(IDLE to SpriteAnim(0, 1), NIGHT to SpriteAnim(1, 1))),
         "bg_sunrise" to SpriteSheet(R.drawable.px_bg_sunrise, 48, 48, still),
         "bg_forest" to SpriteSheet(R.drawable.px_bg_forest, 48, 48, still),
         "bg_ocean" to SpriteSheet(R.drawable.px_bg_ocean, 48, 48, still),
@@ -104,7 +107,12 @@ object SpriteCatalog {
     val ascents: List<SpriteSheet> = listOf(
         R.drawable.px_ascent_0, R.drawable.px_ascent_1, R.drawable.px_ascent_2, R.drawable.px_ascent_3,
         R.drawable.px_ascent_4, R.drawable.px_ascent_5, R.drawable.px_ascent_6, R.drawable.px_ascent_7,
-    ).map { SpriteSheet(it, 160, 112, mapOf(CLIMBING to SpriteAnim(0, 1), SUMMIT to SpriteAnim(1, 1))) }
+    ).map {
+        SpriteSheet(
+            it, 160, 112,
+            mapOf(CLIMBING to SpriteAnim(0, 1), SUMMIT to SpriteAnim(1, 1), CLIMBING_NIGHT to SpriteAnim(2, 1), SUMMIT_NIGHT to SpriteAnim(3, 1)),
+        )
+    }
 
     fun ascent(colorIndex: Int): SpriteSheet = ascents[((colorIndex % ascents.size) + ascents.size) % ascents.size]
 
@@ -151,12 +159,15 @@ object SpriteCatalog {
         skin: SkinTone = SkinTone.LIGHT,
         withBackdrop: Boolean = false,
         backdropId: String? = null,
+        /** Dark theme: use a backdrop's NIGHT variant when it has one. */
+        night: Boolean = false,
     ): List<SpriteLayer>? {
         val cloak = cloaks[colorId ?: "color_violet"] ?: return null
         val body = bodies[skin] ?: return null
         val layers = mutableListOf<SpriteLayer>()
         val at = if (withBackdrop) {
-            layers += SpriteLayer(backdrops[backdropId] ?: return null, IDLE)
+            val bg = backdrops[backdropId] ?: return null
+            layers += SpriteLayer(bg, if (night && NIGHT in bg.anims) NIGHT else IDLE)
             HERO_IN_BACKDROP
         } else IntOffset.Zero
         layers += SpriteLayer(body, pose.anim, at)

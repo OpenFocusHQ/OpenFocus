@@ -36,7 +36,10 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w411dp-h891dp-xxhdpi")
-class ScreenshotTest {
+open class ScreenshotTest {
+    /** Subfolder of docs/screenshots for this variant ("" = light theme). */
+    protected open val variant = ""
+
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     private var goalId = ""
@@ -77,7 +80,7 @@ class ScreenshotTest {
         Thread.sleep(300)
         compose.mainClock.advanceTimeBy(2_000) // let one-shot animations (e.g. the climber) settle
         compose.waitForIdle()
-        val dir = File(System.getProperty("screenshots.dir") ?: "build/screenshots").apply { mkdirs() }
+        val dir = File(System.getProperty("screenshots.dir") ?: "build/screenshots", variant).apply { mkdirs() }
         val view = compose.activity.window.decorView
         val bmp = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)

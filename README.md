@@ -9,6 +9,8 @@ Everything stays on your device: there are no accounts, no analytics and no netw
 |---|---|---|---|---|---|
 | ![](docs/screenshots/today.png) | ![](docs/screenshots/habits.png) | ![](docs/screenshots/focus.png) | ![](docs/screenshots/goal_detail.png) | ![](docs/screenshots/shield.png) | ![](docs/screenshots/hero.png) |
 
+Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
+
 | Block screen | Level up | First day |
 |---|---|---|
 | ![](docs/screenshots/block.png) | ![](docs/screenshots/celebration.png) | ![](docs/screenshots/empty_today.png) |
