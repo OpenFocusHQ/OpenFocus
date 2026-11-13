@@ -3,9 +3,10 @@ package org.openfocus.app.ui.pixel
 import androidx.annotation.DrawableRes
 import androidx.compose.ui.unit.IntOffset
 import org.openfocus.app.R
+import org.openfocus.app.core.Achievements
 
-/** One row of a sprite sheet. */
-data class SpriteAnim(val row: Int, val frames: Int, val fps: Float = 4f)
+/** An animation: [frames] frames on [row], starting at column [col] (for icon atlases). */
+data class SpriteAnim(val row: Int, val frames: Int, val fps: Float = 4f, val col: Int = 0)
 
 /**
  * A fixed-grid sprite sheet stored in res/drawable-nodpi (so Android never rescales it).
@@ -110,6 +111,19 @@ object SpriteCatalog {
     val tent = SpriteSheet(R.drawable.px_tent, 8, 8, mapOf(UNLIT to SpriteAnim(0, 1), LIT to SpriteAnim(1, 2, 3f)))
     val climber = SpriteSheet(R.drawable.px_climber, 10, 12, mapOf(IDLE to SpriteAnim(0, 2, 2f)))
     val flag = SpriteSheet(R.drawable.px_flag, 8, 8, mapOf(RED to SpriteAnim(0, 2, 3f), GOLD to SpriteAnim(1, 2, 3f)))
+
+    /**
+     * 24x24 achievement badges, 5 per row, in [Achievements.all] order; animation name = achievement id.
+     * MUST match BADGES order in build_placeholders.py (checked by SpriteCatalogTest).
+     */
+    const val BADGE_COLUMNS = 5
+    val badges = SpriteSheet(
+        R.drawable.px_badges, 24, 24,
+        Achievements.all.mapIndexed { i, a -> a.id to SpriteAnim(i / BADGE_COLUMNS, 1, col = i % BADGE_COLUMNS) }.toMap(),
+    )
+
+    /** 48x48 sparkle burst; overlays a hero avatar (same logical size, so same pixel scale). */
+    val sparkle = SpriteSheet(R.drawable.px_sparkle, 48, 48, mapOf(IDLE to SpriteAnim(0, 8, 10f)))
 
     val coin = SpriteSheet(R.drawable.px_coin, 16, 16, mapOf("spin" to SpriteAnim(0, 6, 8f)))
 

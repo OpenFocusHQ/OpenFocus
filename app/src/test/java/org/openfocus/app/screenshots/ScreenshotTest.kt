@@ -26,6 +26,7 @@ import org.openfocus.app.ui.theme.OpenFocusTheme
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import org.robolectric.shadows.ShadowDialog
 import java.io.File
 
 /**
@@ -68,8 +69,10 @@ class ScreenshotTest {
         c.blocks.upsertRule(BlockRuleEntity("com.example.feed", "FeedApp", BlockMode.ALWAYS))
     }
 
-    private fun shoot(name: String, route: String?) {
+    private fun shoot(name: String, route: String?, after: (() -> Unit)? = null) {
         compose.setContent { OpenFocusTheme { OpenFocusRoot(pendingRoute = route, onRouteConsumed = {}) } }
+        compose.waitForIdle()
+        after?.invoke()
         compose.waitForIdle()
         Thread.sleep(300)
         compose.mainClock.advanceTimeBy(2_000) // let one-shot animations (e.g. the climber) settle
@@ -77,7 +80,16 @@ class ScreenshotTest {
         val dir = File(System.getProperty("screenshots.dir") ?: "build/screenshots").apply { mkdirs() }
         val view = compose.activity.window.decorView
         val bmp = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        view.draw(Canvas(bmp))
+        val canvas = Canvas(bmp)
+        view.draw(canvas)
+        // Dialogs live in their own window: draw the latest one on top, centred over a scrim.
+        ShadowDialog.getLatestDialog()?.takeIf { it.isShowing }?.window?.decorView?.let { d ->
+            canvas.drawColor(0x99000000.toInt())
+            canvas.save()
+            canvas.translate((bmp.width - d.width) / 2f, (bmp.height - d.height) / 2f)
+            d.draw(canvas)
+            canvas.restore()
+        }
         File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
@@ -87,5 +99,12 @@ class ScreenshotTest {
     @Test fun goals() { seed(); shoot("goals", "goals") }
     @Test fun shield() { seed(); shoot("shield", "shield") }
     @Test fun goalDetail() { seed(); shoot("goal_detail", "goal/$goalId") }
+    @Test fun celebration() {
+        seed()
+        shoot("celebration", null) {
+            // Enough XP for a level-up, which also unlocks an achievement.
+            runBlocking { app.container.game.apply("test", xp = 300, message = "Level up!") }
+        }
+    }
     @Test fun hero() { seed(); runBlocking { app.container.game.syncAchievements() }; shoot("hero", "hero") }
 }

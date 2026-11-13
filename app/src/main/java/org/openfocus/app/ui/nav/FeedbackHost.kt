@@ -1,13 +1,16 @@
 package org.openfocus.app.ui.nav
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -25,11 +28,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.openfocus.app.core.Encouragement
 import org.openfocus.app.game.GameFeedback
-import org.openfocus.app.ui.components.AppIcons
+import org.openfocus.app.ui.components.AchievementBadge
 import org.openfocus.app.ui.components.HeroAvatar
 import org.openfocus.app.ui.pixel.HeroPose
 import org.openfocus.app.ui.components.appContainer
-import org.openfocus.app.ui.theme.Coin
+import org.openfocus.app.ui.pixel.PixelSprite
+import org.openfocus.app.ui.pixel.SpriteCatalog
+
+/** Snackbar payload that knows whether coins were earned (shows the spinning pixel coin). */
+private data class RewardSnackbar(
+    override val message: String,
+    val coins: Int,
+    override val actionLabel: String? = null,
+    override val withDismissAction: Boolean = false,
+    override val duration: SnackbarDuration = SnackbarDuration.Short,
+) : SnackbarVisuals
 
 /** Shows game feedback: small wins as snackbars, big moments as a celebration dialog. */
 @Composable
@@ -49,17 +62,33 @@ fun FeedbackHost(snackbar: SnackbarHostState) {
                     if (fb.hp < 0) add("${fb.hp} HP")
                 }
                 snackbar.currentSnackbarData?.dismiss()
-                snackbar.showSnackbar(fb.message + if (parts.isNotEmpty()) "  (${parts.joinToString(" · ")})" else "")
+                snackbar.showSnackbar(
+                    RewardSnackbar(fb.message + if (parts.isNotEmpty()) "  (${parts.joinToString(" · ")})" else "", fb.coins),
+                )
             }
         }
     }
-    SnackbarHost(snackbar)
+    SnackbarHost(snackbar) { data ->
+        Snackbar {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (((data.visuals as? RewardSnackbar)?.coins ?: 0) > 0) {
+                    PixelSprite(SpriteCatalog.coin, "spin", Modifier.size(24.dp), contentDescription = "Coins earned")
+                    Spacer(Modifier.width(10.dp))
+                }
+                Text(data.visuals.message)
+            }
+        }
+    }
     big?.let { fb ->
         AlertDialog(
             onDismissRequest = { big = null },
             icon = {
                 val p by profile.collectAsState(initial = null)
-                HeroAvatar(p, size = 96.dp, pose = if (fb.fainted) HeroPose.REST else HeroPose.CELEBRATE)
+                Box(contentAlignment = Alignment.Center) {
+                    HeroAvatar(p, size = 120.dp, pose = if (fb.fainted) HeroPose.REST else HeroPose.CELEBRATE)
+                    // Same 48px logical size as the avatar, so both snap to the same pixel scale.
+                    if (!fb.fainted) PixelSprite(SpriteCatalog.sparkle, SpriteCatalog.IDLE, Modifier.size(120.dp))
+                }
             },
             title = {
                 Text(
@@ -76,12 +105,12 @@ fun FeedbackHost(snackbar: SnackbarHostState) {
                     if (fb.newLevel != null) Text("You're getting stronger. HP fully restored!")
                     fb.achievements.forEach { a ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(AppIcons.get(a.icon), null, tint = Coin, modifier = Modifier.size(32.dp))
+                            AchievementBadge(a.id, unlocked = true, modifier = Modifier.size(48.dp))
                             Spacer(Modifier.width(12.dp))
                             Column {
                                 Text(a.title, style = MaterialTheme.typography.titleMedium)
                                 Text(a.description, style = MaterialTheme.typography.bodySmall)
-                                Text("+${a.xpReward} XP · +${a.coinReward} coins", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(listOfNotNull(a.xpReward.takeIf { it > 0 }?.let { "+$it XP" }, a.coinReward.takeIf { it > 0 }?.let { "+$it coins" }).joinToString(" · "), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }

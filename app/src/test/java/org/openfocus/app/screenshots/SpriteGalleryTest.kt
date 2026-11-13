@@ -24,6 +24,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.openfocus.app.core.Achievements
+import org.openfocus.app.ui.components.AchievementBadge
 import org.openfocus.app.ui.components.AscentMountain
 import org.openfocus.app.ui.components.HeroAvatar
 import org.openfocus.app.ui.pixel.AscentTrail
@@ -48,7 +50,7 @@ class SpriteGalleryTest {
 
     private val allSheets: List<SpriteSheet> =
         listOf(SpriteCatalog.coin) + SpriteCatalog.bodies.values + SpriteCatalog.cloaks.values + SpriteCatalog.hats.values +
-            SpriteCatalog.backdrops.values + SpriteCatalog.ascents + listOf(SpriteCatalog.tent, SpriteCatalog.climber, SpriteCatalog.flag)
+            SpriteCatalog.backdrops.values + SpriteCatalog.ascents + listOf(SpriteCatalog.tent, SpriteCatalog.climber, SpriteCatalog.flag, SpriteCatalog.badges, SpriteCatalog.sparkle)
 
     @Test fun sheetDimensionsMatchCatalog() {
         val res = ApplicationProvider.getApplicationContext<android.content.Context>().resources
@@ -56,7 +58,7 @@ class SpriteGalleryTest {
             val opts = BitmapFactory.Options().apply { inScaled = false }
             val bmp = BitmapFactory.decodeResource(res, sheet.resId, opts)
             val rows = sheet.anims.values.maxOf { it.row } + 1
-            val cols = sheet.anims.values.maxOf { it.frames }
+            val cols = sheet.anims.values.maxOf { it.col + it.frames }
             assertEquals(res.getResourceEntryName(sheet.resId) + " width", sheet.frameWidth * cols, bmp.width)
             assertEquals(res.getResourceEntryName(sheet.resId) + " height", sheet.frameHeight * rows, bmp.height)
         }
@@ -98,6 +100,12 @@ class SpriteGalleryTest {
                             PixelSprite(SpriteCatalog.heroLayers("color_teal", h)!!, Modifier.size(48.dp), frame = 1)
                         }
                     }
+                    Text("Badges (unlocked / locked)", style = MaterialTheme.typography.titleMedium)
+                    Achievements.all.chunked(10).forEachIndexed { r, chunk ->
+                        Row { chunk.forEach { AchievementBadge(it.id, unlocked = r == 0, modifier = Modifier.size(36.dp)) } }
+                    }
+                    Text("Sparkle ×8", style = MaterialTheme.typography.titleMedium)
+                    Row { repeat(8) { f -> PixelSprite(listOf(SpriteLayer(SpriteCatalog.sparkle, "idle")), Modifier.size(44.dp).background(MaterialTheme.colorScheme.inverseSurface), frame = f) } }
                     Text("Coin", style = MaterialTheme.typography.titleMedium)
                     Row { repeat(6) { f -> PixelSprite(listOf(SpriteLayer(SpriteCatalog.coin, "spin")), Modifier.size(32.dp), frame = f) } }
                     Text("Goal ascents: 0, 2 of 4, all 4, summit", style = MaterialTheme.typography.titleMedium)

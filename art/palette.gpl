@@ -73,6 +73,15 @@ Columns: 8
 200 164 215	goal 7 ramp 3
 155  89 182	goal 7 ramp 4
 105  61 124	goal 7 ramp 5
+240 181 126	medal bronze rim
+201 132  74	medal bronze face
+138  82  38	medal bronze shadow
+244 244 250	medal silver rim
+201 203 218	medal silver face
+142 145 166	medal silver shadow
+255 224 138	medal gold rim
+255 200  87	medal gold face
+201 142  28	medal gold shadow
 255 217 184	skin light light
 232 180 143	skin light shadow
 247 161 161	skin light blush

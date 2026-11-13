@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -61,6 +60,7 @@ import org.openfocus.app.core.ItemSlot
 import org.openfocus.app.core.ShopCatalog
 import org.openfocus.app.data.db.ProfileEntity
 import org.openfocus.app.data.db.RewardEntity
+import org.openfocus.app.ui.components.AchievementBadge
 import org.openfocus.app.ui.components.AppIcons
 import org.openfocus.app.ui.components.HeroAvatar
 import org.openfocus.app.ui.components.HeroCard
@@ -145,8 +145,7 @@ private fun AchievementsTab() {
             val (cur, goal) = a.progress(stats)
             Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.alpha(if (done) 1f else 0.75f)) {
                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(if (done) AppIcons.get(a.icon) else Icons.Filled.Lock, null,
-                        tint = if (done) Coin else MaterialTheme.colorScheme.outline, modifier = Modifier.size(36.dp))
+                    AchievementBadge(a.id, done, Modifier.size(48.dp), contentDescription = if (done) "Unlocked" else "Locked")
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(a.title, style = MaterialTheme.typography.titleSmall)

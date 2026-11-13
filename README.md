@@ -5,9 +5,9 @@
 OpenFocus mixes ideas from a few kinds of apps: an app blocker and a pause-before-you-scroll screen, a focus timer, a Habitica-style hero with XP, HP and coins, and an "ascent" view where each long-term goal is a mountain you climb.
 Everything stays on your device: there are no accounts, no analytics and no network permission.
 
-| Today | Habits | Focus | Goals | Shield | Hero |
-|---|---|---|---|---|---|
-| ![](docs/screenshots/today.png) | ![](docs/screenshots/habits.png) | ![](docs/screenshots/focus.png) | ![](docs/screenshots/goals.png) | ![](docs/screenshots/shield.png) | ![](docs/screenshots/hero.png) |
+| Today | Habits | Focus | Goal ascent | Shield | Hero | Level up |
+|---|---|---|---|---|---|---|
+| ![](docs/screenshots/today.png) | ![](docs/screenshots/habits.png) | ![](docs/screenshots/focus.png) | ![](docs/screenshots/goal_detail.png) | ![](docs/screenshots/shield.png) | ![](docs/screenshots/hero.png) | ![](docs/screenshots/celebration.png) |
 
 ## Features
 

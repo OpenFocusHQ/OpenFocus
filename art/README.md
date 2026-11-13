@@ -54,6 +54,13 @@ Body and cloak sheets share this layout:
 
 The detail screen stretches the scene to fill its width (`integerScale = false`). Thumbnails keep whole-number scaling.
 
+### Achievement badges
+`px_badges.png` is an atlas of 24×24 medals, 5 per row, in the same order as `Achievements.all`. Each badge's animation name is the achievement id, and its position comes from `SpriteAnim.col`/`row`. A medal is a tier disc (bronze, silver or gold, with a lit top-left rim) on purple ribbon tails, with a 12×12 symbol centred at (6, 4). Locked badges aren't drawn separately: the app tints the unlocked art into a flat silhouette.
+
+To add an achievement: add it to `Achievements.all`, add a matching `(id, tier)` entry to `BADGES` in the generator (in the same position), and add a symbol to `GLYPHS`. `GeneratorSyncTest` fails if the two orders differ.
+
+`px_sparkle.png` (48×48, 8 frames at 10 fps) is drawn over the 48px hero avatar in the level-up and achievement dialog. It's the same logical size, so both snap to the same pixel scale.
+
 ### Rendering
 `PixelSprite` draws with nearest-neighbour filtering and rounds the scale down to a whole number, so every source pixel becomes an equal square block of screen pixels. Animations stop when the user has turned off system animations.
 
@@ -76,6 +83,6 @@ Every file must be listed in `CREDITS.md`.
 - [x] Phase 1: renderer, palette, pipeline, placeholder hero, hats and coin
 - [x] Phase 2: 3 skin tones (stored in the profile, DB v2), pixel backdrops, celebrate animation. Placeholder quality: hand-drawn replacements welcome.
 - [x] Phase 3: goal mountain scene: one 160×112 sheet per goal colour (climbing / summit rows), tents (unlit / lit flicker), climber, flag (red / gold)
-- [ ] Phase 4: 20 achievement badges, coin and level-up effects
+- [x] Phase 4: 20 achievement medals (bronze / silver / gold), locked silhouettes, level-up sparkle burst, coin in reward snackbars
 - [ ] Phase 5: block-screen shield, empty-state scenes, onboarding, launcher icon
 - [ ] Phase 6: polish (timing, dark-mode review on devices)

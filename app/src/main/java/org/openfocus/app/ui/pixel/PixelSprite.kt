@@ -115,7 +115,7 @@ fun PixelSprite(
             val y = layer.offset.y + anchor.y
             drawImage(
                 image = images[i],
-                srcOffset = IntOffset(f * layer.sheet.frameWidth, a.row * layer.sheet.frameHeight),
+                srcOffset = IntOffset((a.col + f) * layer.sheet.frameWidth, a.row * layer.sheet.frameHeight),
                 srcSize = IntSize(layer.sheet.frameWidth, layer.sheet.frameHeight),
                 dstOffset = IntOffset(left + (x * scale).roundToInt(), top + (y * scale).roundToInt()),
                 dstSize = IntSize((layer.sheet.frameWidth * scale).roundToInt(), (layer.sheet.frameHeight * scale).roundToInt()),

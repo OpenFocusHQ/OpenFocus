@@ -335,6 +335,182 @@ def ascent_scene(summit):
     return g
 
 
+# --------------------------------------------------------------------------------------------
+# Achievement badges: 24x24 medal (bronze / silver / gold) + ribbon + 12x12 glyph.
+# Order MUST match org.openfocus.app.core.Achievements.all (checked by a test).
+# --------------------------------------------------------------------------------------------
+TIERS = {  # rim, face, shadow
+    "bronze": ("F0B57E", "C9844A", "8A5226"),
+    "silver": ("F4F4FA", "C9CBDA", "8E91A6"),
+    "gold": ("FFE08A", "FFC857", "C98E1C"),
+}
+
+DIGITS = {
+    "0": ["ooo", "o.o", "o.o", "o.o", "ooo"], "1": [".o.", "oo.", ".o.", ".o.", "ooo"],
+    "2": ["ooo", "..o", "ooo", "o..", "ooo"], "3": ["ooo", "..o", ".oo", "..o", "ooo"],
+    "5": ["ooo", "o..", "ooo", "..o", "ooo"],
+}
+MINI = {  # 5x5 icons shown above a number
+    "check": ["....o", "...oo", "o.oo.", "ooo..", ".o..."],
+    "flame": ["..o..", ".oKo.", ".oKKo", "oKyKo", ".ooo."],
+    "clock": [".ooo.", "o.o.o", "o.ooo", "o...o", ".ooo."],
+    "arrow": ["..o..", ".ooo.", "o.o.o", "..o..", "..o.."],
+    "peak": ["..o..", ".owo.", ".oTo.", "oTTTo", "ooooo"],
+}
+
+
+def numbered(icon, number):
+    g = [["."] * 12 for _ in range(12)]
+    for y, row in enumerate(MINI[icon]):
+        for x, ch in enumerate(row):
+            g[y][3 + x] = ch if ch != "." else g[y][3 + x]
+    text = [DIGITS[d] for d in number]
+    width = 4 * len(text) - 1
+    x0 = (12 - width) // 2
+    for i, d in enumerate(text):
+        for y in range(5):
+            for x in range(3):
+                if d[y][x] != ".":
+                    g[6 + y][x0 + 4 * i + x] = "o"
+    return ["".join(r) for r in g]
+
+
+def shape(fn):
+    """12x12 glyph from a predicate fn(x, y) -> char or None."""
+    return ["".join(fn(x, y) or "." for x in range(12)) for y in range(12)]
+
+
+def star(fill, outline="o"):
+    import math
+    pts = []
+    for i in range(10):
+        r = 5.8 if i % 2 == 0 else 2.6
+        a = -math.pi / 2 + i * math.pi / 5
+        pts.append((5.5 + r * math.cos(a), 6.0 + r * math.sin(a)))
+
+    def inside(px, py):
+        c = False
+        for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1]):
+            if (y1 > py) != (y2 > py) and px < (x2 - x1) * (py - y1) / (y2 - y1) + x1:
+                c = not c
+        return c
+
+    def fn(x, y):
+        if not inside(x + .5, y + .5):
+            return None
+        edge = not all(inside(x + .5 + dx, y + .5 + dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+        return outline if edge else fill
+    return shape(fn)
+
+
+def no_entry(x, y):
+    d = ((x - 5.5) ** 2 + (y - 5.5) ** 2) ** 0.5
+    if 4.0 <= d <= 5.6:
+        return "r"
+    if d < 4.0 and abs(x - y) <= 0:
+        return "r"
+    if d < 4.0 and abs(x - y) == 1:
+        return "o"
+    return None
+
+
+FLAME = ["....o.......", "...oKo......", "...oKKo.....", "..oKKKo.o...", "..oKKKKoKo..", ".oKKKyKKKo..",
+         ".oKKyyyKKo..", "oKKyyyyyKKo.", "oKKyyyyyKKo.", "oKKKyyyKKKo.", ".oKKKKKKKo..", "..ooooooo..."]
+SHIELD = ["..oooooooo..", ".oBBBBBBBBo.", ".oBwBBBBBBo.", ".oBwBBBBBBo.", ".oBBBBBBBBo.", ".oBBBBBBBBo.",
+          "..oBBBBBBo..", "..oBBBBBBo..", "...oBBBBo...", "....oBBo....", ".....oo.....", "............"]
+GLYPHS = {
+    "first_step": ["............", "..oo....oo..", ".oFFo..oFFo.", ".oFFFooFFFo.", "..oFFFFFFo..", "...ooFFoo...",
+                   ".....oo.....", ".....oo.....", "..oooooooo..", "..oKKKKKKo..", "...oKKKKo...", "....oooo...."],
+    "habit_50": numbered("check", "50"),
+    "habit_500": numbered("check", "500"),
+    "streak_7": FLAME,
+    "streak_30": [r.replace("K", "r").replace("y", "K") for r in FLAME],
+    "streak_100": numbered("flame", "100"),
+    "focus_first": [".....oo.....", "....oooo....", "....oooo....", ".....oo.....", "...oooooo...", "..o.oooo.o..",
+                    ".o..oooo..o.", "....oooo....", "..oooooooo..", ".oooooooooo.", "............", "............"],
+    "focus_10h": numbered("clock", "10"),
+    "focus_100h": numbered("clock", "100"),
+    "milestone_1": ["...oooooo...", "...orrrrro..", "...orrrrrro.", "...orrrrro..", "...oooooo...", "...o........",
+                    "...o........", "...o........", "...o........", "...o........", "..ooo.......", "............"],
+    "goal_1": ["............", "............", ".....o......", "....owo.....", "...owwwo....", "..oTwTwTo...",
+               ".oTTTTTTTo..", "oTTTTTTTTTo.", "ooooooooooo.", "............", "............", "............"],
+    "goal_5": numbered("peak", "5"),
+    "resist_10": SHIELD,
+    "resist_100": [r if i not in (3, 4, 5) else r[:5] + ("yy" if i != 4 else "yy") + r[7:] for i, r in enumerate(SHIELD)],
+    "shorts_25": shape(no_entry),
+    "level_5": numbered("arrow", "5"),
+    "level_10": star("w"),
+    "level_25": star("r"),
+    "treat_yo_self": ["...y..y..y..", "...o..o..o..", "...o..o..o..", ".oooooooooo.", ".owwwwwwwwo.", ".oRwRRwRRwo.",
+                      ".oRRRRRRRRo.", ".oRRRRRRRRo.", ".oqqqqqqqqo.", "oooooooooooo", "............", "............"],
+    "collector": [".....yy.....", ".....oo.....", "....oBBo....", "....owwo....", "...oBBBBo...", "...owwwwo...",
+                  "..oBBBBBBo..", "..owwwwwwo..", ".oBBBBBBBBo.", ".oooooooooo.", "............", "............"],
+}
+BADGES = [  # (achievement id, tier) in Achievements.all order
+    ("first_step", "bronze"), ("habit_50", "silver"), ("habit_500", "gold"), ("streak_7", "bronze"),
+    ("streak_30", "silver"), ("streak_100", "gold"), ("focus_first", "bronze"), ("focus_10h", "silver"),
+    ("focus_100h", "gold"), ("milestone_1", "bronze"), ("goal_1", "silver"), ("goal_5", "gold"),
+    ("resist_10", "bronze"), ("resist_100", "gold"), ("shorts_25", "silver"), ("level_5", "bronze"),
+    ("level_10", "silver"), ("level_25", "gold"), ("treat_yo_self", "bronze"), ("collector", "silver"),
+]
+BADGE_COLS = 5
+
+
+def badge(glyph):
+    n = 24
+    g = [["."] * n for _ in range(n)]
+    # Ribbon tails (drawn first, behind the medal)
+    tails = set()
+    for y in range(14, 24):
+        k = (y - 14) // 3
+        for x in range(6 - k, 12 - k):
+            if not (y == 23 and x in (8 - k, 9 - k)):  # V-notch at the end of each tail
+                tails.add((x, y))
+        for x in range(12 + k, 18 + k):
+            if not (y == 23 and x in (14 + k, 15 + k)):
+                tails.add((x, y))
+    for (x, y) in tails:
+        edge = any((x + dx, y + dy) not in tails for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+        g[y][x] = "o" if edge else ("v" if x < 12 else "V")
+    cx, cy, r = 11.5, 9.5, 9.2
+    disc = {(x, y) for y in range(n) for x in range(n) if (x - cx) ** 2 + (y - cy) ** 2 <= r * r}
+    for (x, y) in disc:
+        d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+        edge = any((x + dx, y + dy) not in disc for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+        if edge:
+            g[y][x] = "o"
+        elif d > r - 2.2:
+            g[y][x] = "1" if (x - cx) + (y - cy) < 0 else "3"  # lit rim top-left, shaded bottom-right
+        else:
+            g[y][x] = "2"
+    for y, row in enumerate(glyph):
+        assert len(row) == 12, (glyph, row)
+        for x, ch in enumerate(row):
+            if ch != ".":
+                g[4 + y][6 + x] = ch
+    return g
+
+
+def sparkle_frames():
+    """48x48 level-up burst, 8 frames: sparkles fly outward and fade."""
+    import math
+    frames = []
+    sizes = [1, 2, 2, 3, 3, 2, 1, 1]
+    for k in range(8):
+        g = [["."] * 48 for _ in range(48)]
+        radius = 9 + 2.0 * k
+        for i in range(8):
+            a = i * math.pi / 4 + (math.pi / 8 if k % 2 else 0)
+            cx, cy = round(23.5 + radius * math.cos(a)), round(23.5 + radius * math.sin(a))
+            sz = sizes[k] if i % 2 == 0 else max(1, sizes[k] - 1)
+            for d in range(-sz, sz + 1):
+                for (x, y) in ((cx + d, cy), (cx, cy + d)):
+                    if 0 <= x < 48 and 0 <= y < 48:
+                        g[y][x] = "w" if d == 0 else ("y" if abs(d) < sz else "g")
+        frames.append(g)
+    return frames
+
+
 TENT = {  # 8x8, feet at (4, 6). Row 0 unlit, row 1 lit (2-frame flicker).
     "unlit": [{1: "oo", 2: "oKKo", 3: "oKKKKo", 4: "oKKooKKo", 5: "oKKooKKo", 6: "oooooooo"}],
     "lit": [{1: "oo", 2: "oKKo", 3: "oKKKKo", 4: "oKKyyKKo", 5: "oKKyyKKo", 6: "oooooooo"},
@@ -381,7 +557,7 @@ def write_png(path, pixels, colors):
             if ch == ".":
                 raw += b"\x00\x00\x00\x00"
             else:
-                hexv = colors[ch]
+                hexv = ch[1:] if ch.startswith("#") else colors[ch]
                 raw += bytes.fromhex(hexv) + b"\xff"
 
     def chunk(tag, data):
@@ -446,6 +622,20 @@ def main():
 
     write_png(os.path.join(OUT, "px_coin.png"), sheet([coin_frames()], 16, 16), colors)
 
+    rows = [BADGES[i:i + BADGE_COLS] for i in range(0, len(BADGES), BADGE_COLS)]
+    out = [["."] * (24 * BADGE_COLS) for _ in range(24 * len(rows))]
+    for r, row in enumerate(rows):
+        for c, (aid, tier) in enumerate(row):
+            rim, face, shadow = TIERS[tier]
+            tc = dict(colors, **{"1": rim, "2": face, "3": shadow})
+            g = badge(GLYPHS[aid])
+            for y in range(24):
+                for x in range(24):
+                    ch = g[y][x]
+                    out[r * 24 + y][c * 24 + x] = "." if ch == "." else ("#" + tc[ch])
+    write_png(os.path.join(OUT, "px_badges.png"), out, {})
+    write_png(os.path.join(OUT, "px_sparkle.png"), sheet([sparkle_frames()], 48, 48), colors)
+
     climbing, summit = ascent_scene(False), ascent_scene(True)
     for i, base in enumerate(GOAL_COLORS):
         write_png(os.path.join(OUT, f"px_ascent_{i}.png"), sheet([[climbing], [summit]], SCENE_W, SCENE_H),
@@ -462,6 +652,9 @@ def main():
     for i, base in enumerate(GOAL_COLORS):
         for key, hexv in scene_colors(base).items():
             entries.append((hexv, f"goal {i} ramp {key}"))
+    for tier, ramp in TIERS.items():
+        for shade, hexv in zip(("rim", "face", "shadow"), ramp):
+            entries.append((hexv, f"medal {tier} {shade}"))
     for tone, ramp in SKIN_TONES.items():
         for shade, hexv in zip(("light", "shadow", "blush"), ramp):
             entries.append((hexv, f"skin {tone} {shade}"))
