@@ -1,12 +1,9 @@
 package org.openfocus.app.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -19,10 +16,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.openfocus.app.core.ShopCatalog
 import org.openfocus.app.ui.pixel.PixelSprite
+import org.openfocus.app.data.db.ProfileEntity
+import org.openfocus.app.ui.pixel.HeroPose
+import org.openfocus.app.ui.pixel.SkinTone
 import org.openfocus.app.ui.pixel.SpriteCatalog
 
 /**
- * The hero: a backdrop circle with layered pixel-art sprites (body, cloak, hat) on top.
+ * The hero: layered pixel-art sprites (round backdrop, body in the chosen skin tone, cloak, hat).
  * Sprites are looked up by ShopItem id in [SpriteCatalog]; if one is missing the shape-drawn
  * fallback is used, so new items can ship before their art does.
  */
@@ -33,23 +33,32 @@ fun HeroAvatar(
     backdropId: String?,
     modifier: Modifier = Modifier,
     size: Dp = 72.dp,
-    resting: Boolean = false,
+    pose: HeroPose = HeroPose.IDLE,
+    skinTone: String? = null,
     animate: Boolean = true,
 ) {
-    val layers = remember(colorId, hatId, resting) {
-        SpriteCatalog.heroLayers(colorId, hatId, if (resting) SpriteCatalog.REST else SpriteCatalog.IDLE)
+    val layers = remember(colorId, hatId, backdropId, pose, skinTone) {
+        SpriteCatalog.heroLayers(colorId, hatId, pose, SkinTone.of(skinTone), withBackdrop = true, backdropId = backdropId)
     }
-    Box(modifier.size(size)) {
-        Canvas(Modifier.fillMaxSize()) {
+    if (layers != null) {
+        PixelSprite(layers, modifier.size(size), animate = animate, contentDescription = "Your hero")
+    } else {
+        Canvas(modifier.size(size)) {
             drawBackdrop(ShopCatalog.byId(backdropId))
-            if (layers == null) drawVectorHero(colorId, hatId)
-        }
-        if (layers != null) {
-            // The sprite fills ~90% of the circle; PixelSprite snaps it to a whole-number scale.
-            PixelSprite(layers, Modifier.fillMaxSize(0.9f).align(Alignment.Center), animate = animate)
+            drawVectorHero(colorId, hatId)
         }
     }
 }
+
+/** Avatar for a profile row (null = defaults). */
+@Composable
+fun HeroAvatar(
+    profile: ProfileEntity?,
+    modifier: Modifier = Modifier,
+    size: Dp = 72.dp,
+    pose: HeroPose = HeroPose.IDLE,
+    animate: Boolean = true,
+) = HeroAvatar(profile?.avatarColor, profile?.avatarHat, profile?.avatarBackdrop, modifier, size, pose, profile?.skinTone, animate)
 
 private fun DrawScope.drawBackdrop(backdrop: org.openfocus.app.core.ShopItem?) {
     val w = this.size.width

@@ -43,6 +43,28 @@ PALETTE = {
     "q": ("B8405A", "rose dark"),
     "V": ("5B4BC4", "violet deep"),
     "v": ("7C6CF2", "violet"),
+    # Backdrops
+    "L": ("E4DFFF", "lavender light"),
+    "l": ("CFC7FF", "lavender"),
+    "A": ("FFC9A3", "peach"),
+    "K": ("FF9A6B", "sunset orange"),
+    "k": ("7A4E7A", "dusk ground"),
+    "f": ("BDEBC8", "mint sky"),
+    "F": ("3E8E5E", "leaf green"),
+    "T": ("235C3B", "pine"),
+    "n": ("A9DDF7", "day sky"),
+    "N": ("2F6FB5", "sea"),
+    "m": ("7FC8F8", "wave"),
+    "u": ("F2D8A7", "sand"),
+    "z": ("1E1B4B", "night"),
+    "Z": ("2E2A6B", "night light"),
+}
+
+# Skin ramps (light, shadow, blush). Template chars: s, S, p.
+SKIN_TONES = {
+    "light": ("FFD9B8", "E8B48F", "F7A1A1"),
+    "medium": ("D99A6C", "B47A50", "E0806E"),
+    "deep": ("8D5A3B", "6E4329", "A85A4E"),
 }
 
 # Cloak colour ramps (light, mid, dark), keyed by ShopItem id. Template chars: c, C, D.
@@ -85,9 +107,20 @@ HERO = {
 }
 CLOAK_CHARS = set("cCDg")
 
-# Per-frame head offset (y) of the idle animation. MUST match SpriteCatalog.HEAD_BOB in Kotlin.
+# Per-frame head offset (y). MUST match HEAD_* lists in SpriteCatalog.kt.
 IDLE_BOB = [0, 1, 0, 0]
 IDLE_BLINK = [False, False, False, True]
+CELEBRATE_JUMP = [0, 1]  # frame 1 jumps up one pixel -> head anchor -1
+
+# Raised arm for the celebrate pose, left side as (x, y, char); the right side is mirrored.
+RAISED_ARM = [
+    (6, 13, "o"), (7, 13, "o"), (8, 13, "o"),
+    (6, 14, "o"), (7, 14, "S"), (8, 14, "o"),
+    (6, 15, "o"), (7, 15, "S"), (8, 15, "o"),
+    (6, 16, "o"), (7, 16, "c"), (8, 16, "o"),
+    (6, 17, "o"), (7, 17, "C"), (8, 17, "o"),
+    (7, 18, "o"), (8, 18, "C"), (9, 18, "o"),
+]
 
 # --------------------------------------------------------------------------------------------
 # Hats, 32x32 single-frame overlays aligned to the hero's frame-0 head.
@@ -133,6 +166,75 @@ def hero_frame(bob, blink, closed=False):
             g[y] = list(g[y - 1])
         g[6] = ["."] * 32
     return g
+
+
+def celebrate_frame(jump):
+    g = hero_frame(0, False)
+    g[23] = list(grid({23: "ocCCCCCCCCCCCCDo"}, 32, 32)[23])  # lower hands removed
+    for x, y, ch in RAISED_ARM:
+        g[y][x] = ch
+        g[y][31 - x] = ch
+    for x in (14, 17):  # wide open smile
+        g[15][x] = "o"
+    g[16][15] = g[16][16] = "q"
+    if jump:
+        g = g[1:] + [["."] * 32]
+    return g
+
+
+def backdrop(kind, frame=0):
+    """48x48 round backdrop with a pixel outline. Procedural so palettes stay consistent."""
+    n = 48
+    c = (n - 1) / 2
+    inside = [[(x - c) ** 2 + (y - c) ** 2 <= 23.2 ** 2 for x in range(n)] for y in range(n)]
+    g = [["."] * n for _ in range(n)]
+
+    def fill(x, y):
+        if kind == "default":
+            return "L" if y < 30 else "l"
+        if kind == "sunrise":
+            if y >= 38:
+                return "k"
+            if (x - 36) ** 2 + (y - 16) ** 2 <= 30:
+                return "y"
+            return "A" if y < 22 else "K"
+        if kind == "forest":
+            if y >= 40:
+                return "T"
+            for tx, top in ((8, 20), (20, 14), (38, 18), (46, 24)):
+                half = (y - top) // 2
+                if top <= y <= 40 and abs(x - tx) <= half:
+                    return "F" if x - tx == -half and y % 3 else "T"  # lit left edge
+            return "f" if y < 30 else "F"
+        if kind == "ocean":
+            if y >= 41:
+                return "u"
+            if y >= 30:
+                return "m" if (y in (32, 36) and (x + 3 * y) % 9 < 3) else "N"
+            return "n"
+        if kind == "night":
+            if (x - 13) ** 2 + (y - 13) ** 2 <= 20 and not ((x - 15) ** 2 + (y - 11) ** 2 <= 18):
+                return "y"
+            stars = [(30, 8), (38, 14), (24, 18), (40, 26), (8, 28), (33, 33)]
+            for i, (sx, sy) in enumerate(stars):
+                if (x, y) == (sx, sy) and (i + frame) % 2 == 0:
+                    return "w"
+                if frame % 2 == i % 2 and abs(x - sx) + abs(y - sy) == 1 and i < 3:
+                    return "Z"
+            return "z" if y < 34 else "Z"
+        raise ValueError(kind)
+
+    for y in range(n):
+        for x in range(n):
+            if not inside[y][x]:
+                continue
+            edge = any(not (0 <= x + dx < n and 0 <= y + dy < n and inside[y + dy][x + dx])
+                       for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+            g[y][x] = "o" if edge else fill(x, y)
+    return g
+
+
+BACKDROPS = {"default": 1, "sunrise": 1, "forest": 1, "ocean": 1, "night": 2}
 
 
 def split(g, keep):
@@ -200,15 +302,25 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     colors = {k: v[0] for k, v in PALETTE.items()}
 
-    idle = [hero_frame(b, bl) for b, bl in zip(IDLE_BOB, IDLE_BLINK)]
-    rest = [hero_frame(1, False, closed=True)]
-    body_rows = [[split(f, lambda ch: ch not in CLOAK_CHARS) for f in idle], [split(f, lambda ch: ch not in CLOAK_CHARS) for f in rest]]
-    write_png(os.path.join(OUT, "px_hero_body.png"), sheet(body_rows, 32, 32), colors)
-
+    # Sheet rows: 0 idle (4 frames), 1 rest (1), 2 celebrate (2).
+    poses = [
+        [hero_frame(b, bl) for b, bl in zip(IDLE_BOB, IDLE_BLINK)],
+        [hero_frame(1, False, closed=True)],
+        [celebrate_frame(j) for j in CELEBRATE_JUMP],
+    ]
+    is_body = lambda ch: ch not in CLOAK_CHARS
+    is_cloak = lambda ch: ch in CLOAK_CHARS
+    for tone, (light, shadow, blush) in SKIN_TONES.items():
+        tc = dict(colors, s=light, S=shadow, p=blush)
+        write_png(os.path.join(OUT, f"px_hero_body_{tone}.png"),
+                  sheet([[split(f, is_body) for f in row] for row in poses], 32, 32), tc)
     for item, (light, mid, dark) in CLOAKS.items():
         cc = dict(colors, c=light, C=mid, D=dark)
-        rows = [[split(f, lambda ch: ch in CLOAK_CHARS) for f in idle], [split(f, lambda ch: ch in CLOAK_CHARS) for f in rest]]
-        write_png(os.path.join(OUT, f"px_cloak_{item.removeprefix('color_')}.png"), sheet(rows, 32, 32), cc)
+        write_png(os.path.join(OUT, f"px_cloak_{item.removeprefix('color_')}.png"),
+                  sheet([[split(f, is_cloak) for f in row] for row in poses], 32, 32), cc)
+
+    for kind, frames in BACKDROPS.items():
+        write_png(os.path.join(OUT, f"px_bg_{kind}.png"), sheet([[backdrop(kind, f) for f in range(frames)]], 48, 48), colors)
 
     for item, rows in HATS.items():
         write_png(os.path.join(OUT, f"px_{item}.png"), sheet([[grid(rows, 32, 32)]], 32, 32), colors)
@@ -217,6 +329,9 @@ def main():
 
     # Palette exports (base palette + cloak ramps).
     entries = [(v[0], v[1]) for v in PALETTE.values()]
+    for tone, ramp in SKIN_TONES.items():
+        for shade, hexv in zip(("light", "shadow", "blush"), ramp):
+            entries.append((hexv, f"skin {tone} {shade}"))
     for item, ramp in CLOAKS.items():
         for shade, hexv in zip(("light", "mid", "dark"), ramp):
             entries.append((hexv, f"{item.removeprefix('color_')} cloak {shade}"))

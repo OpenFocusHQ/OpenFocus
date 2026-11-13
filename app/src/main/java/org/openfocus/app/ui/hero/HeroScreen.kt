@@ -64,6 +64,7 @@ import org.openfocus.app.data.db.RewardEntity
 import org.openfocus.app.ui.components.AppIcons
 import org.openfocus.app.ui.components.HeroAvatar
 import org.openfocus.app.ui.components.HeroCard
+import org.openfocus.app.ui.components.SkinTonePicker
 import org.openfocus.app.ui.components.appContainer
 import org.openfocus.app.ui.components.formatMinutes
 import org.openfocus.app.ui.theme.Coin
@@ -81,7 +82,7 @@ fun HeroScreen(nav: NavController) {
         TopAppBar(
             title = { Text("Your hero") },
             navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
-            actions = { IconButton(onClick = { rename = true }) { Icon(Icons.Filled.Edit, "Rename") } },
+            actions = { IconButton(onClick = { rename = true }) { Icon(Icons.Filled.Edit, "Customise hero") } },
         )
         HeroCard(profile, Modifier.padding(horizontal = 16.dp))
         Spacer(Modifier.height(8.dp))
@@ -99,17 +100,25 @@ fun HeroScreen(nav: NavController) {
     }
     if (rename) {
         var name by remember { mutableStateOf(profile?.displayName ?: "") }
+        var tone by remember { mutableStateOf(profile?.skinTone) }
         val scope = rememberCoroutineScope()
         AlertDialog(
             onDismissRequest = { rename = false },
-            title = { Text("Name your hero") },
-            text = { OutlinedTextField(name, { name = it.take(24) }, singleLine = true) },
+            title = { Text("Customise your hero") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(name, { name = it.take(24) }, singleLine = true, label = { Text("Name") })
+                    Text("Skin tone", style = MaterialTheme.typography.titleSmall)
+                    SkinTonePicker(tone, profile?.avatarColor, profile?.avatarHat, onPick = { tone = it })
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     rename = false
-                    scope.launch { c.game.updateProfile { it.copy(displayName = name.ifBlank { "Adventurer" }) } }
+                    scope.launch { c.game.updateProfile { it.copy(displayName = name.ifBlank { "Adventurer" }, skinTone = tone) } }
                 }) { Text("Save") }
             },
+            dismissButton = { TextButton(onClick = { rename = false }) { Text("Cancel") } },
         )
     }
 }
@@ -194,6 +203,8 @@ private fun ShopTab(profile: ProfileEntity?) {
                             hatId = if (slot == ItemSlot.HAT) item.id else null,
                             backdropId = if (slot == ItemSlot.BACKDROP) item.id else null,
                             size = 52.dp,
+                            skinTone = profile?.skinTone,
+                            animate = false,
                         )
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {

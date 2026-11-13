@@ -81,7 +81,7 @@ fun HeroCard(profile: ProfileEntity?, modifier: Modifier = Modifier, onClick: ((
     val lp = GameRules.progress(p.totalXp)
     val content: @Composable () -> Unit = {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            HeroAvatar(p.avatarColor, p.avatarHat, p.avatarBackdrop, size = 76.dp)
+            HeroAvatar(p, size = 80.dp)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

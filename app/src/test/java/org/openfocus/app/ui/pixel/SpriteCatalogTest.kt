@@ -20,10 +20,33 @@ class SpriteCatalogTest {
     }
 
     @Test fun anchorsCoverEveryFrame() {
-        val body = SpriteCatalog.heroBody
-        body.anchors.values.forEach { perAnim ->
-            perAnim.forEach { (anim, offsets) -> assertEquals("anchor frames for $anim", body.anim(anim).frames, offsets.size) }
+        SpriteCatalog.bodies.values.forEach { body ->
+            assertEquals(body.anims.keys, body.anchors.getValue("head").keys)
+            body.anchors.values.forEach { perAnim ->
+                perAnim.forEach { (anim, offsets) -> assertEquals("anchor frames for $anim", body.anim(anim).frames, offsets.size) }
+            }
         }
+    }
+
+    @Test fun everyBackdropAndPoseResolves() {
+        ShopCatalog.items.filter { it.slot == ItemSlot.BACKDROP }.forEach { assertNotNull("backdrop for ${it.id}", SpriteCatalog.backdrops[it.id]) }
+        HeroPose.entries.forEach { pose ->
+            SkinTone.entries.forEach { tone ->
+                val layers = SpriteCatalog.heroLayers("color_gold", "hat_wizard", pose, tone, withBackdrop = true, backdropId = "bg_night")!!
+                assertEquals(4, layers.size)
+                assertEquals(SpriteCatalog.HERO_IN_BACKDROP, layers[1].offset)
+                assertEquals(pose.anim, layers[1].anim)
+            }
+        }
+    }
+
+    @Test fun cloaksMatchEveryBodyAnimation() {
+        SpriteCatalog.cloaks.values.forEach { assertEquals(SpriteCatalog.heroBody.anims, it.anims) }
+    }
+
+    @Test fun skinToneDefaultsToLight() {
+        assertEquals(SkinTone.LIGHT, SkinTone.of(null))
+        assertEquals(SkinTone.DEEP, SkinTone.of("deep"))
     }
 
     @Test fun layersOfOneCharacterShareFrameSize() {

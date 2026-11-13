@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +27,7 @@ import org.openfocus.app.core.Encouragement
 import org.openfocus.app.game.GameFeedback
 import org.openfocus.app.ui.components.AppIcons
 import org.openfocus.app.ui.components.HeroAvatar
+import org.openfocus.app.ui.pixel.HeroPose
 import org.openfocus.app.ui.components.appContainer
 import org.openfocus.app.ui.theme.Coin
 
@@ -59,12 +58,8 @@ fun FeedbackHost(snackbar: SnackbarHostState) {
         AlertDialog(
             onDismissRequest = { big = null },
             icon = {
-                if (fb.fainted) {
-                    val p by profile.collectAsState(initial = null)
-                    HeroAvatar(p?.avatarColor, p?.avatarHat, p?.avatarBackdrop, size = 72.dp, resting = true)
-                } else {
-                    Icon(Icons.Filled.Celebration, null, modifier = Modifier.size(40.dp))
-                }
+                val p by profile.collectAsState(initial = null)
+                HeroAvatar(p, size = 96.dp, pose = if (fb.fainted) HeroPose.REST else HeroPose.CELEBRATE)
             },
             title = {
                 Text(

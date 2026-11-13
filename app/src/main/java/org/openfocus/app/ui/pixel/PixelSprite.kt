@@ -24,14 +24,20 @@ import kotlin.math.floor
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/** A sheet + animation drawn as one layer. [followAnchor] offsets it by the driver layer's anchor. */
+/**
+ * A sheet + animation drawn as one layer.
+ * @param offset position of the layer's top-left corner, in source pixels.
+ * @param followAnchor name of an anchor (e.g. "head") published by another layer in the stack;
+ *        this layer is moved by that anchor's per-frame offset (hats bob with the head).
+ */
 data class SpriteLayer(
     val sheet: SpriteSheet,
     val anim: String = SpriteCatalog.IDLE,
+    val offset: IntOffset = IntOffset.Zero,
     val followAnchor: String? = null,
 )
 
-/** True when the user turned animations off (Developer options / Accessibility "Remove animations"). */
+/** True when the user turned animations off (Accessibility "Remove animations" / developer options). */
 @Composable
 fun rememberReduceMotion(): Boolean {
     val ctx = LocalContext.current
@@ -42,8 +48,14 @@ fun rememberReduceMotion(): Boolean {
 }
 
 /**
+ * One shared clock period. Every animation's loop length (frames / fps) should divide it evenly
+ * so loops stay seamless; 12 s works for 1, 1.5, 2, 3, 4, 6 and 8 fps with typical frame counts.
+ */
+private const val CLOCK_MS = 12_000
+
+/**
  * Draws stacked pixel-art layers, crisp (nearest-neighbour) and at a WHOLE-NUMBER scale so every
- * source pixel maps to the same number of screen pixels. The first layer drives the animation.
+ * source pixel maps to the same number of screen pixels. Each layer animates at its own fps.
  */
 @Composable
 fun PixelSprite(
@@ -52,46 +64,55 @@ fun PixelSprite(
     animate: Boolean = true,
     contentDescription: String? = null,
     colorFilter: ColorFilter? = null,
-    /** Pin a specific frame of the driver animation (galleries, still images). */
+    /** Pin every layer to this frame (galleries, still images). */
     frame: Int? = null,
 ) {
     if (layers.isEmpty()) return
-    val driver = layers.first()
-    val anim = driver.sheet.anim(driver.anim)
     val images: List<ImageBitmap> = layers.map { ImageBitmap.imageResource(it.sheet.resId) }
     val reduceMotion = rememberReduceMotion()
+    val animated = frame == null && animate && !reduceMotion && layers.any { it.sheet.anim(it.anim).frames > 1 }
 
-    val frameState: State<Float>? = if (frame == null && animate && !reduceMotion && anim.frames > 1) {
+    val clock: State<Float>? = if (animated) {
         rememberInfiniteTransition(label = "sprite").animateFloat(
             initialValue = 0f,
-            targetValue = anim.frames.toFloat(),
-            animationSpec = infiniteRepeatable(tween((anim.frames * 1000 / anim.fps).roundToInt(), easing = LinearEasing)),
-            label = "frame",
+            targetValue = CLOCK_MS.toFloat(),
+            animationSpec = infiniteRepeatable(tween(CLOCK_MS, easing = LinearEasing)),
+            label = "clock",
         )
     } else null
 
+    // Logical canvas = union of all layer rectangles.
+    val logicalW = layers.maxOf { it.offset.x + it.sheet.frameWidth }
+    val logicalH = layers.maxOf { it.offset.y + it.sheet.frameHeight }
+
     val semantics = if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier
     Canvas(modifier.then(semantics)) {
-        @Suppress("NAME_SHADOWING")
-        val frame = (frame ?: frameState?.value?.toInt() ?: 0).coerceIn(0, anim.frames - 1)
-        val fw = driver.sheet.frameWidth
-        val fh = driver.sheet.frameHeight
-        val fit = min(size.width / fw, size.height / fh)
+        val t = clock?.value ?: 0f
+        fun frameOf(layer: SpriteLayer): Int {
+            val a = layer.sheet.anim(layer.anim)
+            val f = frame ?: (t / 1000f * a.fps).toInt()
+            return if (frame != null) f.coerceIn(0, a.frames - 1) else f % a.frames
+        }
+
+        val fit = min(size.width / logicalW, size.height / logicalH)
         val scale = if (fit >= 1f) floor(fit) else fit // integer scale whenever there's room
-        val dstW = (fw * scale).roundToInt()
-        val dstH = (fh * scale).roundToInt()
-        val left = ((size.width - dstW) / 2f).roundToInt()
-        val top = ((size.height - dstH) / 2f).roundToInt()
+        val left = ((size.width - logicalW * scale) / 2f).roundToInt()
+        val top = ((size.height - logicalH * scale) / 2f).roundToInt()
 
         layers.forEachIndexed { i, layer ->
-            val la = layer.sheet.anim(layer.anim)
-            val f = frame.coerceAtMost(la.frames - 1)
-            val anchor = layer.followAnchor?.let { driver.sheet.anchor(it, driver.anim, frame) } ?: IntOffset.Zero
+            val a = layer.sheet.anim(layer.anim)
+            val f = frameOf(layer)
+            val anchor = layer.followAnchor?.let { name ->
+                layers.firstOrNull { it !== layer && it.sheet.anchors.containsKey(name) }
+                    ?.let { src -> src.sheet.anchor(name, src.anim, frameOf(src)) }
+            } ?: IntOffset.Zero
+            val x = layer.offset.x + anchor.x
+            val y = layer.offset.y + anchor.y
             drawImage(
                 image = images[i],
-                srcOffset = IntOffset(f * layer.sheet.frameWidth, la.row * layer.sheet.frameHeight),
+                srcOffset = IntOffset(f * layer.sheet.frameWidth, a.row * layer.sheet.frameHeight),
                 srcSize = IntSize(layer.sheet.frameWidth, layer.sheet.frameHeight),
-                dstOffset = IntOffset(left + (anchor.x * scale).roundToInt(), top + (anchor.y * scale).roundToInt()),
+                dstOffset = IntOffset(left + (x * scale).roundToInt(), top + (y * scale).roundToInt()),
                 dstSize = IntSize((layer.sheet.frameWidth * scale).roundToInt(), (layer.sheet.frameHeight * scale).roundToInt()),
                 filterQuality = FilterQuality.None,
                 colorFilter = colorFilter,
@@ -108,4 +129,5 @@ fun PixelSprite(
     modifier: Modifier = Modifier,
     animate: Boolean = true,
     contentDescription: String? = null,
-) = PixelSprite(listOf(SpriteLayer(sheet, anim)), modifier, animate, contentDescription)
+    frame: Int? = null,
+) = PixelSprite(listOf(SpriteLayer(sheet, anim)), modifier, animate, contentDescription, frame = frame)

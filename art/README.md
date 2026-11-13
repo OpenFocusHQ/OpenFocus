@@ -12,7 +12,7 @@ Real art is very welcome. This guide explains how to make art that fits.
 | Props / small icons | 16×16 |
 | Achievement badges | 24×24 |
 | Goal mountain scene | 160×112 |
-| Backdrops | 48×48 |
+| Backdrops | 48×48, round with a 1px outline; the hero stands at offset (8, 13) |
 | Launcher icon | 54×54 canvas (scales ×2/×3/×4/×6/×8 to every density) |
 | Outline | 1px, colour `#2b2440` ("outline"), not pure black, so it works on light and dark themes |
 | Lighting | light from the top-left; 3-step ramps (light / mid / dark) |
@@ -26,10 +26,12 @@ Real art is very welcome. This guide explains how to make art that fits.
 
 ### The hero, a layered "paper doll"
 The hero is drawn as layers, bottom to top:
-1. backdrop (currently drawn in code)
-2. `px_hero_body.png`: skin, hair, outline and boots
+1. `px_bg_<id>.png`: round 48×48 backdrop (`px_bg_default.png` when none is equipped)
+2. `px_hero_body_<tone>.png`: skin, hair, outline and boots, one sheet per skin tone (`light`, `medium`, `deep`)
 3. `px_cloak_<colour>.png`: the cloak pixels only
 4. `px_hat_<id>.png`: a single-frame overlay
+
+Layers 2–4 are 32×32 and sit at offset (8, 13) inside the backdrop. Each layer animates at its own fps (for example the night sky twinkles at 1.5 fps while the hero idles at 3 fps). All loops should divide evenly into the renderer's 12-second clock.
 
 Body and cloak sheets share this layout:
 
@@ -37,6 +39,7 @@ Body and cloak sheets share this layout:
 |---|---|---|---|
 | 0 | `idle` | 4 @ 3 fps | frame 1 = head down 1px, frame 3 = blink |
 | 1 | `rest` | 1 | eyes closed, head down 1px (shown when HP runs out) |
+| 2 | `celebrate` | 2 @ 4 fps | arms raised; frame 1 jumps up 1px (level-ups, achievements) |
 
 **Hats** are drawn against the head in idle frame 0. The renderer moves them by the body's `head` anchor on each frame, so a hat bobs with the head without needing its own animation. If you change the body animation, update `HEAD_BOB` in `SpriteCatalog.kt` (and `IDLE_BOB` in the generator).
 
@@ -60,7 +63,7 @@ Every file must be listed in `CREDITS.md`.
 
 ## Roadmap
 - [x] Phase 1: renderer, palette, pipeline, placeholder hero, hats and coin
-- [ ] Phase 2: real hero art, 3 skin tones, pixel backdrops, a celebrate animation
+- [x] Phase 2: 3 skin tones (stored in the profile, DB v2), pixel backdrops, celebrate animation. Placeholder quality: hand-drawn replacements welcome.
 - [ ] Phase 3: goal mountain scene (layers, camps, climber, flag)
 - [ ] Phase 4: 20 achievement badges, coin and level-up effects
 - [ ] Phase 5: block-screen shield, empty-state scenes, onboarding, launcher icon

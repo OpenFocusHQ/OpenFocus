@@ -44,6 +44,7 @@ import org.openfocus.app.data.db.Difficulty
 import org.openfocus.app.data.db.HabitEntity
 import org.openfocus.app.data.db.HabitKind
 import org.openfocus.app.ui.components.HeroAvatar
+import org.openfocus.app.ui.components.SkinTonePicker
 import org.openfocus.app.ui.components.appContainer
 
 private data class Starter(val title: String, val icon: String, val kind: HabitKind = HabitKind.BUILD, val color: Int)
@@ -66,6 +67,7 @@ fun OnboardingScreen() {
     val scope = rememberCoroutineScope()
     var page by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf("") }
+    var tone by remember { mutableStateOf<String?>(null) }
     var picked by remember { mutableStateOf(setOf(0, 1)) }
     val notif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
@@ -78,13 +80,14 @@ fun OnboardingScreen() {
             Spacer(Modifier.height(24.dp))
             when (page) {
                 0 -> {
-                    HeroAvatar(null, null, "bg_sunrise", size = 140.dp)
+                    HeroAvatar(null, null, "bg_sunrise", size = 140.dp, skinTone = tone)
                     Text("Welcome to OpenFocus", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
                     Text(
                         "Turn your attention into an adventure. Build habits, focus deeply, block the endless feeds, and climb towards the goals that matter.",
                         textAlign = TextAlign.Center,
                     )
                     OutlinedTextField(name, { name = it.take(24) }, label = { Text("Name your hero") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    SkinTonePicker(tone, null, null, onPick = { tone = it })
                     Button(onClick = { page = 1 }, modifier = Modifier.fillMaxWidth()) { Text("Next") }
                 }
                 1 -> {
@@ -117,7 +120,7 @@ fun OnboardingScreen() {
                         onClick = {
                             if (Build.VERSION.SDK_INT >= 33) notif.launch(Manifest.permission.POST_NOTIFICATIONS)
                             scope.launch {
-                                c.game.updateProfile { it.copy(displayName = name.trim().ifBlank { "Adventurer" }) }
+                                c.game.updateProfile { it.copy(displayName = name.trim().ifBlank { "Adventurer" }, skinTone = tone) }
                                 picked.sorted().forEachIndexed { order, i ->
                                     val s = starters[i]
                                     c.habits.save(HabitEntity(ownerId = "", title = s.title, icon = s.icon, kind = s.kind,

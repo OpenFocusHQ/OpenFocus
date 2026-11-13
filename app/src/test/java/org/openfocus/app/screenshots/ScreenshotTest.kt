@@ -42,7 +42,7 @@ class ScreenshotTest {
     private fun seed() = runBlocking {
         val c = app.container
         c.settings.update { it.copy(onboardingDone = true) }
-        c.game.updateProfile { it.copy(displayName = "Aria", totalXp = 740, coins = 135, hp = 42, currentStreak = 4, avatarHat = "hat_party", avatarBackdrop = "bg_forest") }
+        c.game.updateProfile { it.copy(displayName = "Aria", totalXp = 740, coins = 135, hp = 42, currentStreak = 4, avatarHat = "hat_party", avatarBackdrop = "bg_forest", skinTone = "medium") }
         val today = Days.today()
         val created = System.currentTimeMillis() - 30L * 86_400_000
         val goal = GoalEntity(ownerId = "", title = "Run a half marathon", why = "Prove to myself I can stick with something hard.", summitName = "Half Marathon Peak", targetEpochDay = today + 120, colorIndex = 1)

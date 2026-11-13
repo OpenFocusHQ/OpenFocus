@@ -30,6 +30,11 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    sourceSets {
+        // Exported Room schemas for MigrationTest (Robolectric reads the tested variant's assets).
+        // Debug builds only; release APKs don't carry them.
+        getByName("debug").assets.srcDir("$projectDir/schemas")
+    }
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { it.systemProperty("screenshots.dir", rootProject.file("docs/screenshots").absolutePath) }
@@ -62,6 +67,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.room.testing)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.test.manifest)

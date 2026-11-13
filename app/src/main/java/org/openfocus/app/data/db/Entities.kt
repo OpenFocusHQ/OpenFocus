@@ -33,6 +33,8 @@ data class ProfileEntity(
     val avatarColor: String? = null,
     val avatarHat: String? = null,
     val avatarBackdrop: String? = null,
+    /** Pixel-art skin tone id ("light" | "medium" | "deep"); null = light. Added in DB v2. */
+    val skinTone: String? = null,
     /** "local" today; a remote account id once sync exists. */
     val accountKind: String = "local",
     val createdAt: Long = System.currentTimeMillis(),
