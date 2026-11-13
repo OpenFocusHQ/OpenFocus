@@ -1,5 +1,7 @@
 # OpenFocus
 
+[![Build](https://github.com/graphicmismatch/OpenFocus/actions/workflows/build.yml/badge.svg)](https://github.com/graphicmismatch/OpenFocus/actions/workflows/build.yml)
+
 **An open-source Android app blocker, Shorts/Reels blocker, focus timer and habit tracker, all wrapped in a gentle RPG.**
 
 OpenFocus mixes ideas from a few kinds of apps: an app blocker and a pause-before-you-scroll screen, a focus timer, a Habitica-style hero with XP, HP and coins, and an "ascent" view where each long-term goal is a mountain you climb.
@@ -62,6 +64,8 @@ Requirements: JDK 17+ and the Android SDK (API 35).
 ```
 
 The screenshot tests write their PNGs to `docs/screenshots/`.
+
+Every push to `main` and every pull request is built by GitHub Actions ([`build.yml`](.github/workflows/build.yml)): it runs all tests, then uploads the debug APK and the test reports and screenshots as workflow artifacts.
 
 ### First run on a device
 1. Name your hero and pick a few starter habits.
