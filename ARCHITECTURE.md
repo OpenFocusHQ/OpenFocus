@@ -5,6 +5,7 @@ OpenFocus is a single-module Kotlin app built with Jetpack Compose, Material 3, 
 ```
 org.openfocus.app
 ├── core/        Pure Kotlin logic with no Android dependencies. Unit-tested.
+│   ├── content/         GameContent: loads content.json (slots, items, achievements, quests, titles, messages)
 │   ├── GameRules        XP, coin, HP, level curve and unlock prices (all the tuning lives here)
 │   ├── HabitSchedule    whether a habit is due or satisfied, its streak, and misses
 │   ├── Achievements     declarative achievement list evaluated against GameStats
@@ -22,6 +23,14 @@ org.openfocus.app
 └── ui/          Compose screens, one package per tab
     └── pixel/   SpriteCatalog (sheet registry) + PixelSprite (crisp, whole-number-scaled, layered renderer)
 ```
+
+## Game content is data
+`app/src/main/resources/content/content.json` holds every cosmetic, slot, achievement, starter quest, title and message. It's a Java resource, so the same loader (`GameContent`) works in the APK and in plain JVM tests. Kotlin keeps only *rules*:
+- achievement conditions are `stat ≥ target`, with stats from `GameStats.STATS`;
+- slots are stacked by `layer` around the hero's body (layer 1);
+- `OVERLAY` slots follow a body anchor (`head` or `body`).
+
+A profile's outfit is a `{slot: item}` JSON map (`ProfileEntity.equipped`), so a new slot needs no schema change. Sprites are referenced by name and resolved through the generated `SpriteRegistry`. `ContentValidationTest` checks the file against the code and against `tools/content-editor/content.schema.json`. The [content editor](tools/content-editor/README.md) is a local developer tool and isn't shipped.
 
 ## How blocking works
 1. `BlockerAccessibilityService` receives `TYPE_WINDOW_STATE_CHANGED` events and re-checks the foreground app every 15 seconds, which catches time limits and schedules that start while an app is already open.

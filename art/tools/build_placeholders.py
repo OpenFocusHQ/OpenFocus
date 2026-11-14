@@ -15,12 +15,25 @@ Grid conventions
   * '.' is transparent. Every other character is a palette key (see PALETTE).
   * Sheets are fixed grids: one row per animation, frames left-to-right.
 """
+import json
 import os
 import struct
+import sys
 import zlib
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "app", "src", "main", "res", "drawable-nodpi")
+CONTENT = os.path.join(ROOT, "app", "src", "main", "resources", "content", "content.json")
+REGISTRY = os.path.join(ROOT, "app", "src", "main", "java", "org", "openfocus", "app", "ui", "pixel", "SpriteRegistry.kt")
+
+
+def load_content():
+    with open(CONTENT, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def warn(msg):
+    print("warning:", msg, file=sys.stderr)
 
 # --------------------------------------------------------------------------------------------
 # Palette: the single source of truth. Names are documented in art/palette.gpl.
@@ -70,8 +83,9 @@ SKIN_TONES = {
     "deep": ("8D5A3B", "6E4329", "A85A4E"),
 }
 
-# Cloak colour ramps (light, mid, dark), keyed by ShopItem id. Template chars: c, C, D.
-CLOAKS = {
+# Hand-tuned cloak ramps (light, mid, dark) by item id. Cloaks not listed here get a ramp derived
+# from their content.json colour, so adding a cloak in the content editor needs no art work.
+CLOAK_RAMPS = {
     "color_violet": ("A397FF", "7C6CF2", "5545C0"),
     "color_teal": ("5FD6C6", "2BB3A3", "1C7F74"),
     "color_ember": ("FF9A7E", "F06A4D", "B8442D"),
@@ -469,14 +483,29 @@ GLYPHS = {
     "collector": [".....yy.....", ".....oo.....", "....oBBo....", "....owwo....", "...oBBBBo...", "...owwwwo...",
                   "..oBBBBBBo..", "..owwwwwwo..", ".oBBBBBBBBo.", ".oooooooooo.", "............", "............"],
 }
-BADGES = [  # (achievement id, tier) in Achievements.all order
-    ("first_step", "bronze"), ("habit_50", "silver"), ("habit_500", "gold"), ("streak_7", "bronze"),
-    ("streak_30", "silver"), ("streak_100", "gold"), ("focus_first", "bronze"), ("focus_10h", "silver"),
-    ("focus_100h", "gold"), ("milestone_1", "bronze"), ("goal_1", "silver"), ("goal_5", "gold"),
-    ("resist_10", "bronze"), ("resist_100", "gold"), ("shorts_25", "silver"), ("level_5", "bronze"),
-    ("level_10", "silver"), ("level_25", "gold"), ("treat_yo_self", "bronze"), ("collector", "silver"),
-]
-BADGE_COLS = 5
+# Badge order and tiers come from content.json (achievements, in file order). Glyphs are keyed by
+# achievement id; a new achievement without a glyph gets a generic star until someone draws one.
+BADGE_COLS = 5  # MUST match SpriteCatalog.BADGE_COLUMNS
+
+
+def ramp_from(hexv):
+    hexv = hexv.lstrip("#").upper()
+    return mix(hexv, "FFFFFF", 0.35), hexv, mix(hexv, "000000", 0.3)
+
+
+# --------------------------------------------------------------------------------------------
+# Armour overlays, 32x32, aligned to the frame-0 body (they follow the "body" anchor).
+# Ramp chars 1/2/3 = light/mid/dark of the item's colour; w/r/y/g decorations from the palette.
+# --------------------------------------------------------------------------------------------
+ARMOUR_BASE = {
+    19: "o22o..o22o", 20: "o2222222222o", 21: "o1222222223o", 22: "o1222222223o",
+    23: "o1222222223o", 24: "o1222222223o", 25: ".o22222223o.", 26: "..oooooooo..",
+}
+ARMOUR = {
+    "armour_leather": {**ARMOUR_BASE, 22: "o12h2222h23o", 24: "o12h2222h23o"},
+    "armour_iron": {**ARMOUR_BASE, 21: "o1w222222w3o", 25: ".ow222222wo."},
+    "armour_summit": {**ARMOUR_BASE, 19: "oggo..oggo", 22: "o122yrry223o", 23: "o1222yy2223o"},
+}
 
 
 def badge(glyph):
@@ -783,19 +812,38 @@ def main():
         tc = dict(colors, s=light, S=shadow, p=blush)
         write_png(os.path.join(OUT, f"px_hero_body_{tone}.png"),
                   sheet([[split(f, is_body) for f in row] for row in poses], 32, 32), tc)
-    for item, (light, mid, dark) in CLOAKS.items():
+    content = load_content()
+    slot_kind = {s["id"]: s.get("kind", "OVERLAY") for s in content["slots"]}
+    by_slot = lambda kind: [i for i in content["items"] if slot_kind.get(i["slot"]) == kind and i.get("sprite")]
+
+    cloak_ramps = {}
+    for item in by_slot("BODY"):  # cloaks: animate with the body, coloured from content
+        light, mid, dark = CLOAK_RAMPS.get(item["id"]) or ramp_from(item["color"])
+        cloak_ramps[item["id"]] = (light, mid, dark)
         cc = dict(colors, c=light, C=mid, D=dark)
-        write_png(os.path.join(OUT, f"px_cloak_{item.removeprefix('color_')}.png"),
+        write_png(os.path.join(OUT, f"{item['sprite']}.png"),
                   sheet([[split(f, is_cloak) for f in row] for row in poses], 32, 32), cc)
 
-    for kind, frames in BACKDROPS.items():
-        rows = [[backdrop(kind, f) for f in range(frames)]]
-        if kind == "default":  # row 1 = dark-theme version of the default backdrop
+    default_bg = next(s.get("defaultSprite") for s in content["slots"] if s.get("kind") == "BACKDROP")
+    for sprite in [default_bg] + [i["sprite"] for i in by_slot("BACKDROP")]:
+        kind = sprite.removeprefix("px_bg_")
+        if kind not in BACKDROPS:
+            warn(f"no generator art for backdrop '{sprite}' (draw it by hand or add it to BACKDROPS)")
+            continue
+        rows = [[backdrop(kind, f) for f in range(BACKDROPS[kind])]]
+        if sprite == default_bg:  # row 1 = dark-theme version of the default backdrop
             rows.append([backdrop("default_night")])
-        write_png(os.path.join(OUT, f"px_bg_{kind}.png"), sheet(rows, 48, 48), colors)
+        write_png(os.path.join(OUT, f"{sprite}.png"), sheet(rows, 48, 48), colors)
 
-    for item, rows in HATS.items():
-        write_png(os.path.join(OUT, f"px_{item}.png"), sheet([[grid(rows, 32, 32)]], 32, 32), colors)
+    for item in by_slot("OVERLAY"):
+        if item["id"] in HATS:
+            write_png(os.path.join(OUT, f"{item['sprite']}.png"), sheet([[grid(HATS[item['id']], 32, 32)]], 32, 32), colors)
+        elif item["id"] in ARMOUR:
+            light, mid, dark = ramp_from(item["color"])
+            ac = dict(colors, **{"1": light, "2": mid, "3": dark})
+            write_png(os.path.join(OUT, f"{item['sprite']}.png"), sheet([[grid(ARMOUR[item['id']], 32, 32)]], 32, 32), ac)
+        elif not os.path.exists(os.path.join(OUT, f"{item['sprite']}.png")):
+            warn(f"no art for '{item['id']}' ({item['sprite']}.png); the app falls back to the shape-drawn hero")
 
     write_png(os.path.join(OUT, "px_coin.png"), sheet([coin_frames()], 16, 16), colors)
 
@@ -818,13 +866,19 @@ def main():
     os.makedirs(os.path.join(ROOT, "art", "export"), exist_ok=True)
     write_png(os.path.join(ROOT, "art", "export", "ic_launcher_store.png"), scaled(store, 9), colors)  # 486 px
 
-    rows = [BADGES[i:i + BADGE_COLS] for i in range(0, len(BADGES), BADGE_COLS)]
+    badges = [(a["id"], a.get("tier", "bronze")) for a in content["achievements"]]
+    for aid, tier in badges:
+        if aid not in GLYPHS:
+            warn(f"achievement '{aid}' has no glyph yet; using a star")
+        if tier not in TIERS:
+            raise SystemExit(f"achievement '{aid}' has unknown tier '{tier}' (use {', '.join(TIERS)})")
+    rows = [badges[i:i + BADGE_COLS] for i in range(0, len(badges), BADGE_COLS)]
     out = [["."] * (24 * BADGE_COLS) for _ in range(24 * len(rows))]
     for r, row in enumerate(rows):
         for c, (aid, tier) in enumerate(row):
             rim, face, shadow = TIERS[tier]
             tc = dict(colors, **{"1": rim, "2": face, "3": shadow})
-            g = badge(GLYPHS[aid])
+            g = badge(GLYPHS.get(aid) or star("w"))
             for y in range(24):
                 for x in range(24):
                     ch = g[y][x]
@@ -855,7 +909,7 @@ def main():
     for tone, ramp in SKIN_TONES.items():
         for shade, hexv in zip(("light", "shadow", "blush"), ramp):
             entries.append((hexv, f"skin {tone} {shade}"))
-    for item, ramp in CLOAKS.items():
+    for item, ramp in cloak_ramps.items():
         for shade, hexv in zip(("light", "mid", "dark"), ramp):
             entries.append((hexv, f"{item.removeprefix('color_')} cloak {shade}"))
     with open(os.path.join(ROOT, "art", "palette.hex"), "w") as f:
@@ -866,6 +920,41 @@ def main():
             r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
             f.write(f"{r:3d} {g:3d} {b:3d}\t{name}\n")
     print(f"palette: {len(entries)} colours")
+    write_registry()
+
+
+def png_size(path):
+    with open(path, "rb") as f:
+        head = f.read(24)
+    return struct.unpack(">II", head[16:24])
+
+
+def write_registry():
+    """Kotlin map of every px_*.png (generated or hand-drawn) so content can name sprites as strings."""
+    names = sorted(n[:-4] for n in os.listdir(OUT) if n.startswith("px_") and n.endswith(".png"))
+    lines = []
+    for n in names:
+        w, h = png_size(os.path.join(OUT, n + ".png"))
+        lines.append(f'        "{n}" to SpriteInfo(R.drawable.{n}, {w}, {h}),')
+    code = """package org.openfocus.app.ui.pixel
+
+import org.openfocus.app.R
+
+// GENERATED by art/tools/build_placeholders.py from res/drawable-nodpi/px_*.png. Do not edit.
+// Re-run the generator (or the content editor's "Regenerate art") after adding or resizing a sprite.
+
+/** A sprite sheet image: resource id and pixel size. */
+data class SpriteInfo(val resId: Int, val width: Int, val height: Int)
+
+object SpriteRegistry {
+    val sprites: Map<String, SpriteInfo> = mapOf(
+%s
+    )
+}
+""" % "\n".join(lines)
+    with open(REGISTRY, "w") as f:
+        f.write(code)
+    print(f"registry: {len(names)} sprites -> {os.path.relpath(REGISTRY, ROOT)}")
 
 
 if __name__ == "__main__":

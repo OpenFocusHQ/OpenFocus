@@ -36,6 +36,11 @@ data class ProfileEntity(
     val avatarBackdrop: String? = null,
     /** Pixel-art skin tone id ("light" | "medium" | "deep"); null = light. Added in DB v2. */
     val skinTone: String? = null,
+    /**
+     * Equipped cosmetics as a JSON object {slotId: itemId}, so content can add slots without
+     * schema changes. Added in DB v5; empty means "use the legacy avatar* columns".
+     */
+    @ColumnInfo(defaultValue = "") val equipped: String = "",
     /** "local" today; a remote account id once sync exists. */
     val accountKind: String = "local",
     val createdAt: Long = System.currentTimeMillis(),
@@ -231,3 +236,20 @@ data class ActivityEventEntity(
     /** Null until a sync gateway has acknowledged the event. */
     val syncedAt: Long? = null,
 )
+
+/** Equipped cosmetics by slot id. Falls back to the pre-v5 avatarColor/avatarHat/avatarBackdrop columns. */
+fun ProfileEntity.equippedMap(): Map<String, String> {
+    if (equipped.isNotBlank()) {
+        runCatching {
+            return kotlinx.serialization.json.Json.decodeFromString<Map<String, String>>(equipped)
+        }
+    }
+    return buildMap {
+        avatarColor?.let { put("cloak", it) }
+        avatarHat?.let { put("hat", it) }
+        avatarBackdrop?.let { put("backdrop", it) }
+    }
+}
+
+fun ProfileEntity.withEquipped(map: Map<String, String>): ProfileEntity =
+    copy(equipped = kotlinx.serialization.json.Json.encodeToString(kotlinx.serialization.serializer<Map<String, String>>(), map))

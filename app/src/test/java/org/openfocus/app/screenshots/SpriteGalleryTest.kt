@@ -25,6 +25,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.openfocus.app.core.Achievements
+import org.openfocus.app.core.ShopCatalog
 import org.openfocus.app.ui.components.AchievementBadge
 import org.openfocus.app.ui.components.AscentMountain
 import org.openfocus.app.ui.components.HeroAvatar
@@ -49,8 +50,8 @@ class SpriteGalleryTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     private val allSheets: List<SpriteSheet> =
-        listOf(SpriteCatalog.coin) + SpriteCatalog.bodies.values + SpriteCatalog.cloaks.values + SpriteCatalog.hats.values +
-            SpriteCatalog.backdrops.values + SpriteCatalog.ascents + listOf(SpriteCatalog.tent, SpriteCatalog.climber, SpriteCatalog.flag, SpriteCatalog.badges, SpriteCatalog.sparkle, SpriteCatalog.shield, SpriteCatalog.empty)
+        listOf(SpriteCatalog.coin) + SpriteCatalog.bodies.values + ShopCatalog.items.mapNotNull(SpriteCatalog::itemSheet) +
+            listOfNotNull(SpriteCatalog.defaultBackdrop) + SpriteCatalog.ascents + listOf(SpriteCatalog.tent, SpriteCatalog.climber, SpriteCatalog.flag, SpriteCatalog.badges, SpriteCatalog.sparkle, SpriteCatalog.shield, SpriteCatalog.empty)
 
     @Test fun sheetDimensionsMatchCatalog() {
         val res = ApplicationProvider.getApplicationContext<android.content.Context>().resources
@@ -85,19 +86,24 @@ class SpriteGalleryTest {
                 ) {
                     Text("Idle ×4 · rest · celebrate ×2", style = MaterialTheme.typography.titleMedium)
                     Row {
-                        repeat(4) { f -> PixelSprite(SpriteCatalog.heroLayers("color_violet", null)!!, Modifier.size(48.dp), frame = f) }
-                        PixelSprite(SpriteCatalog.heroLayers("color_violet", null, HeroPose.REST)!!, Modifier.size(48.dp))
-                        repeat(2) { f -> PixelSprite(SpriteCatalog.heroLayers("color_violet", "hat_party", HeroPose.CELEBRATE)!!, Modifier.size(48.dp), frame = f) }
+                        repeat(4) { f -> PixelSprite(SpriteCatalog.heroLayers(mapOf("cloak" to "color_violet"))!!, Modifier.size(48.dp), frame = f) }
+                        PixelSprite(SpriteCatalog.heroLayers(mapOf("cloak" to "color_violet"), HeroPose.REST)!!, Modifier.size(48.dp))
+                        repeat(2) { f -> PixelSprite(SpriteCatalog.heroLayers(mapOf("hat" to "hat_party", "armour" to "armour_iron"), HeroPose.CELEBRATE)!!, Modifier.size(48.dp), frame = f) }
                     }
                     Text("Skin tones × cloaks", style = MaterialTheme.typography.titleMedium)
                     SkinTone.entries.forEach { tone ->
-                        Row { SpriteCatalog.cloaks.keys.forEach { PixelSprite(SpriteCatalog.heroLayers(it, null, skin = tone)!!, Modifier.size(48.dp), frame = 0) } }
+                        Row { ShopCatalog.itemsIn("cloak").forEach { PixelSprite(SpriteCatalog.heroLayers(mapOf("cloak" to it.id), skin = tone)!!, Modifier.size(48.dp), frame = 0) } }
                     }
-                    Text("Hats (frame 0 / frame 1 head bob)", style = MaterialTheme.typography.titleMedium)
+                    Text("Hats & armour (frame 0 / frame 1 head bob)", style = MaterialTheme.typography.titleMedium)
                     Row {
-                        SpriteCatalog.hats.keys.forEach { h ->
-                            PixelSprite(SpriteCatalog.heroLayers("color_teal", h)!!, Modifier.size(48.dp), frame = 0)
-                            PixelSprite(SpriteCatalog.heroLayers("color_teal", h)!!, Modifier.size(48.dp), frame = 1)
+                        ShopCatalog.itemsIn("hat").forEach { h ->
+                            PixelSprite(SpriteCatalog.heroLayers(mapOf("cloak" to "color_teal", "hat" to h.id))!!, Modifier.size(48.dp), frame = 0)
+                            PixelSprite(SpriteCatalog.heroLayers(mapOf("cloak" to "color_teal", "hat" to h.id))!!, Modifier.size(48.dp), frame = 1)
+                        }
+                    }
+                    Row {
+                        ShopCatalog.itemsIn("armour").forEach { a ->
+                            PixelSprite(SpriteCatalog.heroLayers(mapOf("cloak" to "color_ember", "armour" to a.id))!!, Modifier.size(48.dp), frame = 0)
                         }
                     }
                     Text("Badges (unlocked / locked)", style = MaterialTheme.typography.titleMedium)
@@ -117,11 +123,11 @@ class SpriteGalleryTest {
                     }
                     Text("Backdrops (as used in the app)", style = MaterialTheme.typography.titleMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        HeroAvatar("color_violet", null, null, size = 72.dp, animate = false)
-                        HeroAvatar("color_ember", "hat_crown", "bg_sunrise", size = 72.dp, skinTone = "medium", animate = false)
-                        HeroAvatar("color_teal", "hat_party", "bg_forest", size = 72.dp, skinTone = "deep", animate = false)
-                        HeroAvatar("color_gold", "hat_beanie", "bg_ocean", size = 72.dp, animate = false)
-                        HeroAvatar("color_violet", "hat_wizard", "bg_night", size = 72.dp, skinTone = "medium", animate = false)
+                        HeroAvatar(mapOf("cloak" to "color_violet"), size = 72.dp, animate = false)
+                        HeroAvatar(mapOf("cloak" to "color_ember", "hat" to "hat_crown", "armour" to "armour_summit", "backdrop" to "bg_sunrise"), size = 72.dp, skinTone = "medium", animate = false)
+                        HeroAvatar(mapOf("cloak" to "color_teal", "hat" to "hat_party", "armour" to "armour_leather", "backdrop" to "bg_forest"), size = 72.dp, skinTone = "deep", animate = false)
+                        HeroAvatar(mapOf("cloak" to "color_gold", "hat" to "hat_beanie", "backdrop" to "bg_ocean"), size = 72.dp, animate = false)
+                        HeroAvatar(mapOf("cloak" to "color_violet", "hat" to "hat_wizard", "armour" to "armour_iron", "backdrop" to "bg_night"), size = 72.dp, skinTone = "medium", animate = false)
                     }
                 }
             }

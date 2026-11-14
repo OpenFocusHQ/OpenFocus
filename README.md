@@ -58,6 +58,7 @@ Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 
 ### 🎮 Gamification
 - **XP and levels**, with titles from *Novice Climber* to *Summit Legend*.
+- **Cosmetics** in data-driven slots: cloaks, armour, hats and backdrops.
 - **HP**: missed habits cost HP. If HP hits zero, your hero takes a rest and loses a few coins. **Gentle mode** is on by default and turns this off.
 - **Coins** buy cosmetics (hats, cloaks, backdrops) and real-life **rewards you define yourself**.
 - **20 achievements**, a "perfect day" streak, celebration dialogs and a journal of everything you've earned.
@@ -78,7 +79,14 @@ Requirements: JDK 17+ and the Android SDK (API 35).
 
 The screenshot tests write their PNGs to `docs/screenshots/`.
 
-Every push to `main` and every pull request is built by GitHub Actions ([`build.yml`](.github/workflows/build.yml)): it runs all tests, then uploads the debug APK and the test reports and screenshots as workflow artifacts.
+Every pull request and push to `main` runs all tests and a minified release build in GitHub Actions ([`build.yml`](.github/workflows/build.yml)). Each push to `main` that passes is published as a **[GitHub Release](../../releases)** with the APK attached. Signing and versioning are covered in [docs/RELEASING.md](docs/RELEASING.md).
+
+### Game content
+All cosmetics (cloaks, armour, hats, backdrops and any new slot), achievements, starter quests, level titles and messages are **data**, in [`app/src/main/resources/content/content.json`](app/src/main/resources/content/content.json). To add more, use the local developer-only [content editor](tools/content-editor/README.md):
+
+```bash
+python3 tools/content-editor/server.py   # http://127.0.0.1:8765
+```
 
 ### First run on a device
 1. Name your hero and pick a few starter habits.

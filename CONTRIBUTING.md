@@ -8,6 +8,9 @@ Apps rename their internal view IDs fairly often. To update a rule:
 2. Add it to the matching `ShortsRule` in `app/src/main/java/org/openfocus/app/blocking/ShortsDetector.kt`.
 3. Say which app version you tested in the PR.
 
+## Game content
+Achievements, cosmetics, slots, starter quests, titles and messages live in `content.json`. Edit them with the local [content editor](tools/content-editor/README.md), not by hand-writing Kotlin.
+
 ## Art
 OpenFocus is moving to pixel art. All current art is placeholder. **[`art/README.md`](art/README.md)** covers the palette, sprite sizes, sheet layout, how hero layers and anchors work, the workflow, and which licences are accepted. Credit every file in [`art/CREDITS.md`](art/CREDITS.md).
 

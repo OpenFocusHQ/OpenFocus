@@ -21,6 +21,7 @@ import org.openfocus.app.data.db.HabitFrequency
 import org.openfocus.app.data.db.HabitKind
 import org.openfocus.app.data.db.HabitLogEntity
 import org.openfocus.app.data.db.newId
+import org.openfocus.app.data.db.withEquipped
 import org.openfocus.app.ui.nav.OpenFocusRoot
 import org.openfocus.app.ui.theme.OpenFocusTheme
 import org.robolectric.RobolectricTestRunner
@@ -48,7 +49,8 @@ open class ScreenshotTest {
     private fun seed() = runBlocking {
         val c = app.container
         c.settings.update { it.copy(onboardingDone = true) }
-        c.game.updateProfile { it.copy(displayName = "Aria", totalXp = 740, coins = 135, hp = 42, currentStreak = 4, avatarHat = "hat_party", avatarBackdrop = "bg_forest", skinTone = "medium") }
+        c.game.updateProfile { it.copy(displayName = "Aria", totalXp = 740, coins = 135, hp = 42, currentStreak = 4, skinTone = "medium")
+            .withEquipped(mapOf("cloak" to "color_violet", "hat" to "hat_party", "armour" to "armour_leather", "backdrop" to "bg_forest")) }
         val today = Days.today()
         val created = System.currentTimeMillis() - 30L * 86_400_000
         val goal = GoalEntity(ownerId = "", title = "Run a half marathon", why = "Prove to myself I can stick with something hard.", summitName = "Half Marathon Peak", targetEpochDay = today + 120, colorIndex = 1)

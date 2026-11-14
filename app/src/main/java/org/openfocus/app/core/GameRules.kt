@@ -105,13 +105,7 @@ object GameRules {
     }
 
     /** Titles shown under the hero's name. */
-    fun titleFor(level: Int): String = when {
-        level >= 40 -> "Summit Legend"
-        level >= 30 -> "Mountain Sage"
-        level >= 20 -> "Peak Seeker"
-        level >= 12 -> "Ridge Walker"
-        level >= 6 -> "Trailblazer"
-        level >= 3 -> "Wanderer"
-        else -> "Novice Climber"
-    }
+    fun titleFor(level: Int): String =
+        org.openfocus.app.core.content.GameContent.current.titles
+            .filter { level >= it.minLevel }.maxByOrNull { it.minLevel }?.title ?: ""
 }

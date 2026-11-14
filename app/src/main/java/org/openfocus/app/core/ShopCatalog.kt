@@ -1,37 +1,25 @@
 package org.openfocus.app.core
 
-enum class ItemSlot { HAT, BACKDROP, COLOR }
+import org.openfocus.app.core.content.GameContent
+import org.openfocus.app.core.content.ItemDef
+import org.openfocus.app.core.content.SlotDef
 
-/**
- * Built-in cosmetic items. Art is placeholder vector/canvas drawing (see ui/components/Avatar.kt);
- * contributors can replace it with real CC-BY / CC0 art keyed by [id].
- */
-data class ShopItem(
-    val id: String,
-    val name: String,
-    val slot: ItemSlot,
-    val price: Int,
-    val minLevel: Int = 1,
-    /** ARGB color used by the placeholder renderer. */
-    val color: Long,
-)
-
+/** Cosmetic slots and items, straight from content.json. */
 object ShopCatalog {
-    val items = listOf(
-        ShopItem("color_violet", "Violet Cloak", ItemSlot.COLOR, 0, color = 0xFF7C6CF2),
-        ShopItem("color_teal", "Teal Cloak", ItemSlot.COLOR, 40, color = 0xFF2BB3A3),
-        ShopItem("color_ember", "Ember Cloak", ItemSlot.COLOR, 60, color = 0xFFF06A4D),
-        ShopItem("color_gold", "Golden Cloak", ItemSlot.COLOR, 250, minLevel = 10, color = 0xFFE0A526),
-        ShopItem("hat_beanie", "Cosy Beanie", ItemSlot.HAT, 50, color = 0xFFE85D75),
-        ShopItem("hat_party", "Party Hat", ItemSlot.HAT, 80, minLevel = 3, color = 0xFF4DA3F0),
-        ShopItem("hat_wizard", "Wizard Hat", ItemSlot.HAT, 180, minLevel = 6, color = 0xFF5B4BC4),
-        ShopItem("hat_crown", "Summit Crown", ItemSlot.HAT, 400, minLevel = 12, color = 0xFFFFC857),
-        ShopItem("bg_sunrise", "Sunrise", ItemSlot.BACKDROP, 60, color = 0xFFFFB38A),
-        ShopItem("bg_forest", "Forest", ItemSlot.BACKDROP, 90, minLevel = 2, color = 0xFF3E8E5E),
-        ShopItem("bg_ocean", "Ocean", ItemSlot.BACKDROP, 120, minLevel = 4, color = 0xFF2F6FB5),
-        ShopItem("bg_night", "Starry Night", ItemSlot.BACKDROP, 200, minLevel = 8, color = 0xFF1E1B4B),
-    )
+    val slots: List<SlotDef> get() = GameContent.current.slots.sortedBy { it.layer }
+    val items: List<ItemDef> get() = GameContent.current.items
 
-    fun byId(id: String?) = items.firstOrNull { it.id == id }
-    val defaultColor = items.first()
+    fun byId(id: String?): ItemDef? = GameContent.current.item(id)
+    fun slot(id: String): SlotDef? = GameContent.current.slot(id)
+    fun itemsIn(slot: String): List<ItemDef> = GameContent.current.itemsIn(slot)
+
+    /** Items owned from the start (price 0). */
+    val freeItems: List<ItemDef> get() = items.filter { it.price == 0 }
+
+    /** What a profile is wearing: explicit choices plus defaults for required slots. */
+    fun resolveEquipped(equipped: Map<String, String>): Map<String, String> {
+        val out = equipped.filterKeys { slot(it) != null }.filterValues { byId(it) != null }.toMutableMap()
+        slots.filter { it.required && it.id !in out }.forEach { s -> s.defaultItem?.let { out[s.id] = it } }
+        return out
+    }
 }

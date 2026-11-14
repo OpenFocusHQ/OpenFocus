@@ -2,7 +2,6 @@ package org.openfocus.app.ui.pixel
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.openfocus.app.core.Achievements
 import java.io.File
 
 /**
@@ -26,9 +25,10 @@ class GeneratorSyncTest {
         error("unterminated $name")
     }
 
-    @Test fun badgeOrderMatchesAchievements() {
-        val ids = Regex("\\(\"(\\w+)\", \"(?:bronze|silver|gold)\"\\)").findAll(block("BADGES")).map { it.groupValues[1] }.toList()
-        assertEquals(Achievements.all.map { it.id }, ids)
+    @Test fun badgesAreReadFromContent() {
+        // Badge order/tiers aren't duplicated in the generator any more; it reads content.json.
+        assertEquals(true, generator.contains("content[\"achievements\"]"))
+        assertEquals(SpriteCatalog.BADGE_COLUMNS, Regex("BADGE_COLS = (\\d+)").find(generator)!!.groupValues[1].toInt())
     }
 
     @Test fun trailMatchesAscentTrail() {

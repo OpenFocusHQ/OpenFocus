@@ -1,0 +1,541 @@
+{
+  "$schema": "../../../../../tools/content-editor/content.schema.json",
+  "version": 1,
+  "slots": [
+    {
+      "id": "backdrop",
+      "name": "Backdrops",
+      "layer": 0,
+      "kind": "BACKDROP",
+      "defaultSprite": "px_bg_default"
+    },
+    {
+      "id": "cloak",
+      "name": "Cloaks",
+      "layer": 2,
+      "kind": "BODY",
+      "required": true,
+      "defaultItem": "color_violet"
+    },
+    {
+      "id": "armour",
+      "name": "Armour",
+      "layer": 3,
+      "kind": "OVERLAY",
+      "anchor": "body"
+    },
+    {
+      "id": "hat",
+      "name": "Hats",
+      "layer": 4,
+      "kind": "OVERLAY",
+      "anchor": "head"
+    }
+  ],
+  "items": [
+    {
+      "id": "color_violet",
+      "name": "Violet Cloak",
+      "slot": "cloak",
+      "price": 0,
+      "minLevel": 1,
+      "color": "#7C6CF2",
+      "sprite": "px_cloak_violet"
+    },
+    {
+      "id": "color_teal",
+      "name": "Teal Cloak",
+      "slot": "cloak",
+      "price": 40,
+      "minLevel": 1,
+      "color": "#2BB3A3",
+      "sprite": "px_cloak_teal"
+    },
+    {
+      "id": "color_ember",
+      "name": "Ember Cloak",
+      "slot": "cloak",
+      "price": 60,
+      "minLevel": 1,
+      "color": "#F06A4D",
+      "sprite": "px_cloak_ember"
+    },
+    {
+      "id": "color_gold",
+      "name": "Golden Cloak",
+      "slot": "cloak",
+      "price": 250,
+      "minLevel": 10,
+      "color": "#E0A526",
+      "sprite": "px_cloak_gold"
+    },
+    {
+      "id": "armour_leather",
+      "name": "Leather Vest",
+      "slot": "armour",
+      "price": 70,
+      "minLevel": 2,
+      "color": "#9A6234",
+      "sprite": "px_armour_leather"
+    },
+    {
+      "id": "armour_iron",
+      "name": "Iron Breastplate",
+      "slot": "armour",
+      "price": 160,
+      "minLevel": 5,
+      "color": "#9EA3B5",
+      "sprite": "px_armour_iron"
+    },
+    {
+      "id": "armour_summit",
+      "name": "Summit Plate",
+      "slot": "armour",
+      "price": 350,
+      "minLevel": 14,
+      "color": "#E0A526",
+      "sprite": "px_armour_summit"
+    },
+    {
+      "id": "hat_beanie",
+      "name": "Cosy Beanie",
+      "slot": "hat",
+      "price": 50,
+      "minLevel": 1,
+      "color": "#E85D75",
+      "sprite": "px_hat_beanie"
+    },
+    {
+      "id": "hat_party",
+      "name": "Party Hat",
+      "slot": "hat",
+      "price": 80,
+      "minLevel": 3,
+      "color": "#4DA3F0",
+      "sprite": "px_hat_party"
+    },
+    {
+      "id": "hat_wizard",
+      "name": "Wizard Hat",
+      "slot": "hat",
+      "price": 180,
+      "minLevel": 6,
+      "color": "#5B4BC4",
+      "sprite": "px_hat_wizard"
+    },
+    {
+      "id": "hat_crown",
+      "name": "Summit Crown",
+      "slot": "hat",
+      "price": 400,
+      "minLevel": 12,
+      "color": "#FFC857",
+      "sprite": "px_hat_crown"
+    },
+    {
+      "id": "bg_sunrise",
+      "name": "Sunrise",
+      "slot": "backdrop",
+      "price": 60,
+      "minLevel": 1,
+      "color": "#FFB38A",
+      "sprite": "px_bg_sunrise"
+    },
+    {
+      "id": "bg_forest",
+      "name": "Forest",
+      "slot": "backdrop",
+      "price": 90,
+      "minLevel": 2,
+      "color": "#3E8E5E",
+      "sprite": "px_bg_forest"
+    },
+    {
+      "id": "bg_ocean",
+      "name": "Ocean",
+      "slot": "backdrop",
+      "price": 120,
+      "minLevel": 4,
+      "color": "#2F6FB5",
+      "sprite": "px_bg_ocean"
+    },
+    {
+      "id": "bg_night",
+      "name": "Starry Night",
+      "slot": "backdrop",
+      "price": 200,
+      "minLevel": 8,
+      "color": "#1E1B4B",
+      "sprite": "px_bg_night",
+      "frames": 2,
+      "fps": 1.5
+    }
+  ],
+  "achievements": [
+    {
+      "id": "first_step",
+      "title": "First Step",
+      "description": "Complete your first habit.",
+      "icon": "DirectionsWalk",
+      "xp": 20,
+      "coins": 5,
+      "stat": "habitCompletions",
+      "target": 1,
+      "tier": "bronze"
+    },
+    {
+      "id": "habit_50",
+      "title": "Creature of Habit",
+      "description": "Complete 50 habits.",
+      "icon": "Repeat",
+      "xp": 100,
+      "coins": 30,
+      "stat": "habitCompletions",
+      "target": 50,
+      "tier": "silver"
+    },
+    {
+      "id": "habit_500",
+      "title": "Habit Machine",
+      "description": "Complete 500 habits.",
+      "icon": "AllInclusive",
+      "xp": 400,
+      "coins": 120,
+      "stat": "habitCompletions",
+      "target": 500,
+      "tier": "gold"
+    },
+    {
+      "id": "streak_7",
+      "title": "Week Warrior",
+      "description": "Reach a 7-day streak on any habit.",
+      "icon": "LocalFireDepartment",
+      "xp": 70,
+      "coins": 20,
+      "stat": "bestHabitStreak",
+      "target": 7,
+      "tier": "bronze"
+    },
+    {
+      "id": "streak_30",
+      "title": "Monthly Master",
+      "description": "Reach a 30-day streak.",
+      "icon": "Whatshot",
+      "xp": 250,
+      "coins": 80,
+      "stat": "bestHabitStreak",
+      "target": 30,
+      "tier": "silver"
+    },
+    {
+      "id": "streak_100",
+      "title": "Centurion",
+      "description": "Reach a 100-day streak.",
+      "icon": "MilitaryTech",
+      "xp": 800,
+      "coins": 250,
+      "stat": "bestHabitStreak",
+      "target": 100,
+      "tier": "gold"
+    },
+    {
+      "id": "focus_first",
+      "title": "Into the Zone",
+      "description": "Finish your first focus session.",
+      "icon": "SelfImprovement",
+      "xp": 20,
+      "coins": 5,
+      "stat": "focusSessions",
+      "target": 1,
+      "tier": "bronze"
+    },
+    {
+      "id": "focus_10h",
+      "title": "Deep Diver",
+      "description": "Focus for 10 hours in total.",
+      "icon": "ScubaDiving",
+      "xp": 200,
+      "coins": 60,
+      "stat": "focusMinutes",
+      "target": 600,
+      "tier": "silver"
+    },
+    {
+      "id": "focus_100h",
+      "title": "Flow State",
+      "description": "Focus for 100 hours in total.",
+      "icon": "Waves",
+      "xp": 1000,
+      "coins": 300,
+      "stat": "focusMinutes",
+      "target": 6000,
+      "tier": "gold"
+    },
+    {
+      "id": "milestone_1",
+      "title": "Base Camp",
+      "description": "Reach your first milestone.",
+      "icon": "Flag",
+      "xp": 30,
+      "coins": 10,
+      "stat": "milestonesDone",
+      "target": 1,
+      "tier": "bronze"
+    },
+    {
+      "id": "goal_1",
+      "title": "Summiteer",
+      "description": "Complete a long-term goal.",
+      "icon": "Landscape",
+      "xp": 300,
+      "coins": 100,
+      "stat": "goalsCompleted",
+      "target": 1,
+      "tier": "silver"
+    },
+    {
+      "id": "goal_5",
+      "title": "Seven Summits (well, five)",
+      "description": "Complete 5 long-term goals.",
+      "icon": "Terrain",
+      "xp": 800,
+      "coins": 250,
+      "stat": "goalsCompleted",
+      "target": 5,
+      "tier": "gold"
+    },
+    {
+      "id": "resist_10",
+      "title": "Willpower",
+      "description": "Choose to close a blocked app 10 times.",
+      "icon": "Shield",
+      "xp": 60,
+      "coins": 20,
+      "stat": "temptationsResisted",
+      "target": 10,
+      "tier": "bronze"
+    },
+    {
+      "id": "resist_100",
+      "title": "Iron Will",
+      "description": "Choose to close a blocked app 100 times.",
+      "icon": "Security",
+      "xp": 300,
+      "coins": 100,
+      "stat": "temptationsResisted",
+      "target": 100,
+      "tier": "gold"
+    },
+    {
+      "id": "shorts_25",
+      "title": "Scroll Dodger",
+      "description": "Have 25 short-video feeds blocked.",
+      "icon": "Block",
+      "xp": 50,
+      "coins": 15,
+      "stat": "shortsBlocked",
+      "target": 25,
+      "tier": "silver"
+    },
+    {
+      "id": "level_5",
+      "title": "Getting Stronger",
+      "description": "Reach level 5.",
+      "icon": "TrendingUp",
+      "xp": 0,
+      "coins": 50,
+      "stat": "level",
+      "target": 5,
+      "tier": "bronze"
+    },
+    {
+      "id": "level_10",
+      "title": "Seasoned",
+      "description": "Reach level 10.",
+      "icon": "Star",
+      "xp": 0,
+      "coins": 120,
+      "stat": "level",
+      "target": 10,
+      "tier": "silver"
+    },
+    {
+      "id": "level_25",
+      "title": "Veteran",
+      "description": "Reach level 25.",
+      "icon": "AutoAwesome",
+      "xp": 0,
+      "coins": 400,
+      "stat": "level",
+      "target": 25,
+      "tier": "gold"
+    },
+    {
+      "id": "treat_yo_self",
+      "title": "Treat Yourself",
+      "description": "Redeem one of your own rewards.",
+      "icon": "Cake",
+      "xp": 15,
+      "coins": 0,
+      "stat": "rewardsRedeemed",
+      "target": 1,
+      "tier": "bronze"
+    },
+    {
+      "id": "collector",
+      "title": "Collector",
+      "description": "Own 5 cosmetic items.",
+      "icon": "Checkroom",
+      "xp": 80,
+      "coins": 0,
+      "stat": "itemsOwned",
+      "target": 5,
+      "tier": "silver"
+    }
+  ],
+  "quests": [
+    {
+      "id": "water",
+      "title": "Drink a glass of water",
+      "icon": "Water",
+      "color": 4,
+      "kind": "BUILD",
+      "difficulty": "EASY",
+      "frequency": "DAILY",
+      "target": 1,
+      "starter": true
+    },
+    {
+      "id": "read",
+      "title": "Read 10 pages",
+      "icon": "Book",
+      "color": 0,
+      "kind": "BUILD",
+      "difficulty": "EASY",
+      "frequency": "DAILY",
+      "target": 1,
+      "starter": true
+    },
+    {
+      "id": "walk",
+      "title": "10 minute walk",
+      "icon": "Walk",
+      "color": 6,
+      "kind": "BUILD",
+      "difficulty": "EASY",
+      "frequency": "DAILY",
+      "target": 1,
+      "starter": true
+    },
+    {
+      "id": "meditate",
+      "title": "Meditate 5 minutes",
+      "icon": "Meditate",
+      "color": 1,
+      "kind": "BUILD",
+      "difficulty": "EASY",
+      "frequency": "DAILY",
+      "target": 1,
+      "starter": true
+    },
+    {
+      "id": "journal",
+      "title": "Journal one line",
+      "icon": "Journal",
+      "color": 3,
+      "kind": "BUILD",
+      "difficulty": "EASY",
+      "frequency": "DAILY",
+      "target": 1,
+      "starter": true
+    },
+    {
+      "id": "no_phone_bed",
+      "title": "No phone in bed",
+      "icon": "NoPhone",
+      "color": 5,
+      "kind": "BUILD",
+      "difficulty": "EASY",
+      "frequency": "DAILY",
+      "target": 1,
+      "starter": true
+    },
+    {
+      "id": "doomscroll",
+      "title": "Doomscrolling",
+      "icon": "Phone",
+      "color": 2,
+      "kind": "BREAK",
+      "difficulty": "EASY",
+      "frequency": "DAILY",
+      "target": 1,
+      "starter": true
+    }
+  ],
+  "titles": [
+    {
+      "minLevel": 1,
+      "title": "Novice Climber"
+    },
+    {
+      "minLevel": 3,
+      "title": "Wanderer"
+    },
+    {
+      "minLevel": 6,
+      "title": "Trailblazer"
+    },
+    {
+      "minLevel": 12,
+      "title": "Ridge Walker"
+    },
+    {
+      "minLevel": 20,
+      "title": "Peak Seeker"
+    },
+    {
+      "minLevel": 30,
+      "title": "Mountain Sage"
+    },
+    {
+      "minLevel": 40,
+      "title": "Summit Legend"
+    }
+  ],
+  "messages": {
+    "general": [
+      "Small steps still climb mountains.",
+      "You don't need a perfect day, just a next step.",
+      "Attention is your most valuable currency. Spend it on purpose.",
+      "Every time you choose focus, future-you gets a little stronger.",
+      "Consistency beats intensity. Show up again today.",
+      "The feed will still be there. Your goals won't wait forever.",
+      "Progress, not perfection.",
+      "One focused hour can change the shape of a week.",
+      "You are building the person who finishes things.",
+      "Boredom is where good ideas come from. Let it in."
+    ],
+    "resist": [
+      "Nice save! That's a point for future-you.",
+      "Closed it. That's what discipline feels like.",
+      "You just won a tiny battle. They add up.",
+      "Back to your quest, adventurer."
+    ],
+    "blocked": [
+      "This app is resting right now. What were you about to do instead?",
+      "Pause. Breathe. Is this what you opened your phone for?",
+      "Your attention is on a quest. This can wait.",
+      "Shield up! Take three slow breaths before deciding."
+    ],
+    "shorts": [
+      "Short videos are built to be endless. You're not.",
+      "Infinite scroll detected and dodged.",
+      "Swipe-feeds blocked. The rest of the app is still yours."
+    ],
+    "comeback": [
+      "A missed day is just a plot twist. Back on the trail!",
+      "Heroes fall. Legends get back up.",
+      "Rest restored you. Let's start fresh."
+    ]
+  }
+}

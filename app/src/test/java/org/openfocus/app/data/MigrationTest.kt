@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.openfocus.app.data.db.AppDatabase
 import org.openfocus.app.data.db.BlockGate
+import org.openfocus.app.data.db.equippedMap
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -33,7 +34,7 @@ class MigrationTest {
             )
             db.execSQL("INSERT INTO block_rules (packageName, label, mode, dailyLimitMinutes, enabled, updatedAt) VALUES ('com.example.feed', 'Feed', 'ALWAYS', 30, 1, 0)")
         }
-        helper.runMigrationsAndValidate(name, 4, true).close()
+        helper.runMigrationsAndValidate(name, 5, true).close()
 
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java, name)
             .allowMainThreadQueries().build()
@@ -42,6 +43,9 @@ class MigrationTest {
         assertEquals(740, p.totalXp)
         assertEquals("hat_party", p.avatarHat)
         assertNull(p.skinTone)
+        // v5: outfits move to the slot map; the legacy columns still resolve until re-saved.
+        assertEquals("", p.equipped)
+        assertEquals(mapOf("cloak" to "color_teal", "hat" to "hat_party"), p.equippedMap())
         // v3: rules that existed before the pause-screen gates keep their old, fully-blocked behaviour.
         val rule = runBlocking { db.blockDao().observeRules().first() }.single()
         assertEquals(BlockGate.HARD, rule.gate)

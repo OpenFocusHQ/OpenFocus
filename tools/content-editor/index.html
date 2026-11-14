@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenFocus Content Editor</title>
+<style>
+  :root {
+    --bg: #f7f4ff; --panel: #ffffff; --line: #e2dcf5; --ink: #1d1a2b; --muted: #6b6680;
+    --accent: #5b4bd6; --accent-ink: #ffffff; --warn: #b8442d; --warn-bg: #fff0eb; --ok: #1f8a5b; --chip: #efeafc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14121f; --panel: #1f1c2e; --line: #34304a; --ink: #ece9f7; --muted: #a29dbb;
+      --accent: #c5bcff; --accent-ink: #1d1a2b; --warn: #ffb49c; --warn-bg: #3a2420; --ok: #7fd8a8; --chip: #2a2640; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+  header { display: flex; gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0 12px 0 0; }
+  nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  nav button { background: none; border: 0; padding: 6px 10px; border-radius: 8px; color: var(--muted); cursor: pointer; font: inherit; }
+  nav button.on { background: var(--chip); color: var(--ink); font-weight: 600; }
+  .spacer { flex: 1; }
+  button.act { border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 6px 12px; border-radius: 8px; cursor: pointer; font: inherit; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  #status { color: var(--muted); font-size: 13px; min-width: 120px; }
+  main { display: grid; grid-template-columns: 300px 1fr 300px; gap: 0; height: calc(100vh - 53px); }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; height: auto; } }
+  .col { border-right: 1px solid var(--line); overflow: auto; padding: 12px; }
+  .list-tools { display: flex; gap: 6px; margin-bottom: 8px; }
+  .list-tools input { flex: 1; }
+  ul.items { list-style: none; margin: 0; padding: 0; }
+  ul.items li { padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+  ul.items li:hover { background: var(--chip); }
+  ul.items li.sel { background: var(--accent); color: var(--accent-ink); }
+  ul.items li small { opacity: .75; display: block; font-size: 12px; }
+  ul.items li .bad { color: var(--warn); font-weight: 700; }
+  ul.items li.sel .bad { color: inherit; }
+  form { display: grid; grid-template-columns: 150px 1fr; gap: 10px 12px; align-items: center; max-width: 720px; }
+  form label { color: var(--muted); }
+  form .hint { grid-column: 2; color: var(--muted); font-size: 12px; margin-top: -6px; }
+  input, select, textarea { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%; }
+  textarea { min-height: 70px; resize: vertical; }
+  input[type=checkbox] { width: auto; }
+  input[type=color] { padding: 2px; height: 34px; }
+  .row-tools { display: flex; gap: 6px; margin: 0 0 14px; flex-wrap: wrap; }
+  .preview { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  canvas.px { image-rendering: pixelated; border-radius: 12px; background: var(--chip); }
+  .issues li { padding: 6px 8px; border-radius: 6px; background: var(--warn-bg); color: var(--warn); margin-bottom: 6px; cursor: pointer; list-style: none; font-size: 13px; }
+  .issues { padding: 0; margin: 0; }
+  .ok, .issues li.ok { color: var(--ok); background: none; cursor: default; }
+  pre { white-space: pre-wrap; font-size: 12px; background: var(--chip); padding: 8px; border-radius: 8px; max-height: 260px; overflow: auto; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 14px 0 8px; }
+  .msgs { display: grid; gap: 14px; max-width: 900px; }
+  .msgs textarea { min-height: 120px; }
+  .swatches { display: flex; gap: 6px; }
+  .swatches span { width: 26px; height: 26px; border-radius: 50%; display: inline-block; cursor: pointer; border: 2px solid transparent; }
+  .swatches span.on { border-color: var(--ink); }
+</style>
+</head>
+<body>
+<header>
+  <h1>OpenFocus Content Editor</h1>
+  <nav id="tabs"></nav>
+  <span class="spacer"></span>
+  <span id="status">Loading…</span>
+  <button class="act" id="regen" title="Run art/tools/build_placeholders.py (badges, cloaks, armour, sprite registry)">Regenerate art</button>
+  <button class="act primary" id="save" disabled title="Ctrl/Cmd+S">Save</button>
+</header>
+<main>
+  <section class="col" id="left"></section>
+  <section class="col" id="center"></section>
+  <section class="col" id="right">
+    <h2>Preview</h2><div id="preview" class="preview"></div>
+    <h2>Problems <span id="issueCount"></span></h2><ul class="issues" id="issues"></ul>
+    <h2>Generator output</h2><pre id="genOut">Run "Regenerate art" after adding achievements, cloaks or sprites.</pre>
+  </section>
+</main>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------------------------
+const PALETTE = ["#7C6CF2", "#2BB3A3", "#F06A4D", "#E0A526", "#4DA3F0", "#E85D75", "#3E8E5E", "#9B59B6"]; // Theme.kt PaletteColors
+const BADGE_COLS = 5;          // SpriteCatalog.BADGE_COLUMNS
+const HERO_AT = [8, 13];       // SpriteCatalog.HERO_IN_BACKDROP
+let content = null, schema = null, sprites = {}, dirty = false;
+let tab = "items", sel = 0, filter = "";
+const $ = (id) => document.getElementById(id);
+const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.flat().forEach(k => e.append(k)); return e; };
+
+function enumFrom(path) {
+  let o = schema;
+  for (const p of path.split("/")) o = o[p];
+  return o.enum.filter(v => v !== null);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Tab definitions: which array, how to label rows, and the form fields.
+// Field types: id, text, textarea, int, number, bool, enum, color, sprite, palette
+// ---------------------------------------------------------------------------------------------
+const TABS = {
+  items: {
+    label: "Items", key: "items",
+    title: x => x.name, sub: x => `${x.slot} · ${x.price} coins${x.minLevel > 1 ? " · Lv " + x.minLevel : ""}`,
+    fields: () => [
+      { k: "id", t: "id", hint: "Stable id saved in players' inventories. Don't rename after release." },
+      { k: "name", t: "text" },
+      { k: "slot", t: "enum", options: content.slots.map(s => s.id) },
+      { k: "price", t: "int" }, { k: "minLevel", t: "int" },
+      { k: "color", t: "color", hint: "Shop accent, fallback art, and the generated colour ramp for cloaks/armour." },
+      { k: "sprite", t: "sprite", hint: "res/drawable-nodpi/<name>.png. Empty = no art yet (shape-drawn fallback)." },
+      { k: "frames", t: "int", hint: "Animation frames in the sheet's first row (backdrops)." },
+      { k: "fps", t: "number" },
+      { k: "description", t: "textarea" },
+    ],
+    template: () => ({ id: uniqueId("new_item"), name: "New item", slot: content.slots.find(s => s.kind !== "BACKDROP")?.id ?? "hat",
+      price: 50, minLevel: 1, color: "#7C6CF2", sprite: null }),
+  },
+  achievements: {
+    label: "Achievements", key: "achievements",
+    title: x => x.title, sub: x => `${x.stat} ≥ ${x.target} · ${x.tier ?? "bronze"}`,
+    fields: () => [
+      { k: "id", t: "id", hint: "Stored when unlocked; also keys the badge glyph in the generator." },
+      { k: "title", t: "text" }, { k: "description", t: "textarea" },
+      { k: "stat", t: "enum", options: enumFrom("properties/achievements/items/properties/stat") },
+      { k: "target", t: "int" },
+      { k: "tier", t: "enum", options: enumFrom("properties/achievements/items/properties/tier"), hint: "Medal colour of the generated badge." },
+      { k: "xp", t: "int" }, { k: "coins", t: "int" },
+      { k: "icon", t: "text", hint: "Material icon name (legacy; badges are pixel art now)." },
+    ],
+    template: () => ({ id: uniqueId("new_achievement"), title: "New achievement", description: "", icon: "Star", xp: 50, coins: 10,
+      stat: "habitCompletions", target: 10, tier: "bronze" }),
+    note: "Order matters: it's the badge atlas order. Regenerate art after adding, removing or reordering.",
+  },
+  slots: {
+    label: "Slots", key: "slots",
+    title: x => x.name, sub: x => `${x.kind ?? "OVERLAY"} · layer ${x.layer}${x.anchor ? " · follows " + x.anchor : ""}`,
+    fields: () => [
+      { k: "id", t: "id", hint: "Saved in players' equipped outfits." }, { k: "name", t: "text" },
+      { k: "layer", t: "int", hint: "Draw order. The hero's body is layer 1." },
+      { k: "kind", t: "enum", options: enumFrom("properties/slots/items/properties/kind"),
+        hint: "BACKDROP: 48×48 scene. BODY: animates with the body (cloaks). OVERLAY: single frame following an anchor." },
+      { k: "anchor", t: "enum", options: ["", "head", "body"], optional: true },
+      { k: "required", t: "bool", hint: "Always filled; falls back to the default item." },
+      { k: "defaultItem", t: "enum", options: () => [""].concat(content.items.filter(i => i.slot === cur()?.id).map(i => i.id)), optional: true },
+      { k: "defaultSprite", t: "sprite", hint: "Shown when nothing is equipped (backdrops)." },
+    ],
+    template: () => ({ id: uniqueId("new_slot"), name: "New slot", layer: Math.max(...content.slots.map(s => s.layer)) + 1, kind: "OVERLAY", anchor: "body" }),
+  },
+  quests: {
+    label: "Quests", key: "quests",
+    title: x => x.title, sub: x => `${x.kind ?? "BUILD"} · ${x.frequency ?? "DAILY"}${x.starter === false ? "" : " · starter"}`,
+    fields: () => [
+      { k: "id", t: "id" }, { k: "title", t: "text" },
+      { k: "icon", t: "enum", options: enumFrom("properties/quests/items/properties/icon") },
+      { k: "color", t: "palette" },
+      { k: "kind", t: "enum", options: enumFrom("properties/quests/items/properties/kind") },
+      { k: "difficulty", t: "enum", options: enumFrom("properties/quests/items/properties/difficulty") },
+      { k: "frequency", t: "enum", options: enumFrom("properties/quests/items/properties/frequency") },
+      { k: "target", t: "int" },
+      { k: "starter", t: "bool", hint: "Offered on the onboarding starter-quests page." },
+    ],
+    template: () => ({ id: uniqueId("new_quest"), title: "New quest", icon: "Star", color: 0, kind: "BUILD", difficulty: "EASY",
+      frequency: "DAILY", target: 1, starter: true }),
+  },
+  titles: {
+    label: "Titles", key: "titles",
+    title: x => x.title, sub: x => `from level ${x.minLevel}`,
+    fields: () => [{ k: "minLevel", t: "int" }, { k: "title", t: "text" }],
+    template: () => ({ minLevel: Math.max(...content.titles.map(t => t.minLevel)) + 5, title: "New title" }),
+  },
+  messages: { label: "Messages", special: true },
+};
+
+const cur = () => content[TABS[tab].key]?.[sel];
+
+function uniqueId(base) {
+  const all = new Set(Object.values(TABS).filter(t => t.key).flatMap(t => content[t.key].map(x => x.id)));
+  let id = base, n = 2;
+  while (all.has(id)) id = `${base}_${n++}`;
+  return id;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Validation (mirrors ContentValidationTest so problems show up before CI does)
+// ---------------------------------------------------------------------------------------------
+function validate() {
+  const out = [];
+  const add = (t, i, msg) => out.push({ tab: t, index: i, msg });
+  const dupes = (t, key) => {
+    const seen = {};
+    content[TABS[t].key].forEach((x, i) => { const v = x[key]; if (v in seen) add(t, i, `duplicate ${key} "${v}"`); seen[v] = i; });
+  };
+  dupes("items", "id"); dupes("achievements", "id"); dupes("slots", "id"); dupes("quests", "id"); dupes("titles", "minLevel");
+  const idRe = /^[a-z][a-z0-9_]*$/;
+  ["items", "achievements", "slots", "quests"].forEach(t => content[t].forEach((x, i) => { if (!idRe.test(x.id || "")) add(t, i, `id "${x.id}" must be lower_snake_case`); }));
+  const slotIds = new Set(content.slots.map(s => s.id));
+  if (content.slots.filter(s => s.kind === "BACKDROP").length !== 1) add("slots", 0, "need exactly one BACKDROP slot");
+  const layers = {};
+  content.slots.forEach((s, i) => {
+    if (s.layer === 1 || s.layer in layers) add("slots", i, `layer ${s.layer} is taken${s.layer === 1 ? " by the body" : ""}`);
+    layers[s.layer] = i;
+    if ((s.kind ?? "OVERLAY") === "OVERLAY" && !["head", "body"].includes(s.anchor)) add("slots", i, "OVERLAY slots need an anchor (head/body)");
+    if (s.required) {
+      const d = content.items.find(it => it.id === s.defaultItem);
+      if (!d || d.slot !== s.id) add("slots", i, "required slot needs a defaultItem from this slot");
+      else if (d.price !== 0) add("slots", i, `default item "${d.id}" must be free`);
+    }
+    if (s.defaultSprite && !(s.defaultSprite in sprites)) add("slots", i, `sprite ${s.defaultSprite}.png doesn't exist`);
+  });
+  content.items.forEach((it, i) => {
+    if (!slotIds.has(it.slot)) add("items", i, `unknown slot "${it.slot}"`);
+    if (!/^#[0-9A-Fa-f]{6}$/.test(it.color || "#7C6CF2")) add("items", i, `bad colour ${it.color}`);
+    if (it.sprite && !(it.sprite in sprites)) add("items", i, `sprite ${it.sprite}.png doesn't exist yet (regenerate art or draw it)`);
+    if (!(it.price >= 0)) add("items", i, "price must be ≥ 0");
+  });
+  const stats = enumFrom("properties/achievements/items/properties/stat");
+  content.achievements.forEach((a, i) => {
+    if (!stats.includes(a.stat)) add("achievements", i, `unknown stat "${a.stat}"`);
+    if (!(a.target > 0)) add("achievements", i, "target must be > 0");
+  });
+  const badges = sprites["px_badges"];
+  if (badges && Math.floor(badges.width / 24) * Math.floor(badges.height / 24) < content.achievements.length)
+    add("achievements", content.achievements.length - 1, "badge atlas is out of date: regenerate art");
+  if (!content.quests.some(q => q.starter !== false)) add("quests", 0, "no starter quests");
+  if (!content.titles.some(t => t.minLevel === 1)) add("titles", 0, "need a title for level 1");
+  for (const [k, v] of Object.entries(content.messages)) if (!v.length) add("messages", 0, `no "${k}" messages`);
+  return out;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------------------------
+function setDirty(d) { dirty = d; $("save").disabled = !d; status(d ? "Unsaved changes" : "Saved"); }
+function status(t, cls) { $("status").textContent = t; $("status").className = cls || ""; }
+
+function renderTabs() {
+  $("tabs").replaceChildren(...Object.entries(TABS).map(([k, t]) =>
+    el("button", { className: k === tab ? "on" : "", textContent: t.label, onclick: () => { tab = k; sel = 0; filter = ""; render(); } })));
+}
+
+function render() {
+  renderTabs();
+  const issues = validate();
+  renderIssues(issues);
+  if (TABS[tab].special) return renderMessages();
+  renderList(issues);
+  renderForm();
+  renderPreview();
+}
+
+function renderIssues(issues) {
+  $("issueCount").textContent = issues.length ? `(${issues.length})` : "";
+  $("issues").replaceChildren(...(issues.length ? issues.map(p =>
+    el("li", { textContent: `${TABS[p.tab].label}: ${p.msg}`, onclick: () => { tab = p.tab; sel = p.index; render(); } }))
+    : [el("li", { className: "ok", textContent: "No problems found." })]));
+}
+
+function renderList(issues) {
+  const t = TABS[tab], arr = content[t.key];
+  const bad = new Set(issues.filter(p => p.tab === tab).map(p => p.index));
+  const q = el("input", { placeholder: "Filter…", value: filter, oninput: e => { filter = e.target.value; renderList(validate()); q.focus(); } });
+  const tools = el("div", { className: "list-tools" }, q,
+    el("button", { className: "act", textContent: "+ Add", onclick: () => { arr.push(t.template()); sel = arr.length - 1; setDirty(true); render(); } }));
+  const rows = arr.map((x, i) => ({ x, i })).filter(({ x }) => !filter || JSON.stringify(x).toLowerCase().includes(filter.toLowerCase()));
+  const ul = el("ul", { className: "items" }, rows.map(({ x, i }) =>
+    el("li", { className: i === sel ? "sel" : "", onclick: () => { sel = i; render(); } },
+      el("div", {}, el("span", { textContent: t.title(x) || "(untitled)" }), el("small", { textContent: (x.id ? x.id + " · " : "") + t.sub(x) })),
+      bad.has(i) ? el("span", { className: "bad", textContent: "!" }) : "")));
+  $("left").replaceChildren(tools, t.note ? el("p", { className: "hint", style: "color:var(--muted);font-size:12px", textContent: t.note }) : "", ul);
+}
+
+function renderForm() {
+  const t = TABS[tab], arr = content[t.key], x = arr[sel];
+  if (!x) { $("center").replaceChildren(el("p", { textContent: "Nothing here yet. Add one on the left." })); return; }
+  const move = (d) => { const j = sel + d; if (j < 0 || j >= arr.length) return; [arr[sel], arr[j]] = [arr[j], arr[sel]]; sel = j; setDirty(true); render(); };
+  const tools = el("div", { className: "row-tools" },
+    el("button", { className: "act", textContent: "↑ Move up", onclick: () => move(-1) }),
+    el("button", { className: "act", textContent: "↓ Move down", onclick: () => move(1) }),
+    el("button", { className: "act", textContent: "Duplicate", onclick: () => {
+      const copy = structuredClone(x); if (copy.id) copy.id = uniqueId(copy.id); arr.splice(sel + 1, 0, copy); sel++; setDirty(true); render(); } }),
+    el("button", { className: "act", textContent: "Delete", onclick: () => {
+      if (!confirm(`Delete "${t.title(x)}"?`)) return; arr.splice(sel, 1); sel = Math.max(0, sel - 1); setDirty(true); render(); } }));
+  const form = el("form", { onsubmit: e => e.preventDefault() });
+  for (const f of t.fields()) {
+    form.append(el("label", { textContent: f.k, htmlFor: "f_" + f.k }), fieldInput(x, f));
+    if (f.hint) form.append(el("div", { className: "hint", textContent: f.hint }));
+  }
+  $("center").replaceChildren(el("h2", { textContent: `${t.label} · ${sel + 1} of ${arr.length}` }), tools, form);
+}
+
+function fieldInput(x, f) {
+  const set = (v) => {
+    if (v === "" || v === null || (typeof v === "number" && isNaN(v))) { if (f.optional || f.t === "sprite") delete x[f.k]; else x[f.k] = v; }
+    else x[f.k] = v;
+    setDirty(true);
+    renderIssues(validate()); renderList(validate()); renderPreview();
+  };
+  const id = "f_" + f.k;
+  switch (f.t) {
+    case "int": case "number":
+      return el("input", { id, type: "number", step: f.t === "int" ? "1" : "0.1", value: x[f.k] ?? "",
+        oninput: e => set(f.t === "int" ? parseInt(e.target.value, 10) : parseFloat(e.target.value)) });
+    case "bool":
+      return el("input", { id, type: "checkbox", checked: x[f.k] ?? (f.k === "starter"), onchange: e => set(e.target.checked) });
+    case "textarea":
+      return el("textarea", { id, value: x[f.k] ?? "", oninput: e => set(e.target.value) });
+    case "color":
+      return el("input", { id, type: "color", value: x[f.k] ?? "#7C6CF2", oninput: e => set(e.target.value.toUpperCase()) });
+    case "palette": {
+      const wrap = el("div", { className: "swatches", id });
+      PALETTE.forEach((c, i) => wrap.append(el("span", { className: (x[f.k] ?? 0) === i ? "on" : "", style: `background:${c}`, title: `${i}: ${c}`,
+        onclick: () => { set(i); renderForm(); } })));
+      return wrap;
+    }
+    case "sprite": {
+      // Free text (a sprite may not exist until "Regenerate art"), with existing sprites suggested.
+      const list = el("datalist", { id: id + "_list" }, Object.keys(sprites).map(n => el("option", { value: n })));
+      const input = el("input", { id, value: x[f.k] ?? "", placeholder: x.id ? `e.g. px_${x.id}` : "px_…", oninput: e => set(e.target.value.trim()) });
+      input.setAttribute("list", list.id);
+      const wrap = el("div", { style: "display:flex;gap:6px" }, input, list);
+      if (x.id !== undefined) wrap.append(el("button", { className: "act", type: "button", textContent: "Use px_<id>",
+        title: "Name the sprite after this item's id", onclick: () => { set(`px_${x.id}`); renderForm(); } }));
+      return wrap;
+    }
+    case "enum": {
+      const opts = typeof f.options === "function" ? f.options() : f.options;
+      const s = el("select", { id, onchange: e => set(e.target.value) });
+      const val = x[f.k] ?? "";
+      if (val && !opts.includes(val)) opts.push(val); // keep unknown values visible (flagged by validation)
+      opts.forEach(o => s.append(el("option", { value: o, textContent: o === "" ? "(none)" : o, selected: o === val })));
+      return s;
+    }
+    default:
+      return el("input", { id, value: x[f.k] ?? "", oninput: e => set(f.t === "id" ? e.target.value.trim() : e.target.value) });
+  }
+}
+
+function renderMessages() {
+  $("left").replaceChildren(el("p", { textContent: "One message per line. These are shown across the app (encouragement, pause screen, comebacks)." }));
+  const box = el("div", { className: "msgs" });
+  for (const [k, lines] of Object.entries(content.messages)) {
+    box.append(el("div", {}, el("h2", { textContent: `${k} (${lines.length})` }),
+      el("textarea", { value: lines.join("\n"), oninput: e => {
+        content.messages[k] = e.target.value.split("\n").map(s => s.trim()).filter(Boolean); setDirty(true); renderIssues(validate()); } })));
+  }
+  $("center").replaceChildren(box);
+  $("preview").replaceChildren(el("p", { textContent: "No preview for messages." }));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Sprite previews (frame 0, composed like SpriteCatalog.heroLayers)
+// ---------------------------------------------------------------------------------------------
+const imgCache = {};
+function img(name) {
+  if (!imgCache[name]) imgCache[name] = new Promise(res => {
+    const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = `/sprites/${name}.png?${Date.now()}`;
+  });
+  return imgCache[name];
+}
+
+async function heroPreview(equip) {
+  const c = el("canvas", { className: "px", width: 48, height: 48 }); c.style.width = c.style.height = "192px";
+  const g = c.getContext("2d"); g.imageSmoothingEnabled = false;
+  const slots = [...content.slots].sort((a, b) => a.layer - b.layer);
+  const layers = [{ layer: 1, sprite: "px_hero_body_light", kind: "BODY" }];
+  for (const s of slots) {
+    const itemId = equip[s.id] ?? (s.required ? s.defaultItem : null);
+    const it = content.items.find(i => i.id === itemId);
+    const sprite = it?.sprite ?? (s.kind === "BACKDROP" ? s.defaultSprite : null);
+    if (sprite) layers.push({ layer: s.layer, sprite, kind: s.kind ?? "OVERLAY" });
+  }
+  layers.sort((a, b) => a.layer - b.layer);
+  for (const l of layers) {
+    const im = await img(l.sprite); if (!im) continue;
+    if (l.kind === "BACKDROP") g.drawImage(im, 0, 0, 48, 48, 0, 0, 48, 48);
+    else g.drawImage(im, 0, 0, 32, 32, HERO_AT[0], HERO_AT[1], 32, 32);
+  }
+  return c;
+}
+
+async function renderPreview() {
+  const p = $("preview"), x = cur();
+  if (!x) return p.replaceChildren();
+  if (tab === "items") {
+    const slot = content.slots.find(s => s.id === x.slot);
+    const nodes = [await heroPreview({ [x.slot]: x.id })];
+    if (!x.sprite) nodes.push(el("p", { textContent: "No sprite yet: the app will use the shape-drawn fallback." }));
+    if (slot) nodes.push(el("p", { textContent: `Slot: ${slot.name} (${slot.kind ?? "OVERLAY"}, layer ${slot.layer})` }));
+    p.replaceChildren(...nodes);
+  } else if (tab === "achievements") {
+    const c = el("canvas", { className: "px", width: 24, height: 24 }); c.style.width = c.style.height = "120px";
+    const g = c.getContext("2d"); g.imageSmoothingEnabled = false;
+    const im = await img("px_badges");
+    if (im) g.drawImage(im, (sel % BADGE_COLS) * 24, Math.floor(sel / BADGE_COLS) * 24, 24, 24, 0, 0, 24, 24);
+    p.replaceChildren(c, el("p", { textContent: "Badge from the last generator run. Regenerate art after changes." }));
+  } else if (tab === "slots") {
+    const items = content.items.filter(i => i.slot === x.id);
+    p.replaceChildren(el("p", { textContent: `${items.length} item(s): ${items.map(i => i.name).join(", ") || "none"}` }));
+  } else if (tab === "quests") {
+    p.replaceChildren(el("p", {}, el("span", { style: `display:inline-block;width:14px;height:14px;border-radius:50%;background:${PALETTE[x.color ?? 0]};margin-right:6px` }),
+      `${x.icon ?? "Star"} · ${x.title}`));
+  } else p.replaceChildren();
+}
+
+// ---------------------------------------------------------------------------------------------
+// I/O
+// ---------------------------------------------------------------------------------------------
+async function load() {
+  [content, schema, sprites] = await Promise.all(["/api/content", "/api/schema", "/api/sprites"].map(u => fetch(u).then(r => r.json())));
+  setDirty(false); status("Loaded"); render();
+}
+
+async function save() {
+  const issues = validate();
+  if (issues.length && !confirm(`${issues.length} problem(s) found. CI will reject these. Save anyway?`)) return;
+  const r = await fetch("/api/content", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(content) });
+  const j = await r.json();
+  if (r.ok) { setDirty(false); status(`Saved to ${j.saved}`, "ok"); } else status(j.error, "bad");
+}
+
+async function regenerate() {
+  if (dirty && !confirm("Save first? The generator reads the saved content.json.")) return;
+  if (dirty) await save();
+  $("regen").disabled = true; $("genOut").textContent = "Running generator…";
+  const j = await fetch("/api/generate", { method: "POST" }).then(r => r.json());
+  $("genOut").textContent = j.output; $("regen").disabled = false;
+  Object.keys(imgCache).forEach(k => delete imgCache[k]);
+  sprites = await fetch("/api/sprites").then(r => r.json());
+  status(j.ok ? "Art regenerated" : "Generator failed", j.ok ? "ok" : "bad"); render();
+}
+
+$("save").onclick = save;
+$("regen").onclick = regenerate;
+addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); if (dirty) save(); } });
+addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+load().catch(e => status("Failed to load: " + e));
+</script>
+</body>
+</html>

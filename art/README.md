@@ -19,6 +19,8 @@ Real art is very welcome. This guide explains how to make art that fits.
 | Anti-aliasing | none; no semi-transparent pixels |
 
 ## Sprite sheets
+Cosmetics and their slots are defined in `content.json` (see the [content editor](../tools/content-editor/README.md)), which references sprites by file name. After adding or resizing any `px_*.png`, run the generator. It regenerates `ui/pixel/SpriteRegistry.kt`, and a test fails if the registry is stale.
+
 - Sheets are **fixed grids**: one row per animation, frames left to right, no padding.
 - Export as **PNG to `app/src/main/res/drawable-nodpi/`**. The `-nodpi` folder stops Android from resizing the image.
 - Name files `px_<thing>.png`. Cosmetics use their shop id, e.g. `hat_wizard` becomes `px_hat_wizard.png`.
@@ -29,7 +31,10 @@ The hero is drawn as layers, bottom to top:
 1. `px_bg_<id>.png`: round 48×48 backdrop (`px_bg_default.png` when none is equipped)
 2. `px_hero_body_<tone>.png`: skin, hair, outline and boots, one sheet per skin tone (`light`, `medium`, `deep`)
 3. `px_cloak_<colour>.png`: the cloak pixels only
-4. `px_hat_<id>.png`: a single-frame overlay
+4. `px_armour_<id>.png`: a single-frame overlay that follows the `body` anchor (it hops with the celebrate jump)
+5. `px_hat_<id>.png`: a single-frame overlay that follows the `head` anchor
+
+The order comes from each slot's `layer` in `content.json`. New slots slot in automatically.
 
 Layers 2–4 are 32×32 and sit at offset (8, 13) inside the backdrop. Each layer animates at its own fps (for example the night sky twinkles at 1.5 fps while the hero idles at 3 fps). All loops should divide evenly into the renderer's 12-second clock.
 
@@ -55,9 +60,9 @@ Body and cloak sheets share this layout:
 The detail screen stretches the scene to fill its width (`integerScale = false`). Thumbnails keep whole-number scaling.
 
 ### Achievement badges
-`px_badges.png` is an atlas of 24×24 medals, 5 per row, in the same order as `Achievements.all`. Each badge's animation name is the achievement id, and its position comes from `SpriteAnim.col`/`row`. A medal is a tier disc (bronze, silver or gold, with a lit top-left rim) on purple ribbon tails, with a 12×12 symbol centred at (6, 4). Locked badges aren't drawn separately: the app tints the unlocked art into a flat silhouette.
+`px_badges.png` is an atlas of 24×24 medals, 5 per row, in the same order as the achievements in `content.json`. Each badge's animation name is the achievement id, and its position comes from `SpriteAnim.col`/`row`. A medal is a tier disc (bronze, silver or gold, with a lit top-left rim) on purple ribbon tails, with a 12×12 symbol centred at (6, 4). Locked badges aren't drawn separately: the app tints the unlocked art into a flat silhouette.
 
-To add an achievement: add it to `Achievements.all`, add a matching `(id, tier)` entry to `BADGES` in the generator (in the same position), and add a symbol to `GLYPHS`. `GeneratorSyncTest` fails if the two orders differ.
+To add an achievement, use the [content editor](../tools/content-editor/README.md). The generator reads the order and tiers straight from `content.json`. To give the achievement its own symbol, add a 12×12 grid to `GLYPHS`, keyed by the achievement id; until then it gets a star.
 
 `px_sparkle.png` (48×48, 8 frames at 10 fps) is drawn over the 48px hero avatar in the level-up and achievement dialog. It's the same logical size, so both snap to the same pixel scale.
 

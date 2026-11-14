@@ -41,7 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import org.openfocus.app.data.db.Difficulty
+import org.openfocus.app.core.content.GameContent
 import org.openfocus.app.data.db.HabitEntity
 import org.openfocus.app.data.db.HabitKind
 import org.openfocus.app.ui.components.HeroAvatar
@@ -50,17 +50,7 @@ import org.openfocus.app.ui.pixel.SpriteCatalog
 import org.openfocus.app.ui.components.SkinTonePicker
 import org.openfocus.app.ui.components.appContainer
 
-private data class Starter(val title: String, val icon: String, val kind: HabitKind = HabitKind.BUILD, val color: Int)
-
-private val starters = listOf(
-    Starter("Drink a glass of water", "Water", color = 4),
-    Starter("Read 10 pages", "Book", color = 0),
-    Starter("10 minute walk", "Walk", color = 6),
-    Starter("Meditate 5 minutes", "Meditate", color = 1),
-    Starter("Journal one line", "Journal", color = 3),
-    Starter("No phone in bed", "NoPhone", color = 5),
-    Starter("Doomscrolling", "Phone", HabitKind.BREAK, color = 2),
-)
+private val starters get() = GameContent.current.quests.filter { it.starter }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -83,14 +73,14 @@ fun OnboardingScreen() {
             Spacer(Modifier.height(24.dp))
             when (page) {
                 0 -> {
-                    HeroAvatar(null, null, "bg_sunrise", size = 140.dp, skinTone = tone)
+                    HeroAvatar(mapOf("backdrop" to "bg_sunrise"), size = 140.dp, skinTone = tone)
                     Text("Welcome to OpenFocus", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
                     Text(
                         "Turn your attention into an adventure. Build habits, focus deeply, block the endless feeds, and climb towards the goals that matter.",
                         textAlign = TextAlign.Center,
                     )
                     OutlinedTextField(name, { name = it.take(24) }, label = { Text("Name your hero") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    SkinTonePicker(tone, null, null, onPick = { tone = it })
+                    SkinTonePicker(tone, emptyMap(), onPick = { tone = it })
                     Button(onClick = { page = 1 }, modifier = Modifier.fillMaxWidth()) { Text("Next") }
                 }
                 1 -> {
@@ -129,7 +119,8 @@ fun OnboardingScreen() {
                                 picked.sorted().forEachIndexed { order, i ->
                                     val s = starters[i]
                                     c.habits.save(HabitEntity(ownerId = "", title = s.title, icon = s.icon, kind = s.kind,
-                                        colorIndex = s.color, difficulty = Difficulty.EASY, sortOrder = order))
+                                        colorIndex = s.color, difficulty = s.difficulty, frequency = s.frequency,
+                                        target = s.target, sortOrder = order))
                                 }
                                 c.settings.update { it.copy(onboardingDone = true) }
                             }

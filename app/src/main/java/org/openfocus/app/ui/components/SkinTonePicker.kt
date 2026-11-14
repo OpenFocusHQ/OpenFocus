@@ -19,13 +19,13 @@ import org.openfocus.app.ui.pixel.SkinTone
 
 /** Row of hero previews, one per skin tone. */
 @Composable
-fun SkinTonePicker(selected: String?, colorId: String?, hatId: String?, onPick: (String) -> Unit, modifier: Modifier = Modifier) {
+fun SkinTonePicker(selected: String?, equipped: Map<String, String>, onPick: (String) -> Unit, modifier: Modifier = Modifier) {
     val current = SkinTone.of(selected)
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         SkinTone.entries.forEach { tone ->
             val isSel = tone == current
             HeroAvatar(
-                colorId, hatId, null, size = 64.dp, skinTone = tone.id, animate = false,
+                equipped - "backdrop", size = 64.dp, skinTone = tone.id, animate = false,
                 modifier = Modifier
                     .clip(CircleShape)
                     .border(3.dp, if (isSel) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape)

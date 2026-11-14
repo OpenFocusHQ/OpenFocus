@@ -4,6 +4,9 @@ import androidx.annotation.DrawableRes
 import androidx.compose.ui.unit.IntOffset
 import org.openfocus.app.R
 import org.openfocus.app.core.Achievements
+import org.openfocus.app.core.ShopCatalog
+import org.openfocus.app.core.content.ItemDef
+import org.openfocus.app.core.content.SlotKind
 
 /** An animation: [frames] frames on [row], starting at column [col] (for icon atlases). */
 data class SpriteAnim(val row: Int, val frames: Int, val fps: Float = 4f, val col: Int = 0)
@@ -62,6 +65,13 @@ object SpriteCatalog {
         CELEBRATE to listOf(IntOffset(0, 0), IntOffset(0, -1)),
     )
 
+    /** Torso offsets: still while idle/resting, hops with the celebrate jump (armour follows this). */
+    private val TORSO = mapOf(
+        IDLE to List(4) { IntOffset.Zero },
+        REST to listOf(IntOffset.Zero),
+        CELEBRATE to listOf(IntOffset(0, 0), IntOffset(0, -1)),
+    )
+
     private val heroAnims = mapOf(
         IDLE to SpriteAnim(0, 4, 3f),
         REST to SpriteAnim(1, 1),
@@ -69,36 +79,40 @@ object SpriteCatalog {
     )
 
     val bodies: Map<SkinTone, SpriteSheet> = mapOf(
-        SkinTone.LIGHT to SpriteSheet(R.drawable.px_hero_body_light, 32, 32, heroAnims, mapOf("head" to HEAD)),
-        SkinTone.MEDIUM to SpriteSheet(R.drawable.px_hero_body_medium, 32, 32, heroAnims, mapOf("head" to HEAD)),
-        SkinTone.DEEP to SpriteSheet(R.drawable.px_hero_body_deep, 32, 32, heroAnims, mapOf("head" to HEAD)),
+        SkinTone.LIGHT to SpriteSheet(R.drawable.px_hero_body_light, 32, 32, heroAnims, mapOf("head" to HEAD, "body" to TORSO)),
+        SkinTone.MEDIUM to SpriteSheet(R.drawable.px_hero_body_medium, 32, 32, heroAnims, mapOf("head" to HEAD, "body" to TORSO)),
+        SkinTone.DEEP to SpriteSheet(R.drawable.px_hero_body_deep, 32, 32, heroAnims, mapOf("head" to HEAD, "body" to TORSO)),
     )
     val heroBody: SpriteSheet get() = bodies.getValue(SkinTone.LIGHT)
 
-    val cloaks: Map<String, SpriteSheet> = mapOf(
-        "color_violet" to SpriteSheet(R.drawable.px_cloak_violet, 32, 32, heroAnims),
-        "color_teal" to SpriteSheet(R.drawable.px_cloak_teal, 32, 32, heroAnims),
-        "color_ember" to SpriteSheet(R.drawable.px_cloak_ember, 32, 32, heroAnims),
-        "color_gold" to SpriteSheet(R.drawable.px_cloak_gold, 32, 32, heroAnims),
-    )
-
     private val still = mapOf(IDLE to SpriteAnim(0, 1))
 
-    val hats: Map<String, SpriteSheet> = mapOf(
-        "hat_party" to SpriteSheet(R.drawable.px_hat_party, 32, 32, still),
-        "hat_beanie" to SpriteSheet(R.drawable.px_hat_beanie, 32, 32, still),
-        "hat_wizard" to SpriteSheet(R.drawable.px_hat_wizard, 32, 32, still),
-        "hat_crown" to SpriteSheet(R.drawable.px_hat_crown, 32, 32, still),
-    )
+    private fun named(name: String, fw: Int, fh: Int, anims: Map<String, SpriteAnim>): SpriteSheet? =
+        SpriteRegistry.sprites[name]?.let { SpriteSheet(it.resId, fw, fh, anims) }
 
-    /** Round 48x48 backdrops. `null` key = the default backdrop when none is equipped. */
-    val backdrops: Map<String?, SpriteSheet> = mapOf(
-        null to SpriteSheet(R.drawable.px_bg_default, 48, 48, mapOf(IDLE to SpriteAnim(0, 1), NIGHT to SpriteAnim(1, 1))),
-        "bg_sunrise" to SpriteSheet(R.drawable.px_bg_sunrise, 48, 48, still),
-        "bg_forest" to SpriteSheet(R.drawable.px_bg_forest, 48, 48, still),
-        "bg_ocean" to SpriteSheet(R.drawable.px_bg_ocean, 48, 48, still),
-        "bg_night" to SpriteSheet(R.drawable.px_bg_night, 48, 48, mapOf(IDLE to SpriteAnim(0, 2, 1.5f))),
-    )
+    /** A round 48x48 backdrop; a second row (if present) is its dark-theme version. */
+    fun backdropSheet(name: String, frames: Int = 1, fps: Float = 1f): SpriteSheet? {
+        val info = SpriteRegistry.sprites[name] ?: return null
+        val anims = buildMap {
+            put(IDLE, SpriteAnim(0, frames.coerceAtLeast(1), fps))
+            if (info.height >= 96) put(NIGHT, SpriteAnim(1, 1))
+        }
+        return SpriteSheet(info.resId, 48, 48, anims)
+    }
+
+    /** The sheet for a cosmetic item, shaped by its slot's kind; null if its art doesn't exist yet. */
+    fun itemSheet(item: ItemDef): SpriteSheet? {
+        val name = item.sprite ?: return null
+        return when (ShopCatalog.slot(item.slot)?.kind ?: return null) {
+            SlotKind.BODY -> named(name, 32, 32, heroAnims)
+            SlotKind.OVERLAY -> named(name, 32, 32, still)
+            SlotKind.BACKDROP -> backdropSheet(name, item.frames, item.fps)
+        }
+    }
+
+    /** Backdrop shown when none is equipped. */
+    val defaultBackdrop: SpriteSheet?
+        get() = ShopCatalog.slots.firstOrNull { it.kind == SlotKind.BACKDROP }?.defaultSprite?.let { backdropSheet(it) }
 
     /** Where the 32x32 hero stands inside a 48x48 backdrop. */
     val HERO_IN_BACKDROP = IntOffset(8, 13)
@@ -148,31 +162,38 @@ object SpriteCatalog {
     val coin = SpriteSheet(R.drawable.px_coin, 16, 16, mapOf("spin" to SpriteAnim(0, 6, 8f)))
 
     /**
-     * Layers for the hero, bottom to top. Returns null if any required sprite is missing so the
-     * caller can fall back to the shape-drawn hero.
-     * @param withBackdrop include the round backdrop (pass the equipped backdrop id, may be null).
+     * Layers for the hero, bottom to top, following the content's slot layers (the body sits at
+     * layer 1). Returns null if anything equipped has no sprite yet, so the caller can fall back to
+     * the shape-drawn hero.
+     * @param equipped slot id -> item id (defaults for required slots are filled in).
      */
     fun heroLayers(
-        colorId: String?,
-        hatId: String?,
+        equipped: Map<String, String>,
         pose: HeroPose = HeroPose.IDLE,
         skin: SkinTone = SkinTone.LIGHT,
         withBackdrop: Boolean = false,
-        backdropId: String? = null,
-        /** Dark theme: use a backdrop's NIGHT variant when it has one. */
         night: Boolean = false,
     ): List<SpriteLayer>? {
-        val cloak = cloaks[colorId ?: "color_violet"] ?: return null
         val body = bodies[skin] ?: return null
-        val layers = mutableListOf<SpriteLayer>()
-        val at = if (withBackdrop) {
-            val bg = backdrops[backdropId] ?: return null
-            layers += SpriteLayer(bg, if (night && NIGHT in bg.anims) NIGHT else IDLE)
-            HERO_IN_BACKDROP
-        } else IntOffset.Zero
-        layers += SpriteLayer(body, pose.anim, at)
-        layers += SpriteLayer(cloak, pose.anim, at)
-        if (hatId != null) layers += SpriteLayer(hats[hatId] ?: return null, IDLE, at, followAnchor = "head")
-        return layers
+        val at = if (withBackdrop) HERO_IN_BACKDROP else IntOffset.Zero
+        val eq = ShopCatalog.resolveEquipped(equipped)
+        val stack = mutableListOf(BODY_LAYER to SpriteLayer(body, pose.anim, at))
+        for (slot in ShopCatalog.slots) {
+            val item = ShopCatalog.byId(eq[slot.id])
+            when (slot.kind) {
+                SlotKind.BACKDROP -> if (withBackdrop) {
+                    val bg = if (item != null) itemSheet(item) ?: return null else defaultBackdrop ?: continue
+                    stack += slot.layer to SpriteLayer(bg, if (night && NIGHT in bg.anims) NIGHT else IDLE)
+                }
+                SlotKind.BODY -> if (item != null) stack += slot.layer to SpriteLayer(itemSheet(item) ?: return null, pose.anim, at)
+                SlotKind.OVERLAY -> if (item != null) {
+                    stack += slot.layer to SpriteLayer(itemSheet(item) ?: return null, IDLE, at, followAnchor = slot.anchor)
+                }
+            }
+        }
+        return stack.sortedBy { it.first }.map { it.second }
     }
+
+    /** The hero's own body is drawn at this layer; slots order themselves around it. */
+    const val BODY_LAYER = 1
 }

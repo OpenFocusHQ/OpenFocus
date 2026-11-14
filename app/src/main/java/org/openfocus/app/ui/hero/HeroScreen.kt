@@ -56,9 +56,9 @@ import kotlinx.coroutines.launch
 import org.openfocus.app.core.Achievements
 import org.openfocus.app.core.GameRules
 import org.openfocus.app.core.GameStats
-import org.openfocus.app.core.ItemSlot
 import org.openfocus.app.core.ShopCatalog
 import org.openfocus.app.data.db.ProfileEntity
+import org.openfocus.app.data.db.equippedMap
 import org.openfocus.app.data.db.RewardEntity
 import org.openfocus.app.ui.components.AchievementBadge
 import org.openfocus.app.ui.components.AppIcons
@@ -109,7 +109,7 @@ fun HeroScreen(nav: NavController) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(name, { name = it.take(24) }, singleLine = true, label = { Text("Name") })
                     Text("Skin tone", style = MaterialTheme.typography.titleSmall)
-                    SkinTonePicker(tone, profile?.avatarColor, profile?.avatarHat, onPick = { tone = it })
+                    SkinTonePicker(tone, profile?.equippedMap().orEmpty(), onPick = { tone = it })
                 }
             },
             confirmButton = {
@@ -179,43 +179,37 @@ private fun ShopTab(profile: ProfileEntity?) {
     val c = appContainer()
     val scope = rememberCoroutineScope()
     val owned by c.shop.inventory.collectAsState(initial = emptyList())
-    val ownedIds = owned.map { it.itemId }.toSet() + ShopCatalog.items.filter { it.price == 0 }.map { it.id }
+    val ownedIds = owned.map { it.itemId }.toSet() + ShopCatalog.freeItems.map { it.id }
     val level = GameRules.levelFor(profile?.totalXp ?: 0)
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Text("Spend coins on cosmetics for your hero. (Placeholder art — contributions welcome!)",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        ItemSlot.entries.forEach { slot ->
-            item { Text(slot.name.lowercase().replaceFirstChar { it.uppercase() } + "s", style = MaterialTheme.typography.titleSmall) }
-            items(ShopCatalog.items.filter { it.slot == slot }, key = { it.id }) { item ->
+        val wearing = ShopCatalog.resolveEquipped(profile?.equippedMap().orEmpty())
+        ShopCatalog.slots.forEach { slot ->
+            val slotItems = ShopCatalog.itemsIn(slot.id)
+            if (slotItems.isEmpty()) return@forEach
+            item(key = "slot_${slot.id}") { Text(slot.name, style = MaterialTheme.typography.titleSmall) }
+            items(slotItems, key = { it.id }) { item ->
                 val own = item.id in ownedIds
-                val equipped = when (slot) {
-                    ItemSlot.HAT -> profile?.avatarHat == item.id
-                    ItemSlot.BACKDROP -> profile?.avatarBackdrop == item.id
-                    ItemSlot.COLOR -> (profile?.avatarColor ?: ShopCatalog.defaultColor.id) == item.id
-                }
+                val equipped = wearing[slot.id] == item.id
                 Card(shape = RoundedCornerShape(16.dp)) {
                     Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        HeroAvatar(
-                            colorId = if (slot == ItemSlot.COLOR) item.id else profile?.avatarColor,
-                            hatId = if (slot == ItemSlot.HAT) item.id else null,
-                            backdropId = if (slot == ItemSlot.BACKDROP) item.id else null,
-                            size = 52.dp,
-                            skinTone = profile?.skinTone,
-                            animate = false,
-                        )
+                        // Preview: what you're wearing now, with this item swapped in.
+                        HeroAvatar(wearing + (slot.id to item.id), size = 52.dp, skinTone = profile?.skinTone, animate = false)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(item.name, style = MaterialTheme.typography.titleSmall)
+                            if (item.description.isNotBlank()) Text(item.description, style = MaterialTheme.typography.bodySmall)
                             if (!own) Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.MonetizationOn, null, tint = Coin, modifier = Modifier.size(14.dp))
                                 Text(" ${item.price}" + if (level < item.minLevel) " · Lv ${item.minLevel}+" else "", style = MaterialTheme.typography.labelMedium)
                             }
                         }
                         when {
-                            own -> OutlinedButton(onClick = { scope.launch { c.shop.equip(item) } }, enabled = !(equipped && slot == ItemSlot.COLOR)) {
-                                Text(if (equipped) (if (slot == ItemSlot.COLOR) "Wearing" else "Take off") else "Wear")
+                            own -> OutlinedButton(onClick = { scope.launch { c.shop.equip(item) } }, enabled = !(equipped && slot.required)) {
+                                Text(if (equipped) (if (slot.required) "Wearing" else "Take off") else "Wear")
                             }
                             else -> FilledTonalButton(
                                 enabled = level >= item.minLevel && (profile?.coins ?: 0) >= item.price,

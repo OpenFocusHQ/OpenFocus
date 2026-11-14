@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -13,15 +14,33 @@ android {
         applicationId = "org.openfocus.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // CI sets these per build (see .github/workflows/build.yml); local builds use 1 / "<base>.0-dev".
+        val build = System.getenv("OPENFOCUS_BUILD_NUMBER")?.toIntOrNull()
+        versionCode = build ?: 1
+        versionName = "${providers.gradleProperty("openfocus.version").get()}.${build ?: "0-dev"}"
         vectorDrawables { useSupportLibrary = true }
+    }
+
+    signingConfigs {
+        // Release signing comes from the environment (CI secrets). Without it, release builds are
+        // signed with the debug key so they still install for testing.
+        create("release") {
+            val store = System.getenv("OPENFOCUS_KEYSTORE")
+            if (store != null && file(store).exists()) {
+                storeFile = file(store)
+                storePassword = System.getenv("OPENFOCUS_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("OPENFOCUS_KEY_ALIAS")
+                keyPassword = System.getenv("OPENFOCUS_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            val release = signingConfigs.getByName("release")
+            signingConfig = if (release.storeFile != null) release else signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -63,6 +82,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.kotlinx.serialization.json)
     debugImplementation(libs.androidx.ui.tooling)
 
     testImplementation(libs.junit)

@@ -1,11 +1,12 @@
 package org.openfocus.app.data.repo
 
 import org.openfocus.app.core.Days
-import org.openfocus.app.core.ItemSlot
 import org.openfocus.app.core.ShopCatalog
-import org.openfocus.app.core.ShopItem
+import org.openfocus.app.core.content.ItemDef
 import org.openfocus.app.data.db.AppDatabase
 import org.openfocus.app.data.db.InventoryEntity
+import org.openfocus.app.data.db.equippedMap
+import org.openfocus.app.data.db.withEquipped
 import org.openfocus.app.data.db.RewardEntity
 import org.openfocus.app.data.prefs.SettingsStore
 import org.openfocus.app.game.EventTypes
@@ -19,19 +20,19 @@ class ShopRepository(db: AppDatabase, private val game: GameEngine, private val 
     val achievements = dao.observeAchievements()
     val events = dao.observeEvents()
 
-    suspend fun buy(item: ShopItem): Boolean {
+    suspend fun buy(item: ItemDef): Boolean {
         if (item.price > 0 && !game.spend(item.price, EventTypes.ITEM_BOUGHT, item.id, "Bought ${item.name}")) return false
         dao.addItem(InventoryEntity(item.id))
         equip(item)
         return true
     }
 
-    suspend fun equip(item: ShopItem) = game.updateProfile {
-        when (item.slot) {
-            ItemSlot.HAT -> it.copy(avatarHat = if (it.avatarHat == item.id) null else item.id)
-            ItemSlot.BACKDROP -> it.copy(avatarBackdrop = if (it.avatarBackdrop == item.id) null else item.id)
-            ItemSlot.COLOR -> it.copy(avatarColor = item.id)
-        }
+    /** Wear [item]; wearing it again takes it off, unless its slot must always be filled. */
+    suspend fun equip(item: ItemDef) = game.updateProfile { p ->
+        val slot = ShopCatalog.slot(item.slot) ?: return@updateProfile p
+        val current = ShopCatalog.resolveEquipped(p.equippedMap())
+        val next = if (current[slot.id] == item.id && !slot.required) current - slot.id else current + (slot.id to item.id)
+        p.withEquipped(next)
     }
 
     suspend fun saveReward(r: RewardEntity) = dao.upsertReward(r.copy(ownerId = game.profile().id, updatedAt = System.currentTimeMillis()))
@@ -79,5 +80,4 @@ class ShopRepository(db: AppDatabase, private val game: GameEngine, private val 
         }
     }
 
-    fun ownsDefaults() = ShopCatalog.items.filter { it.price == 0 }
 }
