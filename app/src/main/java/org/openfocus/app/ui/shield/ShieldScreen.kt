@@ -63,7 +63,9 @@ import org.openfocus.app.data.db.BlockMode
 import org.openfocus.app.data.db.BlockRuleEntity
 import org.openfocus.app.data.db.BlockScheduleEntity
 import org.openfocus.app.data.prefs.ShortsPlatform
+import org.openfocus.app.ui.components.AccessibilityDisclosureDialog
 import org.openfocus.app.ui.components.SectionHeader
+import org.openfocus.app.ui.components.openAccessibilitySettings
 import org.openfocus.app.ui.components.appContainer
 import org.openfocus.app.ui.components.formatMinuteOfDay
 import org.openfocus.app.ui.theme.Success
@@ -79,6 +81,8 @@ fun ShieldScreen(nav: NavController) {
     var a11y by remember { mutableStateOf(false) }
     var usage by remember { mutableStateOf(false) }
     var editSchedule by remember { mutableStateOf<BlockScheduleEntity?>(null) }
+    var disclose by remember { mutableStateOf(false) }
+    if (disclose) AccessibilityDisclosureDialog(onAgree = { disclose = false; openAccessibilitySettings(context) }, onDismiss = { disclose = false })
     LifecycleResumeEffect(Unit) {
         a11y = BlockerAccessibilityService.isEnabled(context)
         usage = c.usage.hasPermission()
@@ -96,7 +100,7 @@ fun ShieldScreen(nav: NavController) {
                 ok = a11y, title = "Accessibility service",
                 body = "Required. Lets OpenFocus see which app is open so it can step in. Nothing is recorded or sent anywhere.",
                 action = "Open settings",
-            ) { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            ) { disclose = true }
         }
         item {
             PermissionCard(

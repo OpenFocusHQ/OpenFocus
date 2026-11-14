@@ -35,9 +35,13 @@ class BlockerAccessibilityService : AccessibilityService() {
         }
     }
 
+    /** Whether screen-content events are currently subscribed (only inside enabled video apps). */
+    private var contentEvents = true // config may differ from the runtime mask until the first update
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         running = true
+        watchContentFor(null)
         refreshExempt(force = true)
         handler.postDelayed(recheck, RECHECK_MS)
     }
@@ -56,10 +60,22 @@ class BlockerAccessibilityService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             if (pkg != currentPkg) {
                 currentPkg = pkg
+                watchContentFor(pkg)
                 if (evaluate(pkg)) return
             }
         }
         checkShorts(pkg)
+    }
+
+    /**
+     * Least privilege: subscribe to screen-content events only while an enabled short-video app is
+     * in front. Everywhere else the Shield only learns which app is open.
+     */
+    private fun watchContentFor(pkg: String?) {
+        val want = ShortsDetector.needsContentEvents(pkg, container.settings.value.shorts)
+        if (want == contentEvents) return
+        contentEvents = want
+        serviceInfo = serviceInfo?.apply { eventTypes = ShortsDetector.eventMask(want) } ?: return
     }
 
     /** @return true if the app was blocked. */

@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">OpenFocus</string>
     <string name="accessibility_service_label">OpenFocus Shield</string>
-    <string name="accessibility_service_description">OpenFocus Shield watches which app is in the foreground so it can pause apps you chose to block, stop short-form video feeds (Shorts, Reels, TikTok) and keep focus sessions distraction-free. It reads the app name and, only inside supported video apps, the screen layout ids needed to recognise a short-video feed. Nothing leaves your device.</string>
+    <string name="accessibility_service_description">OpenFocus Shield checks which app is open so it can show a pause screen for apps you chose to block, and step out of Shorts/Reels feeds. It only looks at screen content inside the video apps you enabled in the Shield tab (to recognise their short-video feed), never reads what you type, and never records your screen. OpenFocus has no internet permission: nothing leaves your device. Note: some payment and banking apps limit payments while an accessibility service installed outside Google Play is on.</string>
 </resources>

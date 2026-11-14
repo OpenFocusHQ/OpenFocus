@@ -66,9 +66,10 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
 
-      # Optional release signing. Add these repository secrets to sign with your own key
-      # (see docs/RELEASING.md): OPENFOCUS_KEYSTORE_BASE64, OPENFOCUS_KEYSTORE_PASSWORD,
-      # OPENFOCUS_KEY_ALIAS, OPENFOCUS_KEY_PASSWORD. Without them the APK is debug-signed.
+      # Releases are only published when signed with your own key (repository secrets, see
+      # docs/RELEASING.md): OPENFOCUS_KEYSTORE_BASE64, OPENFOCUS_KEYSTORE_PASSWORD,
+      # OPENFOCUS_KEY_ALIAS, OPENFOCUS_KEY_PASSWORD. Debug-signed APKs are flagged by Play Protect
+      # and can't be updated in place, so without the secrets nothing is published.
       - name: Set up signing key
         id: signing
         env:
@@ -80,10 +81,13 @@ jobs:
             echo "signed=true" >> "$GITHUB_OUTPUT"
           else
             echo "signed=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No release signing secrets; publishing a debug-signed testing build."
+            echo "::notice::No release signing secrets configured, so no release was published. See docs/RELEASING.md."
+            echo "### No release published" >> "$GITHUB_STEP_SUMMARY"
+            echo "Add the signing secrets described in docs/RELEASING.md to publish signed releases." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Build release APK
+        if: steps.signing.outputs.signed == 'true'
         env:
           OPENFOCUS_KEYSTORE: ${{ steps.signing.outputs.keystore }}
           OPENFOCUS_KEYSTORE_PASSWORD: ${{ secrets.OPENFOCUS_KEYSTORE_PASSWORD }}
@@ -92,6 +96,7 @@ jobs:
         run: ./gradlew :app:assembleRelease
 
       - name: Prepare release files
+        if: steps.signing.outputs.signed == 'true'
         id: files
         run: |
           base=$(sed -n 's/^openfocus.version=//p' gradle.properties)
@@ -107,15 +112,14 @@ jobs:
             echo "After installing, enable *OpenFocus Shield* in Settings → Accessibility."
             echo "On Android 13+, first allow *restricted settings* in the app's info page (⋮ menu)."
             echo
-            if [ "${{ steps.signing.outputs.signed }}" != "true" ]; then
-              echo "> **Testing build:** signed with a temporary debug key, so you may need to uninstall the previous"
-              echo "> version before installing this one (your data is cleared)."
-              echo
-            fi
+            echo "> Some payment apps (e.g. Google Pay) limit payments while an accessibility service installed"
+            echo "> outside Google Play is on. Switch *OpenFocus Shield* off in Accessibility settings while you pay."
+            echo
             echo "SHA-256: \`$(cut -d' ' -f1 "$apk.sha256")\`"
           } > release-notes.md
 
       - name: Create GitHub release
+        if: steps.signing.outputs.signed == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.files.outputs.version }}

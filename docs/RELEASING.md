@@ -14,7 +14,7 @@ Pull requests run step 1 only.
 - CI sets `OPENFOCUS_BUILD_NUMBER` to the workflow run number. It becomes both the APK `versionCode` (so every release is an upgrade) and the last part of `versionName`.
 
 ## Signing with your own key (recommended)
-Without signing secrets, releases are **debug-signed testing builds** (the release notes say so). Each runner has a different debug key, so phones can't update from one of these builds to the next; you have to uninstall first. To publish properly signed releases:
+**Without signing secrets, nothing is published.** CI still tests and builds every push. Debug-signed APKs are flagged by Play Protect, and phones can't update from one to the next, so they're no longer released. To publish signed releases:
 
 ```bash
 keytool -genkeypair -v -keystore openfocus-release.jks -alias openfocus \
@@ -34,3 +34,12 @@ Then add these **repository secrets** (Settings → Secrets and variables → Ac
 Keep the `.jks` file and its passwords safe and **never commit them**. If you lose the key, existing installs can't receive updates.
 
 To build a signed APK locally, set the same environment variables (`OPENFOCUS_KEYSTORE` = path to the `.jks`) and run `./gradlew :app:assembleRelease`.
+
+## Towards Google Play
+Sideloaded apps with an accessibility service are restricted by Play Protect and by many payment apps (see the README). Distributing through Google Play, even just an **internal testing** track, avoids that. Play requires:
+1. A signed **Android App Bundle**: `./gradlew :app:bundleRelease` with the signing variables above.
+2. The **Accessibility API declaration** in Play Console, describing the core feature (blocking apps and short-video feeds chosen by the user) and confirming that data stays on the device.
+3. A **prominent in-app disclosure** before the user enables the service. That's `AccessibilityDisclosureDialog`, shown from onboarding and the Shield tab.
+4. A privacy policy URL. Everything stays on the device, which keeps the policy short.
+
+Don't set `android:isAccessibilityTool`. OpenFocus is not an accessibility tool, and declaring that would be misleading.

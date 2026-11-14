@@ -58,6 +58,22 @@ class BlockScreenshotTest {
     @Test fun customLook() = shoot("block_style",
         waiting.copy(icon = org.openfocus.app.blocking.PauseIcon.LOTUS, colors = org.openfocus.app.blocking.PauseColors.INK))
 
+    @Test fun accessibilityDisclosure() {
+        compose.mainClock.autoAdvance = false
+        compose.setContent { OpenFocusTheme { org.openfocus.app.ui.components.AccessibilityDisclosureDialog({}, {}) } }
+        compose.mainClock.advanceTimeByFrame()
+        val view = compose.activity.window.decorView
+        val bmp = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        view.draw(canvas)
+        org.robolectric.shadows.ShadowDialog.getLatestDialog()?.window?.decorView?.let { d ->
+            canvas.drawColor(0x99000000.toInt())
+            canvas.save(); canvas.translate((bmp.width - d.width) / 2f, (bmp.height - d.height) / 2f); d.draw(canvas); canvas.restore()
+        }
+        val dir = File(System.getProperty("screenshots.dir") ?: "build/screenshots").apply { mkdirs() }
+        File(dir, "accessibility_disclosure.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
     @Test fun hardBlock() = shoot("block_hard", PauseState("Instagram", BlockReason.DAILY_LIMIT, "30 min", BlockGate.HARD))
 
     @Test fun strictFocus() = shoot("block_strict", PauseState("Instagram", BlockReason.FOCUS, "Essay", BlockGate.HARD, canPay = false))

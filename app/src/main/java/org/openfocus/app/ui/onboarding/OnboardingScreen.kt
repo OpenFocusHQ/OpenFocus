@@ -44,7 +44,9 @@ import kotlinx.coroutines.launch
 import org.openfocus.app.core.content.GameContent
 import org.openfocus.app.data.db.HabitEntity
 import org.openfocus.app.data.db.HabitKind
+import org.openfocus.app.ui.components.AccessibilityDisclosureDialog
 import org.openfocus.app.ui.components.HeroAvatar
+import org.openfocus.app.ui.components.openAccessibilitySettings
 import org.openfocus.app.ui.pixel.PixelSprite
 import org.openfocus.app.ui.pixel.SpriteCatalog
 import org.openfocus.app.ui.components.SkinTonePicker
@@ -103,12 +105,12 @@ fun OnboardingScreen() {
                     Text("Raise your Shield", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
                     Text(
                         "To block apps and Shorts/Reels, OpenFocus uses Android's accessibility service to see which app is in front. " +
-                            "It never reads your messages, never records the screen and never sends anything off your device.",
+                            "It only looks at screen content inside the video apps you enable, never reads what you type, never records the screen and never sends anything off your device.",
                         textAlign = TextAlign.Center,
                     )
-                    OutlinedButton(onClick = {
-                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    }) { Text("Open accessibility settings") }
+                    var disclose by remember { mutableStateOf(false) }
+                    OutlinedButton(onClick = { disclose = true }) { Text("Turn on the Shield") }
+                    if (disclose) AccessibilityDisclosureDialog(onAgree = { disclose = false; openAccessibilitySettings(context) }, onDismiss = { disclose = false })
                     Text("You can also do this later from the Shield tab.", style = MaterialTheme.typography.bodySmall)
                     Button(
                         modifier = Modifier.fillMaxWidth(),

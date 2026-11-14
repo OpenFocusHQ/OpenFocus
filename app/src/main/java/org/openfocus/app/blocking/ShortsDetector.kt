@@ -1,5 +1,6 @@
 package org.openfocus.app.blocking
 
+import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import org.openfocus.app.data.prefs.ShortsPlatform
 
@@ -46,6 +47,18 @@ object ShortsDetector {
     )
 
     private val byPackage = rules.associateBy { it.platform.packageName }
+
+    /**
+     * Whether the service needs screen-content events while [pkg] is in front. Only true inside a
+     * supported, enabled video app whose feed is part of the app (not whole-app feeds like TikTok);
+     * everywhere else the Shield only learns *which* app is open.
+     */
+    fun needsContentEvents(pkg: String?, enabled: Set<ShortsPlatform>): Boolean =
+        pkg != null && ruleFor(pkg, enabled)?.wholeApp == false
+
+    /** Accessibility event mask for the current app (see [needsContentEvents]). */
+    fun eventMask(content: Boolean): Int =
+        AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or (if (content) AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED else 0)
 
     fun ruleFor(pkg: String, enabled: Set<ShortsPlatform>): ShortsRule? =
         byPackage[pkg]?.takeIf { it.platform in enabled }

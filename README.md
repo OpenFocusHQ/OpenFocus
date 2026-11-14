@@ -97,8 +97,15 @@ python3 tools/content-editor/server.py   # http://127.0.0.1:8765
 
 > **Note:** On Android 13 and later, apps you sideload may need *Allow restricted settings* (App info → ⋮) before you can turn on the accessibility service. This doesn't apply when you install from an app store such as F-Droid.
 
+## Payment apps and Play Protect
+OpenFocus needs Android's **accessibility service** to see which app is open, because that's how blocking works. Banking malware abuses the same API, so Android and payment apps are cautious:
+- **Google Pay and many banking/UPI apps** may limit payments while an accessibility service installed **outside Google Play** is on. If that happens, switch *OpenFocus Shield* off (Settings → Accessibility) while you pay. Uninstalling also works.
+- **Play Protect** may refuse to install sideloaded apps that request accessibility (especially in regions with *enhanced fraud protection*). **Please don't turn Play Protect off** to get around this. It protects everything else on your phone too.
+
+The proper fix is installing from **Google Play**, which this project is working towards (see [docs/RELEASING.md](docs/RELEASING.md)). Until then, test sideloaded builds on a phone you don't use for payments.
+
 ## Privacy
-The accessibility service only reads the package name of the app in front. Inside the supported video apps, it also reads screen layout IDs so it can recognise a short-video feed. It never reads text you type, never records the screen, and never sends anything off the device. The app does not request internet permission.
+The accessibility service only learns which app is in front. It subscribes to screen-content events **only while one of the video apps you enabled is open**, and then reads only element IDs so it can recognise a short-video feed. Before you turn it on, an in-app disclosure explains this. It never reads text you type, never records the screen, and never sends anything off the device. The app does not request internet permission.
 
 ## Credits and licences
 - **Code:** GPL-3.0-or-later (see [LICENSE](LICENSE)).
