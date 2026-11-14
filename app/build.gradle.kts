@@ -25,7 +25,8 @@ android {
         // Release signing comes from the environment (CI secrets). Without it, release builds are
         // signed with the debug key so they still install for testing.
         create("release") {
-            val store = System.getenv("OPENFOCUS_KEYSTORE")
+            // CI passes unset secrets as empty strings, so treat blank like missing.
+            val store = System.getenv("OPENFOCUS_KEYSTORE")?.takeIf { it.isNotBlank() }
             if (store != null && file(store).exists()) {
                 storeFile = file(store)
                 storePassword = System.getenv("OPENFOCUS_KEYSTORE_PASSWORD")

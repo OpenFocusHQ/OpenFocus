@@ -35,6 +35,12 @@ jobs:
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
       - name: Build release APK (minified)
+        # Same (empty) signing variables the release job sees without secrets, so this path is tested too.
+        env:
+          OPENFOCUS_KEYSTORE: ""
+          OPENFOCUS_KEYSTORE_PASSWORD: ""
+          OPENFOCUS_KEY_ALIAS: ""
+          OPENFOCUS_KEY_PASSWORD: ""
         run: ./gradlew :app:assembleRelease
 
       - name: Upload test reports (on failure)
