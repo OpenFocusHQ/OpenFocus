@@ -34,6 +34,7 @@ import org.openfocus.app.OpenFocusApp
 import org.openfocus.app.core.Encouragement
 import org.openfocus.app.core.GameRules
 import org.openfocus.app.data.db.BlockGate
+import org.openfocus.app.data.db.RewardEntity
 import org.openfocus.app.game.EventTypes
 import org.openfocus.app.ui.pixel.PixelSprite
 import org.openfocus.app.ui.pixel.SpriteCatalog
@@ -109,6 +110,7 @@ class BlockActivity : ComponentActivity() {
                     onClose = { closeApp(resisted = true) },
                     onContinue = { minutes -> continueToApp { container.shop.grantWaitedPass(a.pkg, minutes); true } },
                     onBackToApp = { continueToApp { true } },
+                    onRedeem = { r -> continueToApp { container.shop.redeem(r.id, forPackage = a.pkg) } },
                     onUnlock = { minutes ->
                         continueToApp { container.shop.buyUnlock(a.pkg, minutes, skipWaitSeconds = if (a.gate == BlockGate.WAIT) a.waitSeconds else null) }
                     },
@@ -146,10 +148,12 @@ class BlockActivity : ComponentActivity() {
         onContinue: (Int) -> Unit,
         onBackToApp: () -> Unit,
         onUnlock: (Int) -> Unit,
+        onRedeem: (RewardEntity) -> Unit,
     ) {
         val settings by container.settings.state.collectAsState()
         val profile by remember { container.db.profileDao().observe() }.collectAsState(initial = null)
         val coins = profile?.coins ?: 0L
+        val rewards by container.shop.rewards.collectAsState(initial = emptyList())
         val nudge = remember { if (a.reason == BlockReason.SHORTS) Encouragement.shorts() else Encouragement.blocked() }
         var showCoins by remember { mutableStateOf(false) }
 
@@ -186,6 +190,8 @@ class BlockActivity : ComponentActivity() {
                 skipWaitSeconds = skipWait, skipCost = skipWait?.let { settings.skipCost(it) } ?: 0,
                 escalating = settings.escalatingPrices,
                 onUnlock = { showCoins = false; onUnlock(paidMinutes) }, onDismiss = { showCoins = false },
+                rewards = rewards.filter { it.unlocks(a.pkg) },
+                onRedeem = { r -> showCoins = false; onRedeem(r) },
             )
         }
     }

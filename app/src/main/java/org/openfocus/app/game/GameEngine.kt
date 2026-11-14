@@ -60,7 +60,11 @@ class GameEngine(private val db: AppDatabase) {
     private val _feedback = MutableSharedFlow<GameFeedback>(extraBufferCapacity = 16)
     val feedback: SharedFlow<GameFeedback> = _feedback.asSharedFlow()
 
-    suspend fun profile(): ProfileEntity = profiles.get() ?: ProfileEntity().also { profiles.upsert(it) }
+    /** Guards first-launch profile creation so concurrent callers can't each create one. */
+    private val createLock = Mutex()
+
+    suspend fun profile(): ProfileEntity =
+        profiles.get() ?: createLock.withLock { profiles.get() ?: ProfileEntity().also { profiles.upsert(it) } }
 
     suspend fun apply(
         type: String,

@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.openfocus.app.core.GameRules
 import org.openfocus.app.data.db.BlockGate
+import org.openfocus.app.data.db.RewardEntity
 import org.openfocus.app.ui.pixel.PixelSprite
 import org.openfocus.app.ui.pixel.SpriteCatalog
 
@@ -243,6 +244,9 @@ fun PaidUnlockDialog(
     escalating: Boolean,
     onUnlock: () -> Unit,
     onDismiss: () -> Unit,
+    /** The user's own rewards that unlock this app; redeemed at their fixed price. */
+    rewards: List<RewardEntity> = emptyList(),
+    onRedeem: (RewardEntity) -> Unit = {},
 ) {
     val total = timeCost + skipCost
     AlertDialog(
@@ -263,6 +267,15 @@ fun PaidUnlockDialog(
                     style = MaterialTheme.typography.bodySmall)
                 FilledTonalButton(enabled = coins >= total, onClick = onUnlock, modifier = Modifier.fillMaxWidth()) {
                     Text("Unlock for ${formatDuration(minutes)} · $total coins")
+                }
+                if (rewards.isNotEmpty()) {
+                    Text("Or use one of your rewards", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                    rewards.forEach { r ->
+                        OutlinedButton(enabled = coins >= r.cost, onClick = { onRedeem(r) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("${r.title} · ${formatDuration(r.unlockMinutes)} · ${r.cost} coins", textAlign = TextAlign.Center)
+                        }
+                    }
                 }
             }
         },

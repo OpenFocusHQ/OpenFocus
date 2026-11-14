@@ -32,6 +32,7 @@ Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
   - **Fully blocked:** *Close app* is the only option.
   - **Coins on or off:** whether coins may skip the wait or buy a pass for that app.
 - **Unlock with coins:** the 🎁 button lets you pick any unlock length up to an hour. Longer unlocks cost more (coins per minute), and skipping a wait adds its own fee.
+- **…or with your own rewards:** a self-made reward can optionally unlock a specific app or any blocked app, e.g. *"Evening scroll: 30 min of Instagram for 40 coins"*. Its price is fixed and doesn't rise during the day. It appears on that app's pause screen, and redeeming it from Hero → Rewards unlocks the app straight away.
 - **Make it yours** (Settings → *Pause screen*):
   - the gate, wait and open time that newly blocked apps start with
   - coin prices (including free), and whether they rise with each paid unlock that day
@@ -60,7 +61,7 @@ Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 - **XP and levels**, with titles from *Novice Climber* to *Summit Legend*.
 - **Cosmetics** in data-driven slots: cloaks, armour, hats and backdrops.
 - **HP**: missed habits cost HP. If HP hits zero, your hero takes a rest and loses a few coins. **Gentle mode** is on by default and turns this off.
-- **Coins** buy cosmetics (hats, cloaks, backdrops) and real-life **rewards you define yourself**.
+- **Coins** buy cosmetics and **rewards you define yourself**. A reward can be a real-life treat or, optionally, time in a blocked app.
 - **20 achievements**, a "perfect day" streak, celebration dialogs and a journal of everything you've earned.
 - Original encouragement lines throughout.
 

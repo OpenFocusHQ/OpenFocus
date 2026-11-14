@@ -14,13 +14,14 @@ import androidx.room.TypeConverters
         BlockScheduleEntity::class, AchievementEntity::class, RewardEntity::class,
         InventoryEntity::class, ActivityEventEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // v2: profiles.skinTone
         AutoMigration(from = 2, to = 3), // v3: block_rules.gate / waitSeconds / allowMinutes
         AutoMigration(from = 3, to = 4), // v4: block_rules.allowCoins
         AutoMigration(from = 4, to = 5), // v5: profiles.equipped (slot -> item JSON)
+        AutoMigration(from = 5, to = 6), // v6: rewards.unlockPackage / unlockMinutes
     ],
 )
 @TypeConverters(Converters::class)

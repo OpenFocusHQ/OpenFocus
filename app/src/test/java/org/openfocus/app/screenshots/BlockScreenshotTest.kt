@@ -56,7 +56,11 @@ class BlockScreenshotTest {
         PauseState("FeedApp", BlockReason.ALWAYS, gate = BlockGate.WAIT, waitMs = 60_000, elapsedMs = 20_000, allowMinutes = 10, nudge = nudge),
     ) {
         PaidUnlockDialog("FeedApp", coins = 120, minutes = 15, onMinutes = {}, perMinute = 2, timeCost = 30,
-            skipWaitSeconds = 60, skipCost = 6, escalating = true, onUnlock = {}, onDismiss = {})
+            skipWaitSeconds = 60, skipCost = 6, escalating = true, onUnlock = {}, onDismiss = {},
+            rewards = listOf(
+                org.openfocus.app.data.db.RewardEntity(ownerId = "", title = "Evening scroll", cost = 40, unlockPackage = "com.example.feed", unlockMinutes = 30),
+                org.openfocus.app.data.db.RewardEntity(ownerId = "", title = "Weekend free time", cost = 150, unlockPackage = "*", unlockMinutes = 60),
+            ))
     }
 
     @Test fun hardBlock() = shoot("block_hard",

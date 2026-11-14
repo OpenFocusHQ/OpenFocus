@@ -208,7 +208,23 @@ data class RewardEntity(
     val timesRedeemed: Int = 0,
     val deleted: Boolean = false,
     val updatedAt: Long = System.currentTimeMillis(),
-)
+    /**
+     * Optional (DB v6): redeeming also unlocks an app. A package name, [ANY_BLOCKED_APP], or null
+     * for a plain real-life treat.
+     */
+    val unlockPackage: String? = null,
+    /** How long the unlock lasts, in minutes (only when [unlockPackage] is set). */
+    @ColumnInfo(defaultValue = "0") val unlockMinutes: Int = 0,
+) {
+    val unlocksApp: Boolean get() = unlockPackage != null && unlockMinutes > 0
+
+    /** Whether this reward can be redeemed to open [pkg] from its pause screen. */
+    fun unlocks(pkg: String): Boolean = unlocksApp && (unlockPackage == pkg || unlockPackage == ANY_BLOCKED_APP)
+
+    companion object {
+        const val ANY_BLOCKED_APP = "*"
+    }
+}
 
 /** Cosmetic items owned from the built-in shop catalog. */
 @Entity(tableName = "inventory")

@@ -1,6 +1,11 @@
 package org.openfocus.app.ui.hero
 
 import androidx.compose.foundation.layout.Arrangement
+import org.openfocus.app.blocking.formatDuration
+import org.openfocus.app.blocking.DurationChips
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -228,10 +233,17 @@ private fun RewardsTab(profile: ProfileEntity?) {
     val c = appContainer()
     val scope = rememberCoroutineScope()
     val rewards by c.shop.rewards.collectAsState(initial = emptyList())
+    val rules by c.blocks.rules.collectAsState(initial = emptyList())
     var editing by remember { mutableStateOf<RewardEntity?>(null) }
+    fun appName(pkg: String?) = when (pkg) {
+        null -> null
+        RewardEntity.ANY_BLOCKED_APP -> "any blocked app"
+        else -> rules.firstOrNull { it.packageName == pkg }?.label ?: pkg
+    }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            Text("Treat yourself! Create real-life rewards and buy them with the coins you earn.",
+            Text("Treat yourself! Create rewards and buy them with the coins you earn. A reward can also unlock a blocked app " +
+                "for a while, and then it shows up on that app's pause screen too.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         items(rewards, key = { it.id }) { r ->
@@ -241,9 +253,15 @@ private fun RewardsTab(profile: ProfileEntity?) {
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(r.title, style = MaterialTheme.typography.titleSmall)
-                        Text("${r.cost} coins · redeemed ${r.timesRedeemed}×", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "${r.cost} coins · redeemed ${r.timesRedeemed}×" +
+                                if (r.unlocksApp) " · unlocks ${appName(r.unlockPackage)} for ${formatDuration(r.unlockMinutes)}" else "",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
-                    FilledTonalButton(enabled = (profile?.coins ?: 0) >= r.cost, onClick = { scope.launch { c.shop.redeem(r.id) } }) { Text("Redeem") }
+                    FilledTonalButton(enabled = (profile?.coins ?: 0) >= r.cost, onClick = { scope.launch { c.shop.redeem(r.id) } }) {
+                        Text(if (r.unlocksApp) "Redeem & unlock" else "Redeem")
+                    }
                 }
             }
         }
@@ -257,6 +275,9 @@ private fun RewardsTab(profile: ProfileEntity?) {
         var title by remember(r.id) { mutableStateOf(r.title) }
         var cost by remember(r.id) { mutableStateOf(r.cost.toString()) }
         var icon by remember(r.id) { mutableStateOf(r.icon) }
+        var unlockPkg by remember(r.id) { mutableStateOf(r.unlockPackage) }
+        var unlockMin by remember(r.id) { mutableIntStateOf(r.unlockMinutes.takeIf { it > 0 } ?: 30) }
+        var appMenu by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { editing = null },
             title = { Text("Reward") },
@@ -265,11 +286,30 @@ private fun RewardsTab(profile: ProfileEntity?) {
                     OutlinedTextField(title, { title = it }, label = { Text("e.g. Watch an episode guilt-free") }, singleLine = true)
                     OutlinedTextField(cost, { cost = it.filter(Char::isDigit).take(5) }, label = { Text("Cost in coins") }, singleLine = true)
                     Row { AppIcons.rewardChoices.forEach { n -> IconButton(onClick = { icon = n }) { Icon(AppIcons.get(n), n, tint = if (n == icon) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline) } } }
+                    Text("Also unlocks (optional)", style = MaterialTheme.typography.titleSmall)
+                    Box {
+                        OutlinedButton(onClick = { appMenu = true }) { Text(appName(unlockPkg)?.replaceFirstChar { it.uppercase() } ?: "Nothing, just a treat") }
+                        DropdownMenu(appMenu, { appMenu = false }) {
+                            DropdownMenuItem(text = { Text("Nothing, just a treat") }, onClick = { unlockPkg = null; appMenu = false })
+                            DropdownMenuItem(text = { Text("Any blocked app") }, onClick = { unlockPkg = RewardEntity.ANY_BLOCKED_APP; appMenu = false })
+                            rules.forEach { rule ->
+                                DropdownMenuItem(text = { Text(rule.label) }, onClick = { unlockPkg = rule.packageName; appMenu = false })
+                            }
+                        }
+                    }
+                    if (unlockPkg != null) {
+                        DurationChips("For", GameRules.unlockDurations, unlockMin, { unlockMin = it })
+                        Text("Your price, set above, doesn't rise during the day.", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             },
             confirmButton = {
                 TextButton(enabled = title.isNotBlank() && (cost.toIntOrNull() ?: 0) > 0, onClick = {
-                    scope.launch { c.shop.saveReward(r.copy(title = title.trim(), cost = cost.toInt(), icon = icon)) }
+                    scope.launch {
+                        c.shop.saveReward(r.copy(title = title.trim(), cost = cost.toInt(), icon = icon,
+                            unlockPackage = unlockPkg, unlockMinutes = if (unlockPkg != null) unlockMin else 0))
+                    }
                     editing = null
                 }) { Text("Save") }
             },

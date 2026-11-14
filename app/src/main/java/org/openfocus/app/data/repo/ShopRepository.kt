@@ -1,5 +1,6 @@
 package org.openfocus.app.data.repo
 
+import kotlinx.coroutines.flow.first
 import org.openfocus.app.core.Days
 import org.openfocus.app.core.ShopCatalog
 import org.openfocus.app.core.content.ItemDef
@@ -14,6 +15,7 @@ import org.openfocus.app.game.GameEngine
 
 class ShopRepository(db: AppDatabase, private val game: GameEngine, private val settings: SettingsStore) {
     private val dao = db.gameDao()
+    private val blockDao = db.blockDao()
 
     val rewards = dao.observeRewards()
     val inventory = dao.observeInventory()
@@ -39,10 +41,24 @@ class ShopRepository(db: AppDatabase, private val game: GameEngine, private val 
 
     suspend fun deleteReward(r: RewardEntity) = dao.upsertReward(r.copy(deleted = true, updatedAt = System.currentTimeMillis()))
 
-    suspend fun redeem(id: String): Boolean {
+    /**
+     * Redeem a reward at its fixed, self-chosen price (rewards never escalate). If it's linked to
+     * an app, also unlock it: [forPackage] when redeemed from that app's pause screen; otherwise the
+     * linked app, or every blocked app for an "any blocked app" reward.
+     */
+    suspend fun redeem(id: String, forPackage: String? = null): Boolean {
         val r = dao.reward(id) ?: return false
+        if (forPackage != null && !r.unlocks(forPackage)) return false
         if (!game.spend(r.cost, EventTypes.REWARD_REDEEMED, id, "Redeemed ${r.title}")) return false
         dao.upsertReward(r.copy(timesRedeemed = r.timesRedeemed + 1, updatedAt = System.currentTimeMillis()))
+        if (r.unlocksApp) {
+            val targets = when {
+                forPackage != null -> listOf(forPackage)
+                r.unlockPackage == RewardEntity.ANY_BLOCKED_APP -> blockDao.observeRules().first().map { it.packageName }
+                else -> listOfNotNull(r.unlockPackage)
+            }
+            targets.forEach { addPass(it, r.unlockMinutes, paid = false) } // fixed price: doesn't raise unlock prices
+        }
         return true
     }
 
