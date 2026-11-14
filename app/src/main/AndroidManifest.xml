@@ -48,7 +48,7 @@
             android:exported="false"
             android:launchMode="singleInstance"
             android:taskAffinity="org.openfocus.app.block"
-            android:theme="@style/Theme.OpenFocus" />
+            android:theme="@style/Theme.OpenFocus.Pause" />
 
         <service
             android:name=".blocking.BlockerAccessibilityService"

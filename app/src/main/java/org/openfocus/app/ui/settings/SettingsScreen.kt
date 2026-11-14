@@ -1,6 +1,27 @@
 package org.openfocus.app.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import org.openfocus.app.ui.theme.Body
+import org.openfocus.app.blocking.pauseColors
+import org.openfocus.app.blocking.PauseIconView
+import org.openfocus.app.blocking.PauseIcon
+import org.openfocus.app.blocking.PauseColors
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import org.openfocus.app.ui.shield.PauseConfigEditor
 import org.openfocus.app.ui.shield.PauseConfig
 import org.openfocus.app.core.GameRules
@@ -9,7 +30,6 @@ import org.openfocus.app.blocking.DEFAULT_QUESTION
 import org.openfocus.app.blocking.BlockReason
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Card
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Column
@@ -89,6 +109,57 @@ private fun PauseScreenSettings() {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("Pause screen", style = MaterialTheme.typography.titleMedium)
 
+        // Look: live preview, icon, colours (like the screen you see when an app is paused).
+        PausePreview(
+            PauseState("it", BlockReason.ALWAYS, question = s.pauseQuestion, reminder = s.pauseReminder,
+                icon = PauseIcon.of(s.pauseIcon), colors = PauseColors.of(s.pauseColors)),
+        )
+        Text("Icon", style = MaterialTheme.typography.titleSmall)
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PauseIcon.entries.forEach { icon ->
+                val selected = icon.id == PauseIcon.of(s.pauseIcon).id
+                Box(
+                    Modifier.size(60.dp).clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .border(if (selected) 3.dp else 0.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                        .clickable(role = Role.RadioButton) { c.settings.update { it.copy(pauseIcon = icon.id) } }
+                        .semantics { contentDescription = icon.label; this.selected = selected },
+                    contentAlignment = Alignment.Center,
+                ) { PauseIconView(icon, MaterialTheme.colorScheme.onSurface, Modifier.size(30.dp)) }
+            }
+        }
+        Text("Colour", style = MaterialTheme.typography.titleSmall)
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PauseColors.entries.forEach { pc ->
+                val selected = pc.id == PauseColors.of(s.pauseColors).id
+                val (bg, fg) = if (pc == PauseColors.SYSTEM) Color(PauseColors.LIGHT_BG) to Color(PauseColors.DARK_BG) else Color(pc.background) to Color(pc.foreground)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        Modifier.size(60.dp).clip(CircleShape).background(bg)
+                            .border(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                            .clickable(role = Role.RadioButton) { c.settings.update { it.copy(pauseColors = pc.id) } }
+                            .semantics { contentDescription = "${pc.label} colours"; this.selected = selected },
+                        contentAlignment = Alignment.Center,
+                    ) { Box(Modifier.size(22.dp).clip(CircleShape).background(fg)) }
+                    Text(pc.label, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+        OutlinedTextField(
+            s.pauseQuestion, { v -> c.settings.update { it.copy(pauseQuestion = v.take(120)) } },
+            Modifier.fillMaxWidth(),
+            label = { Text("Question") },
+            placeholder = { Text(DEFAULT_QUESTION) },
+            supportingText = { Text("{app} is replaced with the app's name. Leave empty for the default.") },
+        )
+        OutlinedTextField(
+            s.pauseReminder, { v -> c.settings.update { it.copy(pauseReminder = v.take(160)) } },
+            Modifier.fillMaxWidth(),
+            label = { Text("Personal reminder (optional)") },
+            placeholder = { Text("e.g. You're training for the half marathon.") },
+            supportingText = { Text("A quiet line under the question.") },
+        )
+
         Text("Defaults for newly blocked apps", style = MaterialTheme.typography.titleSmall)
         PauseConfigEditor(
             PauseConfig(s.defaultGate, s.defaultWaitSeconds, s.defaultAllowMinutes),
@@ -112,30 +183,26 @@ private fun PauseScreenSettings() {
                 "skipping a ${GameRules.formatWait(s.defaultWaitSeconds)} wait adds ${s.skipCost(s.defaultWaitSeconds)}.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
 
-        Text("Message", style = MaterialTheme.typography.titleSmall)
-        OutlinedTextField(
-            s.pauseQuestion, { v -> c.settings.update { it.copy(pauseQuestion = v.take(120)) } },
-            Modifier.fillMaxWidth(),
-            label = { Text("Question") },
-            placeholder = { Text(DEFAULT_QUESTION) },
-            supportingText = { Text("{app} is replaced with the app's name. Leave empty for the default.") },
-        )
-        OutlinedTextField(
-            s.pauseReminder, { v -> c.settings.update { it.copy(pauseReminder = v.take(160)) } },
-            Modifier.fillMaxWidth(),
-            label = { Text("Personal reminder (optional)") },
-            placeholder = { Text("e.g. You're training for the half marathon.") },
-            supportingText = { Text("Shown under the question, instead of the usual encouragement.") },
-        )
-        Card(shape = RoundedCornerShape(16.dp)) {
-            Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Preview", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(PauseState("Instagram", BlockReason.ALWAYS, question = s.pauseQuestion).headline,
-                    style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-                if (s.pauseReminder.isNotBlank()) Text(s.pauseReminder, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-            }
+/** A small, non-interactive rendering of the pause screen with the current look and text. */
+@Composable
+private fun PausePreview(state: PauseState) {
+    val (bg, fg) = pauseColors(state.colors)
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(bg).padding(horizontal = 24.dp, vertical = 28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        PauseIconView(state.icon, fg, Modifier.size(56.dp))
+        Text(state.headline, color = fg, textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.headlineMedium.copy(fontFamily = Body, fontWeight = FontWeight.Normal))
+        if (state.reminder.isNotBlank()) Text(state.reminder, color = fg.copy(alpha = 0.7f), textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(4.dp))
+        Box(Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(14.dp)).background(fg), contentAlignment = Alignment.Center) {
+            Text("Close app", color = bg, style = MaterialTheme.typography.titleSmall)
         }
     }
 }

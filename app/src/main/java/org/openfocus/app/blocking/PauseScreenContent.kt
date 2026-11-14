@@ -23,7 +23,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Redeem
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.sp
+import org.openfocus.app.ui.theme.Body
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
@@ -67,6 +79,8 @@ data class PauseState(
     val question: String = "",
     /** User's personal reminder. Replaces the context line when set. */
     val reminder: String = "",
+    val icon: PauseIcon = PauseIcon.SHIELD,
+    val colors: PauseColors = PauseColors.SYSTEM,
 ) {
     val waiting: Boolean get() = gate == BlockGate.WAIT && elapsedMs < waitMs
     val progress: Float get() = if (waitMs <= 0) 1f else (elapsedMs.toFloat() / waitMs).coerceIn(0f, 1f)
@@ -126,11 +140,25 @@ data class UnlockOption(
 /** The bottom sheet used both for "how long?" after waiting and for coin unlocks. */
 data class UnlockSheet(val title: String, val subtitle: String? = null, val options: List<UnlockOption>, val footer: String? = null)
 
+/** Resolved pause-screen colours: [PauseColors.SYSTEM] follows the phone's dark mode with neutral greys. */
+@Composable
+fun pauseColors(c: PauseColors): Pair<Color, Color> {
+    if (c != PauseColors.SYSTEM) return Color(c.background) to Color(c.foreground)
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    return if (dark) Color(PauseColors.DARK_BG) to Color(PauseColors.DARK_FG) else Color(PauseColors.LIGHT_BG) to Color(PauseColors.LIGHT_FG)
+}
+
+/** The pause screen's icon: the pixel shield, or an outline icon tinted with the foreground colour. */
+@Composable
+fun PauseIconView(icon: PauseIcon, tint: Color, modifier: Modifier = Modifier) {
+    if (icon.vector == null) PixelSprite(SpriteCatalog.shield, SpriteCatalog.IDLE, modifier, contentDescription = "Shield")
+    else Icon(icon.vector, contentDescription = icon.label, tint = tint, modifier = modifier)
+}
+
 /**
- * Ascent-style pause screen: one icon, one question, at most one quiet line, then "Close app"
- * as the primary action and (for wait gates) a "Continue in app" button that fills up while the
- * wait runs down. Choosing *how long* happens in a sheet after tapping Continue; coins live
- * behind the gift button.
+ * Ascent-style pause screen: one icon, one question in a calm regular weight, at most one quiet
+ * line, then "Close app" and (for wait gates) a "Continue in app" bar that drains while the wait
+ * runs down. Choosing how long happens in a card after tapping Continue; coins sit behind the gift.
  */
 @Composable
 fun PauseScreenContent(
@@ -142,127 +170,143 @@ fun PauseScreenContent(
     sheet: UnlockSheet? = null,
     onPick: (String) -> Unit = {},
     onDismissSheet: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    val (bg, fg) = pauseColors(s.colors)
+    Surface(modifier.fillMaxSize(), color = bg, contentColor = fg) {
         Box(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxSize().safeDrawingPadding()) {
                 if (s.showCoins) {
                     IconButton(onClick = onOpenCoins, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
-                        Icon(Icons.Filled.Redeem, contentDescription = "Use coins")
+                        Icon(Icons.Filled.Redeem, contentDescription = "Use coins", tint = fg)
                     }
                 }
 
                 Column(
-                    Modifier.align(Alignment.Center).padding(horizontal = 36.dp),
+                    Modifier.align(Alignment.Center).padding(horizontal = 28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                    PixelSprite(SpriteCatalog.shield, SpriteCatalog.IDLE, Modifier.size(96.dp), contentDescription = "Shield")
-                    Text(s.headline, style = MaterialTheme.typography.headlineLarge, textAlign = TextAlign.Center)
+                    PauseIconView(s.icon, fg, Modifier.size(88.dp))
+                    Text(
+                        s.headline, textAlign = TextAlign.Center, color = fg,
+                        style = MaterialTheme.typography.displaySmall.copy(fontFamily = Body, fontWeight = FontWeight.Normal, lineHeight = 44.sp),
+                    )
                     s.subline()?.let {
-                        Text(it, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(it, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = fg.copy(alpha = 0.7f))
                     }
                 }
 
                 Column(
                     Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     val shortsWithApp = s.reason == BlockReason.SHORTS && s.backToApp
-                    PrimaryButton(if (shortsWithApp) "Back to ${s.appLabel}" else "Close app", if (shortsWithApp) onBackToApp else onClose)
+                    PrimaryButton(if (shortsWithApp) "Back to ${s.appLabel}" else "Close app", fg, bg, if (shortsWithApp) onBackToApp else onClose)
                     when {
-                        shortsWithApp -> TextButton(onClick = onClose) { Text("Close ${s.appLabel}") }
-                        s.gate == BlockGate.WAIT && s.reason != BlockReason.SHORTS -> ContinueButton(s, onContinue)
+                        shortsWithApp -> QuietButton("Close ${s.appLabel}", fg, onClose)
+                        s.gate == BlockGate.WAIT && s.reason != BlockReason.SHORTS -> ContinueButton(s, fg, onContinue)
                         else -> s.hardNote?.let {
-                            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            Text(it, style = MaterialTheme.typography.bodySmall, color = fg.copy(alpha = 0.7f),
                                 textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
                         }
                     }
                 }
             }
-            if (sheet != null) UnlockSheetOverlay(sheet, onPick, onDismissSheet)
+            AnimatedVisibility(sheet != null, enter = fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.96f), exit = fadeOut(tween(150))) {
+                // Keep showing the last sheet while it fades out.
+                val last = remember { mutableStateOf(sheet) }
+                if (sheet != null) last.value = sheet
+                last.value?.let { UnlockCard(it, onPick, onDismissSheet) }
+            }
         }
     }
 }
 
 @Composable
-private fun PrimaryButton(text: String, onClick: () -> Unit) {
+private fun PrimaryButton(text: String, fg: Color, bg: Color, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(64.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.onBackground,
-            contentColor = MaterialTheme.colorScheme.background,
-        ),
-    ) { Text(text, style = MaterialTheme.typography.titleMedium) }
+        modifier = Modifier.fillMaxWidth().height(60.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = fg, contentColor = bg),
+    ) { Text(text, style = MaterialTheme.typography.titleMedium.copy(fontFamily = Body, fontWeight = FontWeight.Medium)) }
 }
 
-/** "Continue in app": fills from left to right while the wait runs down; tap it when full. */
 @Composable
-private fun ContinueButton(s: PauseState, onClick: () -> Unit) {
+private fun QuietButton(text: String, fg: Color, onClick: () -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(18.dp)).clickable(role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Text(text, style = MaterialTheme.typography.titleMedium.copy(fontFamily = Body, fontWeight = FontWeight.Medium), color = fg) }
+}
+
+/**
+ * "Continue in app": a grey bar that drains from left to right as the wait runs down, with the
+ * seconds left underneath. When it's empty the button turns into plain text you can tap.
+ */
+@Composable
+private fun ContinueButton(s: PauseState, fg: Color, onClick: () -> Unit) {
     val ready = !s.waiting
-    val shape = RoundedCornerShape(20.dp)
     val label = if (ready) "Continue in app" else "Continue in app, available in ${s.secondsLeft} seconds"
-    val onColor = if (ready) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Box(
         Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .height(60.dp)
+            .clip(RoundedCornerShape(18.dp))
             .clickable(enabled = ready, role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = label },
     ) {
-        Box(
-            Modifier.fillMaxHeight().fillMaxWidth(s.progress)
-                .background(if (ready) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.outlineVariant),
-        )
+        if (!ready) {
+            // Remaining time as a bar anchored to the right edge: it shrinks towards the right.
+            Box(Modifier.fillMaxHeight().fillMaxWidth(1f - s.progress).align(Alignment.CenterEnd).background(fg.copy(alpha = 0.18f)))
+        }
         Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Continue in app", style = MaterialTheme.typography.titleMedium, color = onColor)
-            if (!ready) Text("${s.secondsLeft}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = onColor)
+            Text("Continue in app", style = MaterialTheme.typography.titleMedium.copy(fontFamily = Body, fontWeight = FontWeight.Medium), color = fg)
+            if (!ready) Text("${s.secondsLeft}", style = MaterialTheme.typography.titleMedium.copy(fontFamily = Body), color = fg)
         }
     }
 }
 
-/** Bottom sheet drawn inside the pause screen (no extra window): one tap picks an option. */
+/** Centred card over a scrim (drawn inside the pause screen, no extra window): one tap picks an option. */
 @Composable
-fun UnlockSheetOverlay(sheet: UnlockSheet, onPick: (String) -> Unit, onDismiss: () -> Unit) {
+fun UnlockCard(sheet: UnlockSheet, onPick: (String) -> Unit, onDismiss: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
         Box(
-            Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f))
+            Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f))
                 .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
         )
         Surface(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().heightIn(max = 640.dp),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            Modifier.align(Alignment.Center).padding(horizontal = 16.dp).fillMaxWidth().heightIn(max = 600.dp),
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
+            shadowElevation = 6.dp,
         ) {
-            Column(
-                Modifier.navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(Modifier.align(Alignment.CenterHorizontally).size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp))
-                    .background(MaterialTheme.colorScheme.outlineVariant))
-                Text(sheet.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp))
-                sheet.subtitle?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                Spacer(Modifier.height(4.dp))
-                var lastSection: String? = null
-                sheet.options.forEach { o ->
-                    if (o.section != lastSection && o.section != null) {
-                        Text(o.section, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 10.dp, bottom = 2.dp))
+            Column {
+                Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(sheet.title, style = MaterialTheme.typography.titleMedium.copy(fontFamily = Body, fontWeight = FontWeight.Medium))
+                        sheet.subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
-                    lastSection = o.section
-                    OptionRow(o) { onPick(o.key) }
+                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "Close") }
                 }
-                sheet.footer?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp))
+                HorizontalDivider()
+                Column(Modifier.verticalScroll(rememberScrollState()).padding(vertical = 4.dp)) {
+                    var lastSection: String? = null
+                    sheet.options.forEach { o ->
+                        if (o.section != lastSection && o.section != null) {
+                            Text(o.section, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 4.dp))
+                        }
+                        lastSection = o.section
+                        OptionRow(o) { onPick(o.key) }
+                    }
+                    sheet.footer?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
+                    }
                 }
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) { Text("Cancel") }
             }
         }
     }
@@ -270,18 +314,20 @@ fun UnlockSheetOverlay(sheet: UnlockSheet, onPick: (String) -> Unit, onDismiss: 
 
 @Composable
 private fun OptionRow(o: UnlockOption, onClick: () -> Unit) {
-    val alpha = if (o.enabled) 1f else 0.4f
+    val alpha = if (o.enabled) 1f else 0.38f
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = alpha))
+        Modifier.fillMaxWidth().heightIn(min = 48.dp)
             .clickable(enabled = o.enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(o.label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f),
+        Text(o.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha))
-        Text(o.price, style = MaterialTheme.typography.labelLarge,
-            color = (if (o.price == "Free") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = alpha))
+        if (o.price.isEmpty()) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha))
+        } else {
+            Text(o.price, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha))
+        }
     }
 }
 
@@ -299,5 +345,9 @@ fun DurationChips(label: String, options: List<Int>, selected: Int, onSelect: (I
     }
 }
 
-fun formatDuration(minutes: Int): String = if (minutes >= 60 && minutes % 60 == 0) "${minutes / 60} h" else "$minutes min"
+fun formatDuration(minutes: Int): String = when {
+    minutes == 60 -> "1 hour"
+    minutes > 60 && minutes % 60 == 0 -> "${minutes / 60} hours"
+    else -> "$minutes min"
+}
 

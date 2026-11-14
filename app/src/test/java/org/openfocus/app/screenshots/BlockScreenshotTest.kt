@@ -55,6 +55,9 @@ class BlockScreenshotTest {
     @Test fun customMessage() = shoot("block_custom",
         waiting.copy(question = "Is {app} worth your evening?", reminder = "Half marathon in March. Sleep is training too."))
 
+    @Test fun customLook() = shoot("block_style",
+        waiting.copy(icon = org.openfocus.app.blocking.PauseIcon.LOTUS, colors = org.openfocus.app.blocking.PauseColors.INK))
+
     @Test fun hardBlock() = shoot("block_hard", PauseState("Instagram", BlockReason.DAILY_LIMIT, "30 min", BlockGate.HARD))
 
     @Test fun strictFocus() = shoot("block_strict", PauseState("Instagram", BlockReason.FOCUS, "Essay", BlockGate.HARD, canPay = false))

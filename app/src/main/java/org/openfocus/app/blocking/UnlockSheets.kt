@@ -14,7 +14,7 @@ object UnlockSheets {
     /** After waiting: pick how long, up to the app's free maximum. */
     fun free(s: PauseState) = UnlockSheet(
         title = "How long do you need ${s.appLabel}?",
-        options = s.freeDurations.map { UnlockOption("$FREE$it", formatDuration(it), "Free") },
+        options = s.freeDurations.map { UnlockOption("$FREE$it", formatDuration(it), price = "") }, // chevron, no price
     )
 
     /** Gift button: every length with its price (longer costs more), then the user's own rewards for this app. */

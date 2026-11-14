@@ -110,6 +110,7 @@ class BlockerAccessibilityService : AccessibilityService() {
 
     private fun launchBlockScreen(pkg: String, decision: BlockDecision) {
         val intent = Intent(this, BlockActivity::class.java)
+            // No window animation: the pause screen fades itself in over the (still visible) app.
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NO_ANIMATION)
             .putExtra(BlockActivity.EXTRA_PACKAGE, pkg)
             .putExtra(BlockActivity.EXTRA_REASON, decision.reason.name)

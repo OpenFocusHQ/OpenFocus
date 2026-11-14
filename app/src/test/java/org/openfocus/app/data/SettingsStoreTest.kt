@@ -17,6 +17,7 @@ class SettingsStoreTest {
                 defaultGate = BlockGate.HARD, defaultWaitSeconds = 90, defaultAllowMinutes = 45,
                 skipCostPer10s = 4, unlockCostPerMinute = 0, escalatingPrices = false,
                 pauseQuestion = "Is {app} worth it?", pauseReminder = "Marathon in March!",
+                pauseIcon = "lotus", pauseColors = "ink",
             )
         }
         val s = SettingsStore(ctx).value // fresh instance reads from disk
@@ -28,6 +29,8 @@ class SettingsStoreTest {
         assertEquals(false, s.escalatingPrices)
         assertEquals("Is {app} worth it?", s.pauseQuestion)
         assertEquals("Marathon in March!", s.pauseReminder)
+        assertEquals(org.openfocus.app.blocking.PauseIcon.LOTUS, org.openfocus.app.blocking.PauseIcon.of(s.pauseIcon))
+        assertEquals(org.openfocus.app.blocking.PauseColors.INK, org.openfocus.app.blocking.PauseColors.of(s.pauseColors))
     }
 
     @Test fun longerPaidUnlocksCostMoreAndSkippingAddsAFee() {

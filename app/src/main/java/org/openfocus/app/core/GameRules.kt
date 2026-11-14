@@ -85,7 +85,7 @@ object GameRules {
         (minutes * perMinute) * (1 + unlocksToday)
 
     /** How long an unlock can last (minutes); chosen on the pause screen each time. */
-    val unlockDurations = listOf(1, 2, 5, 10, 15, 30, 60)
+    val unlockDurations = listOf(1, 3, 5, 10, 15, 20, 30, 45, 60, 90)
 
     /** Choices after waiting (free): every standard duration up to the app's maximum, plus that maximum. */
     fun freeDurations(maxMinutes: Int): List<Int> =

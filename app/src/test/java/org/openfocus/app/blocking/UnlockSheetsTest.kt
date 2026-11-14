@@ -14,8 +14,8 @@ class UnlockSheetsTest {
 
     @Test fun freeSheetOffersEachLengthUpToTheMaximum() {
         val sheet = UnlockSheets.free(s)
-        assertEquals(listOf("free:1", "free:2", "free:5", "free:10"), sheet.options.map { it.key })
-        assertTrue(sheet.options.all { it.price == "Free" && it.enabled })
+        assertEquals(listOf("free:1", "free:3", "free:5", "free:10"), sheet.options.map { it.key })
+        assertTrue(sheet.options.all { it.price.isEmpty() && it.enabled }) // free rows show a chevron, not a price
     }
 
     @Test fun paidRowsShowTheirPriceAndLongerCostsMore() {

@@ -59,8 +59,8 @@ class GameRulesTest {
     }
 
     @Test fun freeUnlockChoicesStopAtTheAppsMaximum() {
-        assertEquals(listOf(1, 2, 5, 10), GameRules.freeDurations(10))
-        assertEquals(listOf(1, 2, 5, 10, 15, 30, 45), GameRules.freeDurations(45)) // odd max is offered too
+        assertEquals(listOf(1, 3, 5, 10), GameRules.freeDurations(10))
+        assertEquals(listOf(1, 3, 5, 10, 15, 20, 30, 45, 50), GameRules.freeDurations(50)) // odd max is offered too
         assertEquals(listOf(1), GameRules.freeDurations(1))
         assertEquals(5, GameRules.defaultDuration(GameRules.freeDurations(30)))  // short by default
         assertEquals(2, GameRules.defaultDuration(listOf(1, 2)))

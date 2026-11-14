@@ -53,6 +53,9 @@ data class Settings(
     // Pause screen: message ({app} is replaced with the app's name; blank = built-in text)
     val pauseQuestion: String = "",
     val pauseReminder: String = "",
+    // Pause screen: look (ids from blocking.PauseIcon / PauseColors)
+    val pauseIcon: String = "shield",
+    val pauseColors: String = "system",
 ) {
     fun unlocksTodayEffective(today: Long = Days.today()) = if (unlocksDay == today) unlocksToday else 0
 
@@ -110,6 +113,8 @@ class SettingsStore(context: Context) {
         escalatingPrices = prefs.getBoolean("escalatingPrices", true),
         pauseQuestion = prefs.getString("pauseQuestion", "") ?: "",
         pauseReminder = prefs.getString("pauseReminder", "") ?: "",
+        pauseIcon = prefs.getString("pauseIcon", "shield") ?: "shield",
+        pauseColors = prefs.getString("pauseColors", "system") ?: "system",
     )
 
     private fun write(s: Settings) {
@@ -134,6 +139,8 @@ class SettingsStore(context: Context) {
             .putBoolean("escalatingPrices", s.escalatingPrices)
             .putString("pauseQuestion", s.pauseQuestion)
             .putString("pauseReminder", s.pauseReminder)
+            .putString("pauseIcon", s.pauseIcon)
+            .putString("pauseColors", s.pauseColors)
             .apply()
     }
 

@@ -13,9 +13,9 @@ Everything stays on your device: there are no accounts, no analytics and no netw
 
 Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 
-| Pause (waiting) | How long? | Unlock with coins | Reels blocked | Your own message | Settings |
+| Pause (waiting) | How long? | Unlock with coins | Reels blocked | Your own look | Settings |
 |---|---|---|---|---|---|
-| ![](docs/screenshots/block_wait.png) | ![](docs/screenshots/block_free_sheet.png) | ![](docs/screenshots/block_pay.png) | ![](docs/screenshots/block_reels.png) | ![](docs/screenshots/block_custom.png) | ![](docs/screenshots/settings.png) |
+| ![](docs/screenshots/block_wait.png) | ![](docs/screenshots/block_free_sheet.png) | ![](docs/screenshots/block_pay.png) | ![](docs/screenshots/block_reels.png) | ![](docs/screenshots/block_style.png) | ![](docs/screenshots/settings.png) |
 
 | Level up | First day |
 |---|---|
@@ -36,7 +36,8 @@ Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 - **Make it yours** (Settings → *Pause screen*):
   - the gate, wait and open time that newly blocked apps start with
   - coin prices (including free), and whether they rise with each paid unlock that day
-  - your own question (`{app}` becomes the app's name) and a personal reminder, with a live preview
+  - the pause screen's **look**: icon and colour pair, with a live preview
+  - your own question (`{app}` becomes the app's name) and a personal reminder
 - **Strict mode** makes every block during a focus session final: no waiting through and no coin unlocks.
 - Some apps are never blocked: the launcher, phone/dialer, keyboard, Settings and OpenFocus itself.
 

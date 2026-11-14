@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -54,6 +55,9 @@ class BlockActivity : ComponentActivity() {
 
     /** Set when the user chose a way into the app, so onStop doesn't treat it as walking away. */
     private var leavingToApp = false
+
+    /** Drives the fade-out back into the app before the activity finishes. */
+    private val fadingOut = androidx.compose.runtime.mutableStateOf(false)
 
     private data class Args(
         val pkg: String,
@@ -138,7 +142,7 @@ class BlockActivity : ComponentActivity() {
         lifecycleScope.launch {
             if (grant()) {
                 leavingToApp = true
-                finish() // the blocked app is still open beneath this screen
+                fadingOut.value = true // PauseScreen fades out, then finishes: the app is still open beneath
             }
         }
     }
@@ -174,7 +178,20 @@ class BlockActivity : ComponentActivity() {
             waitMs = waitMs, elapsedMs = elapsed, allowMinutes = a.allowMinutes,
             canPay = a.canPay, backToApp = a.backToApp, focusEndsAt = settings.activeFocus?.endsAt,
             question = settings.pauseQuestion, reminder = settings.pauseReminder,
+            icon = PauseIcon.of(settings.pauseIcon), colors = PauseColors.of(settings.pauseColors),
         )
+
+        // Fade in over the app (the window is translucent), and fade out before revealing it again.
+        val alpha = remember { androidx.compose.animation.core.Animatable(0f) }
+        LaunchedEffect(Unit) { alpha.animateTo(1f, androidx.compose.animation.core.tween(220)) }
+        val leaving by fadingOut
+        LaunchedEffect(leaving) {
+            if (leaving) {
+                alpha.animateTo(0f, androidx.compose.animation.core.tween(200))
+                finish()
+                @Suppress("DEPRECATION") overridePendingTransition(0, 0)
+            }
+        }
         val sheet = when (sheetKind) {
             "free" -> UnlockSheets.free(state)
             "paid" -> UnlockSheets.paid(state, coins, settings, rewards, a.pkg)
@@ -192,6 +209,7 @@ class BlockActivity : ComponentActivity() {
             onOpenCoins = { sheetKind = "paid" },
             sheet = sheet,
             onDismissSheet = { sheetKind = "" },
+            modifier = Modifier.graphicsLayer { this.alpha = alpha.value },
             onPick = { key ->
                 sheetKind = ""
                 when {

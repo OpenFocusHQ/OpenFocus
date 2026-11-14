@@ -20,7 +20,7 @@ class PauseStateTest {
     }
 
     @Test fun freeLengthsStopAtTheAppsMaximum() {
-        assertEquals(listOf(1, 2, 5, 10, 15), PauseState("Feed", BlockReason.ALWAYS, allowMinutes = 15).freeDurations)
+        assertEquals(listOf(1, 3, 5, 10, 15), PauseState("Feed", BlockReason.ALWAYS, allowMinutes = 15).freeDurations)
     }
 
     @Test fun hardBlockOffersCoinsUnlessStrictOrShorts() {
