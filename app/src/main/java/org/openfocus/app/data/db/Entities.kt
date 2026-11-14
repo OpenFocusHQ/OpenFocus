@@ -171,6 +171,8 @@ data class BlockRuleEntity(
     @ColumnInfo(defaultValue = "HARD") val gate: BlockGate = BlockGate.WAIT,
     @ColumnInfo(defaultValue = "30") val waitSeconds: Int = 30,
     @ColumnInfo(defaultValue = "10") val allowMinutes: Int = 10,
+    /** Added in DB v4: whether coins may skip the wait / buy a pass for this app. */
+    @ColumnInfo(defaultValue = "1") val allowCoins: Boolean = true,
 )
 
 @Entity(tableName = "block_schedules")

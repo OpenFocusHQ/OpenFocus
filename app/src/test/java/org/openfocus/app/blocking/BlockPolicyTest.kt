@@ -21,8 +21,8 @@ class BlockPolicyTest {
     private fun decide(config: BlockConfig, minute: Int = 12 * 60, day: Long = monday, usage: Int = 0, exempt: Set<String> = emptySet()) =
         BlockPolicy.decide(app, config, now, day, minute, exempt) { usage }
 
-    private fun rule(mode: BlockMode, limit: Int = 30, gate: BlockGate = BlockGate.HARD, wait: Int = 30, allow: Int = 10) =
-        mapOf(app to BlockRuleEntity(app, "Feed", mode, limit, gate = gate, waitSeconds = wait, allowMinutes = allow))
+    private fun rule(mode: BlockMode, limit: Int = 30, gate: BlockGate = BlockGate.HARD, wait: Int = 30, allow: Int = 10, coins: Boolean = true) =
+        mapOf(app to BlockRuleEntity(app, "Feed", mode, limit, gate = gate, waitSeconds = wait, allowMinutes = allow, allowCoins = coins))
 
     @Test fun unlistedAppNotBlocked() = assertNull(decide(BlockConfig()))
 
@@ -74,6 +74,11 @@ class BlockPolicyTest {
         val hard = decide(BlockConfig(rule(BlockMode.ALWAYS, gate = BlockGate.HARD)))!!
         assertEquals(BlockGate.HARD, hard.gate)
         assertEquals(0, hard.waitSeconds)
+    }
+
+    @Test fun perAppCoinSwitch() {
+        assertFalse(decide(BlockConfig(rule(BlockMode.ALWAYS, gate = BlockGate.WAIT, coins = false)))!!.canPay)
+        assertFalse(decide(BlockConfig(rule(BlockMode.ALWAYS, gate = BlockGate.HARD, coins = false)))!!.canPay)
     }
 
     @Test fun focusFollowsRuleGateUnlessStrict() {

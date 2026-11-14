@@ -58,7 +58,6 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.openfocus.app.blocking.BlockerAccessibilityService
 import org.openfocus.app.core.Days
-import org.openfocus.app.core.GameRules
 import org.openfocus.app.data.db.BlockGate
 import org.openfocus.app.data.db.BlockMode
 import org.openfocus.app.data.db.BlockRuleEntity
@@ -239,41 +238,43 @@ private fun RuleRow(r: BlockRuleEntity, usageMinutes: Int?, onChange: (BlockRule
     }
 }
 
-/** "When blocked": fully blocked, or a wait timer that then lets the app open for a while. */
+/** One-line summary of the app's pause screen, with an editor dialog for exact times and coins. */
 @Composable
 private fun GateRow(r: BlockRuleEntity, onChange: (BlockRuleEntity) -> Unit) {
-    var gateMenu by remember { mutableStateOf(false) }
-    var allowMenu by remember { mutableStateOf(false) }
-    fun waitLabel(s: Int) = if (s < 60) "${s}s" else "${s / 60} min"
-    Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("When blocked:", style = MaterialTheme.typography.labelMedium)
-        Box {
-            OutlinedButton(onClick = { gateMenu = true }) {
-                Text(if (r.gate == BlockGate.HARD) "Fully blocked" else "Wait ${waitLabel(r.waitSeconds)}")
-            }
-            DropdownMenu(gateMenu, { gateMenu = false }) {
-                DropdownMenuItem(
-                    text = { Text("Fully blocked") },
-                    onClick = { gateMenu = false; onChange(r.copy(gate = BlockGate.HARD)) },
-                )
-                GameRules.waitOptionsSeconds.forEach { s ->
-                    DropdownMenuItem(
-                        text = { Text("Wait ${waitLabel(s)}, then continue") },
-                        onClick = { gateMenu = false; onChange(r.copy(gate = BlockGate.WAIT, waitSeconds = s)) },
-                    )
-                }
-            }
+    var editing by remember { mutableStateOf(false) }
+    val config = PauseConfig(r.gate, r.waitSeconds, r.allowMinutes)
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("Pause screen", style = MaterialTheme.typography.labelMedium)
+            Text(config.summary() + if (r.allowCoins) " · coins allowed" else " · no coins",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (r.gate == BlockGate.WAIT) {
-            Box {
-                TextButton(onClick = { allowMenu = true }) { Text("for ${r.allowMinutes} min") }
-                DropdownMenu(allowMenu, { allowMenu = false }) {
-                    GameRules.allowOptionsMinutes.forEach { m ->
-                        DropdownMenuItem(text = { Text("Open for $m min") }, onClick = { allowMenu = false; onChange(r.copy(allowMinutes = m)) })
-                    }
+        TextButton(onClick = { editing = true }) { Text("Edit") }
+    }
+    if (editing) {
+        var draft by remember { mutableStateOf(config) }
+        var coins by remember { mutableStateOf(r.allowCoins) }
+        AlertDialog(
+            onDismissRequest = { editing = false },
+            title = { Text("Pause screen for ${r.label}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PauseConfigEditor(draft, { draft = it })
+                    ToggleRow(
+                        "Allow coins",
+                        if (draft.gate == BlockGate.WAIT) "Spend coins to skip the wait." else "Spend coins on a 5 or 15 min pass.",
+                        coins,
+                    ) { coins = it }
                 }
-            }
-        }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    editing = false
+                    onChange(r.copy(gate = draft.gate, waitSeconds = draft.waitSeconds, allowMinutes = draft.allowMinutes, allowCoins = coins))
+                }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { editing = false }) { Text("Cancel") } },
+        )
     }
 }
 

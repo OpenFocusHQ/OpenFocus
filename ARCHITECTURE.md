@@ -30,7 +30,7 @@ org.openfocus.app
 4. If the app should be blocked, the service shows `BlockActivity` **on top of the app** (Ascent-style); it doesn't send the user home. The decision carries the rule's **gate**:
    - `HARD`: only *Close app*, plus coin-priced unlock passes.
    - `WAIT`: *Continue in app* unlocks after `waitSeconds`, then a free pass lasts `allowMinutes`; coins can skip the wait.
-   Strict mode during focus forces `HARD` with no paid way through. Passes live in `Settings.unlockPasses` and `BlockPolicy` honours them.
+   Each rule also has `allowCoins`. Strict mode during focus forces `HARD` with no paid way through. Prices, defaults for new rules and the pause-screen message live in `Settings` and are edited under Settings → Pause screen. Passes live in `Settings.unlockPasses` and `BlockPolicy` honours them.
 5. The pause screen splits into a stateless `PauseScreenContent(PauseState)` and the activity, which owns the `WaitTimer`. The timer runs on Compose's frame clock and ignores gaps longer than 250 ms, so time only counts while the screen is visible. Leaving the screen discards it, so the wait starts over next time.
 6. For Shorts and Reels, `ShortsDetector` looks for known view IDs and presses **Back** out of the feed. Apps that are entirely short video (TikTok) get the pause screen with only *Close app*.
 

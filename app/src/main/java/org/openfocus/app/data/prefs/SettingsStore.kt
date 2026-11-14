@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
 import org.openfocus.app.core.Days
+import org.openfocus.app.core.GameRules
+import org.openfocus.app.data.db.BlockGate
 
 /** A focus session that is currently running. Persisted so it survives process death. */
 data class ActiveFocus(
@@ -40,8 +42,25 @@ data class Settings(
     val reminderHour: Int = 20,
     val lastReminderDay: Long = 0,
     val focusAllowlist: Set<String> = emptySet(),
+    // Pause screen: defaults for newly blocked apps
+    val defaultGate: BlockGate = BlockGate.WAIT,
+    val defaultWaitSeconds: Int = 30,
+    val defaultAllowMinutes: Int = 10,
+    // Pause screen: coin prices
+    val skipCostPer10s: Int = GameRules.DEFAULT_SKIP_COST_PER_10S,
+    val unlockCostPerMinute: Int = GameRules.DEFAULT_UNLOCK_COST_PER_MINUTE,
+    val escalatingPrices: Boolean = true,
+    // Pause screen: message ({app} is replaced with the app's name; blank = built-in text)
+    val pauseQuestion: String = "",
+    val pauseReminder: String = "",
 ) {
     fun unlocksTodayEffective(today: Long = Days.today()) = if (unlocksDay == today) unlocksToday else 0
+
+    /** Unlocks that count towards escalating prices (0 when escalation is turned off). */
+    fun priceStep(today: Long = Days.today()) = if (escalatingPrices) unlocksTodayEffective(today) else 0
+
+    fun skipCost(waitSeconds: Int) = GameRules.skipWaitCost(waitSeconds, priceStep(), skipCostPer10s)
+    fun unlockCost(minutes: Int) = GameRules.unlockCost(minutes, priceStep(), unlockCostPerMinute)
 }
 
 /**
@@ -76,6 +95,14 @@ class SettingsStore(context: Context) {
         reminderHour = prefs.getInt("reminderHour", 20),
         lastReminderDay = prefs.getLong("lastReminderDay", 0),
         focusAllowlist = prefs.getStringSet("focusAllowlist", emptySet()) ?: emptySet(),
+        defaultGate = runCatching { BlockGate.valueOf(prefs.getString("defaultGate", null) ?: "") }.getOrDefault(BlockGate.WAIT),
+        defaultWaitSeconds = prefs.getInt("defaultWaitSeconds", 30),
+        defaultAllowMinutes = prefs.getInt("defaultAllowMinutes", 10),
+        skipCostPer10s = prefs.getInt("skipCostPer10s", GameRules.DEFAULT_SKIP_COST_PER_10S),
+        unlockCostPerMinute = prefs.getInt("unlockCostPerMinute", GameRules.DEFAULT_UNLOCK_COST_PER_MINUTE),
+        escalatingPrices = prefs.getBoolean("escalatingPrices", true),
+        pauseQuestion = prefs.getString("pauseQuestion", "") ?: "",
+        pauseReminder = prefs.getString("pauseReminder", "") ?: "",
     )
 
     private fun write(s: Settings) {
@@ -92,6 +119,14 @@ class SettingsStore(context: Context) {
             .putInt("reminderHour", s.reminderHour)
             .putLong("lastReminderDay", s.lastReminderDay)
             .putStringSet("focusAllowlist", s.focusAllowlist)
+            .putString("defaultGate", s.defaultGate.name)
+            .putInt("defaultWaitSeconds", s.defaultWaitSeconds)
+            .putInt("defaultAllowMinutes", s.defaultAllowMinutes)
+            .putInt("skipCostPer10s", s.skipCostPer10s)
+            .putInt("unlockCostPerMinute", s.unlockCostPerMinute)
+            .putBoolean("escalatingPrices", s.escalatingPrices)
+            .putString("pauseQuestion", s.pauseQuestion)
+            .putString("pauseReminder", s.pauseReminder)
             .apply()
     }
 

@@ -13,9 +13,13 @@ Everything stays on your device: there are no accounts, no analytics and no netw
 
 Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 
-| Pause (waiting) | Pause (ready) | Pause (fully blocked) | Level up | First day |
+| Pause (waiting) | Pause (ready) | Pause (fully blocked) | Your own message | Settings |
 |---|---|---|---|---|
-| ![](docs/screenshots/block_wait.png) | ![](docs/screenshots/block_wait_done.png) | ![](docs/screenshots/block_hard.png) | ![](docs/screenshots/celebration.png) | ![](docs/screenshots/empty_today.png) |
+| ![](docs/screenshots/block_wait.png) | ![](docs/screenshots/block_wait_done.png) | ![](docs/screenshots/block_hard.png) | ![](docs/screenshots/block_custom.png) | ![](docs/screenshots/settings.png) |
+
+| Level up | First day |
+|---|---|
+| ![](docs/screenshots/celebration.png) | ![](docs/screenshots/empty_today.png) |
 
 ## Features
 
@@ -23,10 +27,15 @@ Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 - Block apps **always**, after a **daily time limit**, or only **during focus sessions and schedules**.
 - **Schedules**, including overnight windows such as 22:00–07:00 on chosen days.
 - **Ascent-style pause screen.** Instead of throwing you out, a calm "Do you really need it right now?" screen covers the app. *Close app* earns XP.
-- **You choose, per app, what the pause screen allows:**
-  - **Wait timer** (default for new apps): *Continue in app* fills up over 10 s to 5 min, then opens the app for 5–30 min.
+- **You choose, per app, what the pause screen allows** (Shield tab → *Edit*):
+  - **Wait timer:** *Continue in app* fills up over any wait from 5 s to 10 min, then opens the app for 1–120 min.
   - **Fully blocked:** *Close app* is the only option.
-- **Skip with coins:** the 🎁 button spends coins to skip a wait, or to buy a 5/15 min pass through a full block. Each paid unlock that day costs more than the last.
+  - **Coins on or off:** whether coins may skip the wait or buy a pass for that app.
+- **Skip with coins:** the 🎁 button spends coins to skip a wait, or to buy a 5/15 min pass through a full block.
+- **Make it yours** (Settings → *Pause screen*):
+  - the gate, wait and open time that newly blocked apps start with
+  - coin prices (including free), and whether they rise with each paid unlock that day
+  - your own question (`{app}` becomes the app's name) and a personal reminder, with a live preview
 - **Strict mode** makes every block during a focus session final: no waiting through and no coin unlocks.
 - Some apps are never blocked: the launcher, phone/dialer, keyboard, Settings and OpenFocus itself.
 

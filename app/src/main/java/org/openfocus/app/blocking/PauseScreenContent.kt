@@ -53,7 +53,15 @@ data class PauseState(
     val backToApp: Boolean = false,
     val focusEndsAt: Long? = null,
     val nudge: String = "",
+    /** User's own question; `{app}` becomes the app name. Blank = [DEFAULT_QUESTION]. */
+    val question: String = "",
+    /** User's personal reminder ("Remember: you're training for the marathon"). Shown when not blank. */
+    val reminder: String = "",
 ) {
+    val headline: String
+        get() = if (reason == BlockReason.SHORTS) "$detail blocked"
+        else question.ifBlank { DEFAULT_QUESTION }.replace("{app}", appLabel)
+
     val waiting: Boolean get() = gate == BlockGate.WAIT && elapsedMs < waitMs
     val progress: Float get() = if (waitMs <= 0) 1f else (elapsedMs.toFloat() / waitMs).coerceIn(0f, 1f)
     val secondsLeft: Int get() = ((waitMs - elapsedMs + 999) / 1000).toInt().coerceAtLeast(0)
@@ -73,6 +81,8 @@ data class PauseState(
         BlockReason.ALWAYS -> if (gate == BlockGate.WAIT) "Take a breath before you dive in." else "You chose to block this app."
     }
 }
+
+const val DEFAULT_QUESTION = "Do you really need {app} right now?"
 
 /**
  * Ascent-style pause screen: a calm question in the middle, "Close app" as the big primary action,
@@ -101,13 +111,17 @@ fun PauseScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 PixelSprite(SpriteCatalog.shield, SpriteCatalog.IDLE, Modifier.size(112.dp), contentDescription = "Shield")
-                Text(
-                    if (s.reason == BlockReason.SHORTS) "${s.detail} blocked" else "Do you really need ${s.appLabel} right now?",
-                    style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center,
-                )
+                Text(s.headline, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
                 Text(s.contextLine(), style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                if (s.nudge.isNotBlank()) Text(s.nudge, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+                if (s.reminder.isNotBlank()) {
+                    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                        Text(s.reminder, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
+                    }
+                } else if (s.nudge.isNotBlank()) {
+                    Text(s.nudge, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+                }
             }
 
             Column(

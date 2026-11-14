@@ -41,6 +41,10 @@ class BlockScreenshotTest {
     @Test fun waitFinished() = shoot("block_wait_done",
         PauseState("FeedApp", BlockReason.SCHEDULE, "Evening wind-down", BlockGate.WAIT, 10_000, 10_000, allowMinutes = 15, nudge = nudge))
 
+    @Test fun customMessage() = shoot("block_custom",
+        PauseState("Instagram", BlockReason.ALWAYS, gate = BlockGate.WAIT, waitMs = 60_000, elapsedMs = 15_000, allowMinutes = 5,
+            question = "Is {app} worth your evening?", reminder = "Half marathon in March. Sleep is training too."))
+
     @Test fun hardBlock() = shoot("block_hard",
         PauseState("FeedApp", BlockReason.DAILY_LIMIT, "30 min", BlockGate.HARD, nudge = nudge))
 

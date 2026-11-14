@@ -106,6 +106,6 @@ object BlockPolicy {
         reason, detail, rule.gate,
         waitSeconds = if (rule.gate == BlockGate.WAIT) rule.waitSeconds.coerceAtLeast(1) else 0,
         allowMinutes = if (rule.gate == BlockGate.WAIT) rule.allowMinutes.coerceAtLeast(1) else 0,
-        canPay = true,
+        canPay = rule.allowCoins,
     )
 }

@@ -24,6 +24,14 @@ class PauseStateTest {
         assertFalse(PauseState("TikTok", BlockReason.SHORTS).showCoins)
     }
 
+    @Test fun customQuestionUsesAppPlaceholder() {
+        assertEquals("Do you really need Feed right now?", PauseState("Feed", BlockReason.ALWAYS).headline)
+        assertEquals("Is Feed worth it?", PauseState("Feed", BlockReason.ALWAYS, question = "Is {app} worth it?").headline)
+        assertEquals("Breathe.", PauseState("Feed", BlockReason.ALWAYS, question = "Breathe.").headline)
+        // Shorts keep their own headline
+        assertEquals("YouTube Shorts blocked", PauseState("YouTube", BlockReason.SHORTS, "YouTube Shorts", question = "x").headline)
+    }
+
     @Test fun contextLines() {
         assertEquals("Scheduled rest: Night.", PauseState("Feed", BlockReason.SCHEDULE, "Night").contextLine())
         assertEquals("You're in a focus session on \"Essay\" · about 5 min left.",

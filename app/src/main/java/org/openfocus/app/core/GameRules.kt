@@ -76,21 +76,33 @@ object GameRules {
     fun faintCoinPenalty(coins: Long): Long = (coins / 10)
 
     /** Price of a temporary unlock from the block screen, scaling with how often you've used it today. */
-    fun unlockCost(minutes: Int, unlocksToday: Int): Int =
-        (minutes * 2) * (1 + unlocksToday)
+    const val DEFAULT_UNLOCK_COST_PER_MINUTE = 2
+    const val DEFAULT_SKIP_COST_PER_10S = 1
+    /** Bounds for user-configured prices (Settings → Pause screen). */
+    val priceRange = 0..20
+
+    fun unlockCost(minutes: Int, unlocksToday: Int, perMinute: Int = DEFAULT_UNLOCK_COST_PER_MINUTE): Int =
+        (minutes * perMinute) * (1 + unlocksToday)
 
     val unlockOptions = listOf(5, 15)
 
-    /** Choices offered when configuring a WAIT gate. */
-    val waitOptionsSeconds = listOf(10, 30, 60, 120, 300)
-    val allowOptionsMinutes = listOf(5, 10, 15, 30)
+    /** Slider stops when configuring a WAIT gate (seconds) and the open time afterwards (minutes). */
+    val waitStepsSeconds = listOf(5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300, 600)
+    val allowStepsMinutes = listOf(1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120)
 
     /**
-     * Coins to skip a wait timer: roughly 1 coin per 10 s of waiting (min 3), escalating with each
-     * paid unlock today, so skipping is possible but never mindless.
+     * Coins to skip a wait timer: [per10s] coins per started 10 s of waiting (min 3 × per10s),
+     * escalating with each paid unlock today, so skipping is possible but never mindless.
+     * A price of 0 makes skipping free.
      */
-    fun skipWaitCost(waitSeconds: Int, unlocksToday: Int): Int =
-        maxOf(3, (waitSeconds + 9) / 10) * (1 + unlocksToday)
+    fun skipWaitCost(waitSeconds: Int, unlocksToday: Int, per10s: Int = DEFAULT_SKIP_COST_PER_10S): Int =
+        maxOf(3, (waitSeconds + 9) / 10) * per10s * (1 + unlocksToday)
+
+    fun formatWait(seconds: Int): String = when {
+        seconds < 60 -> "${seconds}s"
+        seconds % 60 == 0 -> "${seconds / 60} min"
+        else -> "${seconds / 60} min ${seconds % 60}s"
+    }
 
     /** Titles shown under the hero's name. */
     fun titleFor(level: Int): String = when {

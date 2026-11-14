@@ -114,5 +114,6 @@ open class ScreenshotTest {
             runBlocking { app.container.game.apply("test", xp = 300, message = "Level up!") }
         }
     }
+    @Test fun settings() { seed(); shoot("settings", "settings") }
     @Test fun hero() { seed(); runBlocking { app.container.game.syncAchievements() }; shoot("hero", "hero") }
 }

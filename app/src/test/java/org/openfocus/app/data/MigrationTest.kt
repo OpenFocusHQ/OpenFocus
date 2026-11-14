@@ -33,7 +33,7 @@ class MigrationTest {
             )
             db.execSQL("INSERT INTO block_rules (packageName, label, mode, dailyLimitMinutes, enabled, updatedAt) VALUES ('com.example.feed', 'Feed', 'ALWAYS', 30, 1, 0)")
         }
-        helper.runMigrationsAndValidate(name, 3, true).close()
+        helper.runMigrationsAndValidate(name, 4, true).close()
 
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java, name)
             .allowMainThreadQueries().build()
@@ -47,6 +47,7 @@ class MigrationTest {
         assertEquals(BlockGate.HARD, rule.gate)
         assertEquals(30, rule.waitSeconds)
         assertEquals(10, rule.allowMinutes)
+        assertEquals(true, rule.allowCoins) // v4: coins stay allowed for existing rules
         db.close()
     }
 }

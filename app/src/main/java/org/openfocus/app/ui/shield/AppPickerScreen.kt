@@ -81,7 +81,14 @@ fun AppPickerScreen(nav: NavController, mode: String) {
                         c.settings.update { s -> s.copy(focusAllowlist = if (checked) s.focusAllowlist - app.packageName else s.focusAllowlist + app.packageName) }
                     } else scope.launch {
                         if (checked) c.blocks.removeRule(app.packageName)
-                        else c.blocks.upsertRule(BlockRuleEntity(app.packageName, app.label))
+                        else c.blocks.upsertRule(
+                            // New apps start with the pause-screen defaults from Settings.
+                            BlockRuleEntity(
+                                app.packageName, app.label,
+                                gate = settings.defaultGate, waitSeconds = settings.defaultWaitSeconds,
+                                allowMinutes = settings.defaultAllowMinutes,
+                            ),
+                        )
                     }
                     Unit
                 }

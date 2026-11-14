@@ -48,6 +48,16 @@ class GameRulesTest {
         assertEquals(2 * GameRules.skipWaitCost(60, 0), GameRules.skipWaitCost(60, 1))
     }
 
+    @Test fun pricesAreConfigurable() {
+        assertEquals(0, GameRules.skipWaitCost(60, 3, per10s = 0)) // free skipping
+        assertEquals(18, GameRules.skipWaitCost(60, 0, per10s = 3))
+        assertEquals(15, GameRules.unlockCost(5, 0, perMinute = 3))
+        assertEquals(0, GameRules.unlockCost(15, 2, perMinute = 0))
+        assertEquals("1 min 30s", GameRules.formatWait(90))
+        assertEquals("45s", GameRules.formatWait(45))
+        assertEquals("5 min", GameRules.formatWait(300))
+    }
+
     @Test fun maxHpCapped() {
         assertEquals(GameRules.MAX_MAX_HP, GameRules.maxHpFor(1000))
     }

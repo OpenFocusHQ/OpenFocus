@@ -1,7 +1,6 @@
 package org.openfocus.app.data.repo
 
 import org.openfocus.app.core.Days
-import org.openfocus.app.core.GameRules
 import org.openfocus.app.core.ItemSlot
 import org.openfocus.app.core.ShopCatalog
 import org.openfocus.app.core.ShopItem
@@ -48,7 +47,7 @@ class ShopRepository(db: AppDatabase, private val game: GameEngine, private val 
 
     /** Buy a temporary unlock for a hard-blocked app from the pause screen. */
     suspend fun buyUnlock(pkg: String, minutes: Int): Boolean {
-        val cost = GameRules.unlockCost(minutes, settings.value.unlocksTodayEffective(Days.today()))
+        val cost = settings.value.unlockCost(minutes)
         if (!game.spend(cost, EventTypes.UNLOCK_BOUGHT, pkg, "Unlocked for $minutes min")) return false
         addPass(pkg, minutes, paid = true)
         return true
@@ -56,7 +55,7 @@ class ShopRepository(db: AppDatabase, private val game: GameEngine, private val 
 
     /** Pay coins to skip a wait timer; the app then opens for [allowMinutes] as if the wait had finished. */
     suspend fun buySkipWait(pkg: String, waitSeconds: Int, allowMinutes: Int): Boolean {
-        val cost = GameRules.skipWaitCost(waitSeconds, settings.value.unlocksTodayEffective(Days.today()))
+        val cost = settings.value.skipCost(waitSeconds)
         if (!game.spend(cost, EventTypes.UNLOCK_BOUGHT, pkg, "Skipped the wait")) return false
         addPass(pkg, allowMinutes, paid = true)
         return true

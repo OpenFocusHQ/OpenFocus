@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.openfocus.app.OpenFocusApp
-import org.openfocus.app.core.Days
 import org.openfocus.app.core.Encouragement
 import org.openfocus.app.core.GameRules
 import org.openfocus.app.data.db.BlockGate
@@ -150,7 +149,6 @@ class BlockActivity : ComponentActivity() {
         val settings by container.settings.state.collectAsState()
         val profile by remember { container.db.profileDao().observe() }.collectAsState(initial = null)
         val coins = profile?.coins ?: 0L
-        val unlocksToday = settings.unlocksTodayEffective(Days.today())
         val nudge = remember { if (a.reason == BlockReason.SHORTS) Encouragement.shorts() else Encouragement.blocked() }
         var showCoins by remember { mutableStateOf(false) }
 
@@ -169,6 +167,7 @@ class BlockActivity : ComponentActivity() {
                 appLabel = appLabel, reason = a.reason, detail = a.detail, gate = a.gate,
                 waitMs = waitMs, elapsedMs = elapsed, allowMinutes = a.allowMinutes,
                 canPay = a.canPay, backToApp = a.backToApp, focusEndsAt = settings.activeFocus?.endsAt, nudge = nudge,
+                question = settings.pauseQuestion, reminder = settings.pauseReminder,
             ),
             onClose = onClose, onContinue = onContinue, onBackToApp = onBackToApp, onOpenCoins = { showCoins = true },
         )
@@ -180,16 +179,16 @@ class BlockActivity : ComponentActivity() {
                 title = { Text("Use coins") },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("You have $coins coins. Each paid unlock today costs more than the last.")
+                        Text("You have $coins coins." + if (settings.escalatingPrices) " Each paid unlock today costs more than the last." else "")
                         if (a.gate == BlockGate.WAIT) {
-                            val cost = GameRules.skipWaitCost(a.waitSeconds, unlocksToday)
+                            val cost = settings.skipCost(a.waitSeconds)
                             FilledTonalButton(enabled = coins >= cost, onClick = { showCoins = false; onSkipWait() }, modifier = Modifier.fillMaxWidth()) {
                                 Text("Skip the wait · $cost coins")
                             }
                             Text("Opens $appLabel for ${a.allowMinutes} min.", style = MaterialTheme.typography.bodySmall)
                         } else {
                             GameRules.unlockOptions.forEach { m ->
-                                val cost = GameRules.unlockCost(m, unlocksToday)
+                                val cost = settings.unlockCost(m)
                                 FilledTonalButton(enabled = coins >= cost, onClick = { showCoins = false; onUnlock(m) }, modifier = Modifier.fillMaxWidth()) {
                                     Text("Unlock for $m min · $cost coins")
                                 }
