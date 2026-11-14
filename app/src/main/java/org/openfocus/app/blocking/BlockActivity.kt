@@ -112,6 +112,7 @@ class BlockActivity : ComponentActivity() {
                     onBackToApp = { continueToApp { true } },
                     onRedeem = { r -> continueToApp { container.shop.redeem(r.id, forPackage = a.pkg) } },
                     onUnlock = { minutes ->
+                        // Skipping only costs extra while the wait is still running.
                         continueToApp { container.shop.buyUnlock(a.pkg, minutes, skipWaitSeconds = if (a.gate == BlockGate.WAIT) a.waitSeconds else null) }
                     },
                 )
@@ -121,6 +122,8 @@ class BlockActivity : ComponentActivity() {
 
     private fun closeApp(resisted: Boolean) {
         if (resisted) {
+            // The pause screen stays quiet; the reward shows as a toast over the home screen.
+            android.widget.Toast.makeText(this, "+${GameRules.RESIST_XP} XP · ${Encouragement.resist()}", android.widget.Toast.LENGTH_SHORT).show()
             container.appScope.launch {
                 container.game.apply(EventTypes.RESISTED, intent.getStringExtra(EXTRA_PACKAGE),
                     xp = GameRules.RESIST_XP, coins = GameRules.RESIST_COINS, message = Encouragement.resist())
@@ -154,8 +157,7 @@ class BlockActivity : ComponentActivity() {
         val profile by remember { container.db.profileDao().observe() }.collectAsState(initial = null)
         val coins = profile?.coins ?: 0L
         val rewards by container.shop.rewards.collectAsState(initial = emptyList())
-        val nudge = remember { if (a.reason == BlockReason.SHORTS) Encouragement.shorts() else Encouragement.blocked() }
-        var showCoins by remember { mutableStateOf(false) }
+        var sheetKind by rememberSaveable { mutableStateOf("") } // "", "free" or "paid"
 
         // Wait timer: elapsed time survives rotation; the screen is discarded if the user leaves.
         val waitMs = a.waitSeconds * 1000L
@@ -167,33 +169,38 @@ class BlockActivity : ComponentActivity() {
             while (!timer.done) withFrameMillis { elapsed = timer.onFrame(it) }
         }
 
-        // How long to unlock for: chosen here each time (free up to the app's max; paid can go longer).
-        var freeMinutes by rememberSaveable { mutableIntStateOf(0) }
         val state = PauseState(
             appLabel = appLabel, reason = a.reason, detail = a.detail, gate = a.gate,
-            waitMs = waitMs, elapsedMs = elapsed, allowMinutes = a.allowMinutes, selectedMinutes = freeMinutes,
-            canPay = a.canPay, backToApp = a.backToApp, focusEndsAt = settings.activeFocus?.endsAt, nudge = nudge,
+            waitMs = waitMs, elapsedMs = elapsed, allowMinutes = a.allowMinutes,
+            canPay = a.canPay, backToApp = a.backToApp, focusEndsAt = settings.activeFocus?.endsAt,
             question = settings.pauseQuestion, reminder = settings.pauseReminder,
         )
+        val sheet = when (sheetKind) {
+            "free" -> UnlockSheets.free(state)
+            "paid" -> UnlockSheets.paid(state, coins, settings, rewards, a.pkg)
+            else -> null
+        }
         PauseScreenContent(
             state,
-            onClose = onClose, onContinue = { onContinue(state.chosenMinutes) }, onBackToApp = onBackToApp,
-            onOpenCoins = { showCoins = true }, onSelectMinutes = { freeMinutes = it },
+            onClose = onClose,
+            onContinue = {
+                // Only one choice? Don't ask.
+                val only = state.freeDurations.singleOrNull()
+                if (only != null) onContinue(only) else sheetKind = "free"
+            },
+            onBackToApp = onBackToApp,
+            onOpenCoins = { sheetKind = "paid" },
+            sheet = sheet,
+            onDismissSheet = { sheetKind = "" },
+            onPick = { key ->
+                sheetKind = ""
+                when {
+                    key.startsWith(UnlockSheets.FREE) -> onContinue(key.removePrefix(UnlockSheets.FREE).toInt())
+                    key.startsWith(UnlockSheets.PAID) -> onUnlock(key.removePrefix(UnlockSheets.PAID).toInt())
+                    key.startsWith(UnlockSheets.REWARD) -> rewards.firstOrNull { it.id == key.removePrefix(UnlockSheets.REWARD) }?.let(onRedeem)
+                }
+            },
         )
-
-        if (showCoins) {
-            val skipWait = if (a.gate == BlockGate.WAIT) a.waitSeconds else null
-            var paidMinutes by rememberSaveable { mutableIntStateOf(GameRules.defaultDuration(GameRules.unlockDurations)) }
-            PaidUnlockDialog(
-                appLabel = appLabel, coins = coins, minutes = paidMinutes, onMinutes = { paidMinutes = it },
-                perMinute = settings.unlockCostPerMinute, timeCost = settings.unlockCost(paidMinutes),
-                skipWaitSeconds = skipWait, skipCost = skipWait?.let { settings.skipCost(it) } ?: 0,
-                escalating = settings.escalatingPrices,
-                onUnlock = { showCoins = false; onUnlock(paidMinutes) }, onDismiss = { showCoins = false },
-                rewards = rewards.filter { it.unlocks(a.pkg) },
-                onRedeem = { r -> showCoins = false; onRedeem(r) },
-            )
-        }
     }
 
     companion object {

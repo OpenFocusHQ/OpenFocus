@@ -13,9 +13,9 @@ Everything stays on your device: there are no accounts, no analytics and no netw
 
 Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 
-| Pause (waiting) | Pause (ready) | Pause (fully blocked) | Your own message | Settings |
-|---|---|---|---|---|
-| ![](docs/screenshots/block_wait.png) | ![](docs/screenshots/block_wait_done.png) | ![](docs/screenshots/block_hard.png) | ![](docs/screenshots/block_custom.png) | ![](docs/screenshots/settings.png) |
+| Pause (waiting) | How long? | Unlock with coins | Reels blocked | Your own message | Settings |
+|---|---|---|---|---|---|
+| ![](docs/screenshots/block_wait.png) | ![](docs/screenshots/block_free_sheet.png) | ![](docs/screenshots/block_pay.png) | ![](docs/screenshots/block_reels.png) | ![](docs/screenshots/block_custom.png) | ![](docs/screenshots/settings.png) |
 
 | Level up | First day |
 |---|---|
@@ -26,7 +26,7 @@ Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 ### 🛡️ Shield (app blocker)
 - Block apps **always**, after a **daily time limit**, or only **during focus sessions and schedules**.
 - **Schedules**, including overnight windows such as 22:00–07:00 on chosen days.
-- **Ascent-style pause screen.** Instead of throwing you out, a calm "Do you really need it right now?" screen covers the app. *Close app* earns XP.
+- **Ascent-style pause screen.** Instead of throwing you out, a calm screen covers the app: one question, *Close app* (which earns XP), and, on wait-timer apps, *Continue in app*, which fills up as the timer runs. After tapping Continue, a sheet asks how long you need.
 - **You choose, per app, what the pause screen allows** (Shield tab → *Edit*):
   - **Wait timer:** *Continue in app* fills up over any wait from 5 s to 10 min. You then **choose how long to unlock**, up to the app's free maximum (1–120 min).
   - **Fully blocked:** *Close app* is the only option.

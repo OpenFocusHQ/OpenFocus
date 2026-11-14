@@ -2,6 +2,7 @@ package org.openfocus.app.blocking
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.openfocus.app.data.db.BlockGate
@@ -18,12 +19,8 @@ class PauseStateTest {
         assertFalse(done.showCoins) // nothing left to pay for
     }
 
-    @Test fun freeUnlockLengthIsChosenWithinTheMaximum() {
-        val s = PauseState("Feed", BlockReason.ALWAYS, gate = BlockGate.WAIT, waitMs = 1, elapsedMs = 1, allowMinutes = 15)
-        assertEquals(listOf(1, 2, 5, 10, 15), s.freeDurations)
-        assertEquals(5, s.chosenMinutes)                         // default
-        assertEquals(15, s.copy(selectedMinutes = 15).chosenMinutes)
-        assertEquals(5, s.copy(selectedMinutes = 60).chosenMinutes) // can't pick past the free max
+    @Test fun freeLengthsStopAtTheAppsMaximum() {
+        assertEquals(listOf(1, 2, 5, 10, 15), PauseState("Feed", BlockReason.ALWAYS, allowMinutes = 15).freeDurations)
     }
 
     @Test fun hardBlockOffersCoinsUnlessStrictOrShorts() {
@@ -35,14 +32,17 @@ class PauseStateTest {
     @Test fun customQuestionUsesAppPlaceholder() {
         assertEquals("Do you really need Feed right now?", PauseState("Feed", BlockReason.ALWAYS).headline)
         assertEquals("Is Feed worth it?", PauseState("Feed", BlockReason.ALWAYS, question = "Is {app} worth it?").headline)
-        assertEquals("Breathe.", PauseState("Feed", BlockReason.ALWAYS, question = "Breathe.").headline)
-        // Shorts keep their own headline
         assertEquals("YouTube Shorts blocked", PauseState("YouTube", BlockReason.SHORTS, "YouTube Shorts", question = "x").headline)
     }
 
-    @Test fun contextLines() {
-        assertEquals("Scheduled rest: Night.", PauseState("Feed", BlockReason.SCHEDULE, "Night").contextLine())
+    /** Ascent-style: say at most one thing under the question. */
+    @Test fun atMostOneQuietLine() {
+        assertNull(PauseState("Feed", BlockReason.ALWAYS).subline())
+        assertEquals("Scheduled rest: Night.", PauseState("Feed", BlockReason.SCHEDULE, "Night").subline())
+        assertEquals("Mind the marathon", PauseState("Feed", BlockReason.SCHEDULE, "Night", reminder = "Mind the marathon").subline())
         assertEquals("You're in a focus session on \"Essay\" · about 5 min left.",
-            PauseState("Feed", BlockReason.FOCUS, "Essay", focusEndsAt = 4 * 60_000L + 1).contextLine(now = 0))
+            PauseState("Feed", BlockReason.FOCUS, "Essay", focusEndsAt = 4 * 60_000L + 1).subline(now = 0))
+        assertEquals("The rest of Instagram still works.", PauseState("Instagram", BlockReason.SHORTS, "Reels", backToApp = true).subline())
+        assertEquals("TikTok is all short videos.", PauseState("TikTok", BlockReason.SHORTS, "TikTok").subline())
     }
 }
