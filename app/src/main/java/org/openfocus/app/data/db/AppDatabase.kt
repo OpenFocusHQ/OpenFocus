@@ -14,9 +14,12 @@ import androidx.room.TypeConverters
         BlockScheduleEntity::class, AchievementEntity::class, RewardEntity::class,
         InventoryEntity::class, ActivityEventEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)], // v2: profiles.skinTone
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2), // v2: profiles.skinTone
+        AutoMigration(from = 2, to = 3), // v3: block_rules.gate / waitSeconds / allowMinutes
+    ],
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

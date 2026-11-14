@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.openfocus.app.data.db.BlockGate
 import org.openfocus.app.data.db.BlockMode
 import org.openfocus.app.data.db.BlockRuleEntity
 import org.openfocus.app.data.db.BlockScheduleEntity
@@ -20,7 +21,8 @@ class BlockPolicyTest {
     private fun decide(config: BlockConfig, minute: Int = 12 * 60, day: Long = monday, usage: Int = 0, exempt: Set<String> = emptySet()) =
         BlockPolicy.decide(app, config, now, day, minute, exempt) { usage }
 
-    private fun rule(mode: BlockMode, limit: Int = 30) = mapOf(app to BlockRuleEntity(app, "Feed", mode, limit))
+    private fun rule(mode: BlockMode, limit: Int = 30, gate: BlockGate = BlockGate.HARD, wait: Int = 30, allow: Int = 10) =
+        mapOf(app to BlockRuleEntity(app, "Feed", mode, limit, gate = gate, waitSeconds = wait, allowMinutes = allow))
 
     @Test fun unlistedAppNotBlocked() = assertNull(decide(BlockConfig()))
 
@@ -61,6 +63,41 @@ class BlockPolicyTest {
         assertNull(decide(BlockConfig(rule(BlockMode.ALWAYS), settings = Settings(shieldPaused = true))))
         val focus = ActiveFocus("f", 0, now + 60_000, 25, "", null, deep = false)
         assertEquals(BlockReason.FOCUS, decide(BlockConfig(rule(BlockMode.ALWAYS), settings = Settings(shieldPaused = true, activeFocus = focus)))?.reason)
+    }
+
+    @Test fun ruleGateIsPassedThrough() {
+        val wait = decide(BlockConfig(rule(BlockMode.ALWAYS, gate = BlockGate.WAIT, wait = 60, allow = 15)))!!
+        assertEquals(BlockGate.WAIT, wait.gate)
+        assertEquals(60, wait.waitSeconds)
+        assertEquals(15, wait.allowMinutes)
+        assertTrue(wait.canPay)
+        val hard = decide(BlockConfig(rule(BlockMode.ALWAYS, gate = BlockGate.HARD)))!!
+        assertEquals(BlockGate.HARD, hard.gate)
+        assertEquals(0, hard.waitSeconds)
+    }
+
+    @Test fun focusFollowsRuleGateUnlessStrict() {
+        val focus = ActiveFocus("f", 0, now + 60_000, 25, "Essay", null, deep = false)
+        val r = rule(BlockMode.FOCUS_AND_SCHEDULE, gate = BlockGate.WAIT)
+        val relaxed = decide(BlockConfig(r, settings = Settings(activeFocus = focus)))!!
+        assertEquals(BlockGate.WAIT, relaxed.gate)
+        val strict = decide(BlockConfig(r, settings = Settings(activeFocus = focus, strictMode = true)))!!
+        assertEquals(BlockGate.HARD, strict.gate)
+        assertFalse(strict.canPay)
+    }
+
+    @Test fun deepFocusIsHardWithPaidEscapeUnlessStrict() {
+        val focus = ActiveFocus("f", 0, now + 60_000, 25, "", null, deep = true)
+        val d = decide(BlockConfig(settings = Settings(activeFocus = focus)))!!
+        assertEquals(BlockGate.HARD, d.gate)
+        assertTrue(d.canPay)
+        assertFalse(decide(BlockConfig(settings = Settings(activeFocus = focus, strictMode = true)))!!.canPay)
+    }
+
+    @Test fun waitedPassLetsTheAppThroughUntilItExpires() {
+        val r = rule(BlockMode.ALWAYS, gate = BlockGate.WAIT)
+        assertNull(decide(BlockConfig(r, settings = Settings(unlockPasses = mapOf(app to now + 1)))))
+        assertEquals(BlockReason.ALWAYS, decide(BlockConfig(r, settings = Settings(unlockPasses = mapOf(app to now))))?.reason)
     }
 
     @Test fun overnightSchedule() {

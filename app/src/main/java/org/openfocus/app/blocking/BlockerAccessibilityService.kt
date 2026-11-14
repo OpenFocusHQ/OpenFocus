@@ -78,7 +78,7 @@ class BlockerAccessibilityService : AccessibilityService() {
         if (pkg == lastBlockPkg && now - lastBlockAt < 1_500) return true
         lastBlockPkg = pkg
         lastBlockAt = now
-        performGlobalAction(GLOBAL_ACTION_HOME)
+        // Ascent-style: don't kick the user out. The pause screen covers the app; the user decides.
         launchBlockScreen(pkg, decision)
         return true
     }
@@ -95,12 +95,17 @@ class BlockerAccessibilityService : AccessibilityService() {
         if (now - lastBlockAt < 1_200) return
         lastBlockAt = now
         lastBlockPkg = pkg
-        performGlobalAction(if (rule.wholeApp) GLOBAL_ACTION_HOME else GLOBAL_ACTION_BACK)
+        // In-app feeds (Shorts, Reels): step back out of the feed. Whole-app feeds (TikTok): leave the
+        // app where it is and let the pause screen offer "Close app".
+        if (!rule.wholeApp) performGlobalAction(GLOBAL_ACTION_BACK)
         if (now - lastShortsLogAt > 5_000) {
             lastShortsLogAt = now
             container.appScope.launch { container.game.apply(EventTypes.SHORTS_BLOCKED, pkg, emit = false) }
         }
-        launchBlockScreen(pkg, BlockDecision(BlockReason.SHORTS, rule.platform.label))
+        launchBlockScreen(
+            pkg,
+            BlockDecision(BlockReason.SHORTS, rule.platform.label, canPay = false, backToApp = !rule.wholeApp),
+        )
     }
 
     private fun launchBlockScreen(pkg: String, decision: BlockDecision) {
@@ -109,6 +114,11 @@ class BlockerAccessibilityService : AccessibilityService() {
             .putExtra(BlockActivity.EXTRA_PACKAGE, pkg)
             .putExtra(BlockActivity.EXTRA_REASON, decision.reason.name)
             .putExtra(BlockActivity.EXTRA_DETAIL, decision.detail)
+            .putExtra(BlockActivity.EXTRA_GATE, decision.gate.name)
+            .putExtra(BlockActivity.EXTRA_WAIT_SECONDS, decision.waitSeconds)
+            .putExtra(BlockActivity.EXTRA_ALLOW_MINUTES, decision.allowMinutes)
+            .putExtra(BlockActivity.EXTRA_CAN_PAY, decision.canPay)
+            .putExtra(BlockActivity.EXTRA_BACK_TO_APP, decision.backToApp)
         runCatching { startActivity(intent) }
     }
 

@@ -81,6 +81,17 @@ object GameRules {
 
     val unlockOptions = listOf(5, 15)
 
+    /** Choices offered when configuring a WAIT gate. */
+    val waitOptionsSeconds = listOf(10, 30, 60, 120, 300)
+    val allowOptionsMinutes = listOf(5, 10, 15, 30)
+
+    /**
+     * Coins to skip a wait timer: roughly 1 coin per 10 s of waiting (min 3), escalating with each
+     * paid unlock today, so skipping is possible but never mindless.
+     */
+    fun skipWaitCost(waitSeconds: Int, unlocksToday: Int): Int =
+        maxOf(3, (waitSeconds + 9) / 10) * (1 + unlocksToday)
+
     /** Titles shown under the hero's name. */
     fun titleFor(level: Int): String = when {
         level >= 40 -> "Summit Legend"

@@ -58,6 +58,8 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.openfocus.app.blocking.BlockerAccessibilityService
 import org.openfocus.app.core.Days
+import org.openfocus.app.core.GameRules
+import org.openfocus.app.data.db.BlockGate
 import org.openfocus.app.data.db.BlockMode
 import org.openfocus.app.data.db.BlockRuleEntity
 import org.openfocus.app.data.db.BlockScheduleEntity
@@ -110,7 +112,7 @@ fun ShieldScreen(nav: NavController) {
             }
         }
         item {
-            ToggleRow("Strict mode", "No paid unlocks during focus sessions.", settings.strictMode) { on ->
+            ToggleRow("Strict mode", "During focus sessions every block is final: no waiting through, no coin unlocks.", settings.strictMode) { on ->
                 c.settings.update { it.copy(strictMode = on) }
             }
         }
@@ -230,6 +232,45 @@ private fun RuleRow(r: BlockRuleEntity, usageMinutes: Int?, onChange: (BlockRule
                         DropdownMenuItem(text = { Text("Daily limit: $m min") }, onClick = { menu = false; onChange(r.copy(mode = BlockMode.DAILY_LIMIT, dailyLimitMinutes = m)) })
                     }
                     DropdownMenuItem(text = { Text("Always blocked") }, onClick = { menu = false; onChange(r.copy(mode = BlockMode.ALWAYS)) })
+                }
+            }
+            GateRow(r, onChange)
+        }
+    }
+}
+
+/** "When blocked": fully blocked, or a wait timer that then lets the app open for a while. */
+@Composable
+private fun GateRow(r: BlockRuleEntity, onChange: (BlockRuleEntity) -> Unit) {
+    var gateMenu by remember { mutableStateOf(false) }
+    var allowMenu by remember { mutableStateOf(false) }
+    fun waitLabel(s: Int) = if (s < 60) "${s}s" else "${s / 60} min"
+    Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("When blocked:", style = MaterialTheme.typography.labelMedium)
+        Box {
+            OutlinedButton(onClick = { gateMenu = true }) {
+                Text(if (r.gate == BlockGate.HARD) "Fully blocked" else "Wait ${waitLabel(r.waitSeconds)}")
+            }
+            DropdownMenu(gateMenu, { gateMenu = false }) {
+                DropdownMenuItem(
+                    text = { Text("Fully blocked") },
+                    onClick = { gateMenu = false; onChange(r.copy(gate = BlockGate.HARD)) },
+                )
+                GameRules.waitOptionsSeconds.forEach { s ->
+                    DropdownMenuItem(
+                        text = { Text("Wait ${waitLabel(s)}, then continue") },
+                        onClick = { gateMenu = false; onChange(r.copy(gate = BlockGate.WAIT, waitSeconds = s)) },
+                    )
+                }
+            }
+        }
+        if (r.gate == BlockGate.WAIT) {
+            Box {
+                TextButton(onClick = { allowMenu = true }) { Text("for ${r.allowMinutes} min") }
+                DropdownMenu(allowMenu, { allowMenu = false }) {
+                    GameRules.allowOptionsMinutes.forEach { m ->
+                        DropdownMenuItem(text = { Text("Open for $m min") }, onClick = { allowMenu = false; onChange(r.copy(allowMinutes = m)) })
+                    }
                 }
             }
         }

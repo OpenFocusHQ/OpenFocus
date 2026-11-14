@@ -1,5 +1,6 @@
 package org.openfocus.app.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -150,6 +151,14 @@ enum class BlockMode {
     FOCUS_AND_SCHEDULE,
 }
 
+/** What the pause screen does when a rule blocks an app. */
+enum class BlockGate {
+    /** No way in except closing the app (or paying coins for an unlock pass, unless strict). */
+    HARD,
+    /** Wait [BlockRuleEntity.waitSeconds] on the pause screen, then the app opens for [BlockRuleEntity.allowMinutes]. */
+    WAIT,
+}
+
 @Entity(tableName = "block_rules")
 data class BlockRuleEntity(
     @PrimaryKey val packageName: String,
@@ -158,6 +167,10 @@ data class BlockRuleEntity(
     val dailyLimitMinutes: Int = 30,
     val enabled: Boolean = true,
     val updatedAt: Long = System.currentTimeMillis(),
+    // Added in DB v3. Rows migrated from v2 keep their old behaviour (HARD); new rules default to WAIT.
+    @ColumnInfo(defaultValue = "HARD") val gate: BlockGate = BlockGate.WAIT,
+    @ColumnInfo(defaultValue = "30") val waitSeconds: Int = 30,
+    @ColumnInfo(defaultValue = "10") val allowMinutes: Int = 10,
 )
 
 @Entity(tableName = "block_schedules")

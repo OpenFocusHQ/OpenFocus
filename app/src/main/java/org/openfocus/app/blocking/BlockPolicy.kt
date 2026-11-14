@@ -1,6 +1,7 @@
 package org.openfocus.app.blocking
 
 import org.openfocus.app.core.Days
+import org.openfocus.app.data.db.BlockGate
 import org.openfocus.app.data.db.BlockMode
 import org.openfocus.app.data.db.BlockRuleEntity
 import org.openfocus.app.data.db.BlockScheduleEntity
@@ -14,7 +15,22 @@ data class BlockConfig(
 
 enum class BlockReason { ALWAYS, DAILY_LIMIT, FOCUS, DEEP_FOCUS, SCHEDULE, SHORTS }
 
-data class BlockDecision(val reason: BlockReason, val detail: String = "")
+/**
+ * @param gate HARD = only "Close app" (plus a paid unlock if [canPay]); WAIT = "Continue in app"
+ *        becomes available after [waitSeconds] and opens the app for [allowMinutes].
+ * @param canPay whether coins may be spent to unlock / skip the wait (false in strict focus).
+ * @param backToApp the offending part of the app was already left (e.g. a Shorts feed), so the
+ *        rest of the app is safe to return to straight away.
+ */
+data class BlockDecision(
+    val reason: BlockReason,
+    val detail: String = "",
+    val gate: BlockGate = BlockGate.HARD,
+    val waitSeconds: Int = 0,
+    val allowMinutes: Int = 0,
+    val canPay: Boolean = true,
+    val backToApp: Boolean = false,
+)
 
 /** Pure decision logic; unit-tested in BlockPolicyTest. */
 object BlockPolicy {
@@ -61,20 +77,35 @@ object BlockPolicy {
         val rule = config.rules[pkg]?.takeIf { it.enabled }
 
         if (focus != null && !unlockHonoured) {
-            if (rule != null) return BlockDecision(BlockReason.FOCUS, focus.label)
-            if (focus.deep && pkg !in s.focusAllowlist) return BlockDecision(BlockReason.DEEP_FOCUS, focus.label)
+            // Strict mode turns every focus block into a hard block with no paid way through.
+            val strict = s.strictMode
+            if (rule != null) {
+                return if (strict) BlockDecision(BlockReason.FOCUS, focus.label, BlockGate.HARD, canPay = false)
+                else gated(rule, BlockReason.FOCUS, focus.label)
+            }
+            if (focus.deep && pkg !in s.focusAllowlist) {
+                return BlockDecision(BlockReason.DEEP_FOCUS, focus.label, BlockGate.HARD, canPay = !strict)
+            }
         }
         if (rule == null || unlockHonoured) return null
 
         return when (rule.mode) {
-            BlockMode.ALWAYS -> BlockDecision(BlockReason.ALWAYS)
+            BlockMode.ALWAYS -> gated(rule, BlockReason.ALWAYS)
             BlockMode.DAILY_LIMIT -> {
                 val used = usageMinutesToday(pkg)
-                if (used >= rule.dailyLimitMinutes) BlockDecision(BlockReason.DAILY_LIMIT, "${rule.dailyLimitMinutes} min")
-                else activeSchedule(config, epochDay, minuteOfDay)?.let { BlockDecision(BlockReason.SCHEDULE, it.name) }
+                if (used >= rule.dailyLimitMinutes) gated(rule, BlockReason.DAILY_LIMIT, "${rule.dailyLimitMinutes} min")
+                else activeSchedule(config, epochDay, minuteOfDay)?.let { gated(rule, BlockReason.SCHEDULE, it.name) }
             }
             BlockMode.FOCUS_AND_SCHEDULE ->
-                activeSchedule(config, epochDay, minuteOfDay)?.let { BlockDecision(BlockReason.SCHEDULE, it.name) }
+                activeSchedule(config, epochDay, minuteOfDay)?.let { gated(rule, BlockReason.SCHEDULE, it.name) }
         }
     }
+
+    /** A decision that follows the rule's chosen gate (hard block or wait timer). */
+    private fun gated(rule: BlockRuleEntity, reason: BlockReason, detail: String = "") = BlockDecision(
+        reason, detail, rule.gate,
+        waitSeconds = if (rule.gate == BlockGate.WAIT) rule.waitSeconds.coerceAtLeast(1) else 0,
+        allowMinutes = if (rule.gate == BlockGate.WAIT) rule.allowMinutes.coerceAtLeast(1) else 0,
+        canPay = true,
+    )
 }

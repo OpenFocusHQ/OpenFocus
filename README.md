@@ -13,17 +13,21 @@ Everything stays on your device: there are no accounts, no analytics and no netw
 
 Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 
-| Block screen | Level up | First day |
-|---|---|---|
-| ![](docs/screenshots/block.png) | ![](docs/screenshots/celebration.png) | ![](docs/screenshots/empty_today.png) |
+| Pause (waiting) | Pause (ready) | Pause (fully blocked) | Level up | First day |
+|---|---|---|---|---|
+| ![](docs/screenshots/block_wait.png) | ![](docs/screenshots/block_wait_done.png) | ![](docs/screenshots/block_hard.png) | ![](docs/screenshots/celebration.png) | ![](docs/screenshots/empty_today.png) |
 
 ## Features
 
 ### 🛡️ Shield (app blocker)
 - Block apps **always**, after a **daily time limit**, or only **during focus sessions and schedules**.
 - **Schedules**, including overnight windows such as 22:00–07:00 on chosen days.
-- **Pause screen** with a 5-second breathing prompt. Choosing *Close app* earns XP. If you really need the app, you can buy a 5 or 15 minute unlock with coins, and each unlock costs more than the last one that day.
-- **Strict mode** turns off paid unlocks during focus sessions.
+- **Ascent-style pause screen.** Instead of throwing you out, a calm "Do you really need it right now?" screen covers the app. *Close app* earns XP.
+- **You choose, per app, what the pause screen allows:**
+  - **Wait timer** (default for new apps): *Continue in app* fills up over 10 s to 5 min, then opens the app for 5–30 min.
+  - **Fully blocked:** *Close app* is the only option.
+- **Skip with coins:** the 🎁 button spends coins to skip a wait, or to buy a 5/15 min pass through a full block. Each paid unlock that day costs more than the last.
+- **Strict mode** makes every block during a focus session final: no waiting through and no coin unlocks.
 - Some apps are never blocked: the launcher, phone/dialer, keyboard, Settings and OpenFocus itself.
 
 ### 📵 Short-form video blocker

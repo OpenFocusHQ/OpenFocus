@@ -46,20 +46,38 @@ class ShopRepository(db: AppDatabase, private val game: GameEngine, private val 
         return true
     }
 
-    /** Buy a temporary unlock for a blocked app from the block screen. */
+    /** Buy a temporary unlock for a hard-blocked app from the pause screen. */
     suspend fun buyUnlock(pkg: String, minutes: Int): Boolean {
-        val today = Days.today()
-        val cost = GameRules.unlockCost(minutes, settings.value.unlocksTodayEffective(today))
+        val cost = GameRules.unlockCost(minutes, settings.value.unlocksTodayEffective(Days.today()))
         if (!game.spend(cost, EventTypes.UNLOCK_BOUGHT, pkg, "Unlocked for $minutes min")) return false
-        val until = System.currentTimeMillis() + minutes * 60_000L
+        addPass(pkg, minutes, paid = true)
+        return true
+    }
+
+    /** Pay coins to skip a wait timer; the app then opens for [allowMinutes] as if the wait had finished. */
+    suspend fun buySkipWait(pkg: String, waitSeconds: Int, allowMinutes: Int): Boolean {
+        val cost = GameRules.skipWaitCost(waitSeconds, settings.value.unlocksTodayEffective(Days.today()))
+        if (!game.spend(cost, EventTypes.UNLOCK_BOUGHT, pkg, "Skipped the wait")) return false
+        addPass(pkg, allowMinutes, paid = true)
+        return true
+    }
+
+    /** The wait timer ran out: let the user in for [allowMinutes]. Free, and doesn't raise unlock prices. */
+    suspend fun grantWaitedPass(pkg: String, allowMinutes: Int) {
+        game.apply(EventTypes.WAITED, pkg, emit = false)
+        addPass(pkg, allowMinutes, paid = false)
+    }
+
+    private fun addPass(pkg: String, minutes: Int, paid: Boolean) {
+        val today = Days.today()
+        val now = System.currentTimeMillis()
         settings.update { s ->
             s.copy(
-                unlockPasses = s.unlockPasses.filterValues { it > System.currentTimeMillis() } + (pkg to until),
-                unlocksToday = s.unlocksTodayEffective(today) + 1,
+                unlockPasses = s.unlockPasses.filterValues { it > now } + (pkg to now + minutes * 60_000L),
+                unlocksToday = if (paid) s.unlocksTodayEffective(today) + 1 else s.unlocksTodayEffective(today),
                 unlocksDay = today,
             )
         }
-        return true
     }
 
     fun ownsDefaults() = ShopCatalog.items.filter { it.price == 0 }

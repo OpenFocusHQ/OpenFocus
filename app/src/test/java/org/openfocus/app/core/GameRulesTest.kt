@@ -41,6 +41,13 @@ class GameRulesTest {
         assertTrue(GameRules.unlockCost(5, 1) > GameRules.unlockCost(5, 0))
     }
 
+    @Test fun skippingAWaitCostsMoreForLongerWaitsAndRepeatUnlocks() {
+        assertEquals(3, GameRules.skipWaitCost(10, 0))   // minimum price
+        assertEquals(6, GameRules.skipWaitCost(60, 0))
+        assertTrue(GameRules.skipWaitCost(300, 0) > GameRules.skipWaitCost(60, 0))
+        assertEquals(2 * GameRules.skipWaitCost(60, 0), GameRules.skipWaitCost(60, 1))
+    }
+
     @Test fun maxHpCapped() {
         assertEquals(GameRules.MAX_MAX_HP, GameRules.maxHpFor(1000))
     }

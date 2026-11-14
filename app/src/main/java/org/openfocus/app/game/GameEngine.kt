@@ -28,6 +28,7 @@ object EventTypes {
     const val SHORTS_BLOCKED = "shorts_blocked"
     const val APP_BLOCKED = "app_blocked"
     const val UNLOCK_BOUGHT = "unlock_bought"
+    const val WAITED = "waited"
     const val ITEM_BOUGHT = "item_bought"
     const val REWARD_REDEEMED = "reward_redeemed"
     const val ACHIEVEMENT = "achievement"

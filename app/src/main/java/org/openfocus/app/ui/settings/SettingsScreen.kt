@@ -42,7 +42,7 @@ fun SettingsScreen(nav: NavController) {
             ToggleRow("Gentle mode", "Missed habits and abandoned sessions don't cost HP. Recommended while you build momentum.", s.gentleMode) { on ->
                 c.settings.update { it.copy(gentleMode = on) }
             }
-            ToggleRow("Strict mode", "No paid unlocks while a focus session is running.", s.strictMode) { on ->
+            ToggleRow("Strict mode", "During focus sessions every block is final: no waiting through, no coin unlocks.", s.strictMode) { on ->
                 c.settings.update { it.copy(strictMode = on) }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
