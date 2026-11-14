@@ -46,26 +46,22 @@ class ShopRepository(db: AppDatabase, private val game: GameEngine, private val 
         return true
     }
 
-    /** Buy a temporary unlock for a hard-blocked app from the pause screen. */
-    suspend fun buyUnlock(pkg: String, minutes: Int): Boolean {
-        val cost = settings.value.unlockCost(minutes)
-        if (!game.spend(cost, EventTypes.UNLOCK_BOUGHT, pkg, "Unlocked for $minutes min")) return false
+    /**
+     * Pay coins to unlock [pkg] for [minutes] (the user picks the length; longer costs more).
+     * Pass [skipWaitSeconds] when this also skips a wait timer, which adds the skip fee.
+     */
+    suspend fun buyUnlock(pkg: String, minutes: Int, skipWaitSeconds: Int? = null): Boolean {
+        val cost = settings.value.paidUnlockCost(minutes, skipWaitSeconds)
+        val what = if (skipWaitSeconds != null) "Skipped the wait, unlocked for $minutes min" else "Unlocked for $minutes min"
+        if (!game.spend(cost, EventTypes.UNLOCK_BOUGHT, pkg, what)) return false
         addPass(pkg, minutes, paid = true)
         return true
     }
 
-    /** Pay coins to skip a wait timer; the app then opens for [allowMinutes] as if the wait had finished. */
-    suspend fun buySkipWait(pkg: String, waitSeconds: Int, allowMinutes: Int): Boolean {
-        val cost = settings.value.skipCost(waitSeconds)
-        if (!game.spend(cost, EventTypes.UNLOCK_BOUGHT, pkg, "Skipped the wait")) return false
-        addPass(pkg, allowMinutes, paid = true)
-        return true
-    }
-
-    /** The wait timer ran out: let the user in for [allowMinutes]. Free, and doesn't raise unlock prices. */
-    suspend fun grantWaitedPass(pkg: String, allowMinutes: Int) {
+    /** The wait timer ran out: let the user in for the [minutes] they chose. Free, and doesn't raise prices. */
+    suspend fun grantWaitedPass(pkg: String, minutes: Int) {
         game.apply(EventTypes.WAITED, pkg, emit = false)
-        addPass(pkg, allowMinutes, paid = false)
+        addPass(pkg, minutes, paid = false)
     }
 
     private fun addPass(pkg: String, minutes: Int, paid: Boolean) {

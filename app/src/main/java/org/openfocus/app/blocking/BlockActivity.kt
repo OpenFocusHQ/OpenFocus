@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -106,10 +107,11 @@ class BlockActivity : ComponentActivity() {
                 PauseScreen(
                     a, label,
                     onClose = { closeApp(resisted = true) },
-                    onContinue = { continueToApp { container.shop.grantWaitedPass(a.pkg, a.allowMinutes); true } },
+                    onContinue = { minutes -> continueToApp { container.shop.grantWaitedPass(a.pkg, minutes); true } },
                     onBackToApp = { continueToApp { true } },
-                    onSkipWait = { continueToApp { container.shop.buySkipWait(a.pkg, a.waitSeconds, a.allowMinutes) } },
-                    onUnlock = { minutes -> continueToApp { container.shop.buyUnlock(a.pkg, minutes) } },
+                    onUnlock = { minutes ->
+                        continueToApp { container.shop.buyUnlock(a.pkg, minutes, skipWaitSeconds = if (a.gate == BlockGate.WAIT) a.waitSeconds else null) }
+                    },
                 )
             }
         }
@@ -141,9 +143,8 @@ class BlockActivity : ComponentActivity() {
         a: Args,
         appLabel: String,
         onClose: () -> Unit,
-        onContinue: () -> Unit,
+        onContinue: (Int) -> Unit,
         onBackToApp: () -> Unit,
-        onSkipWait: () -> Unit,
         onUnlock: (Int) -> Unit,
     ) {
         val settings by container.settings.state.collectAsState()
@@ -162,41 +163,29 @@ class BlockActivity : ComponentActivity() {
             while (!timer.done) withFrameMillis { elapsed = timer.onFrame(it) }
         }
 
+        // How long to unlock for: chosen here each time (free up to the app's max; paid can go longer).
+        var freeMinutes by rememberSaveable { mutableIntStateOf(0) }
+        val state = PauseState(
+            appLabel = appLabel, reason = a.reason, detail = a.detail, gate = a.gate,
+            waitMs = waitMs, elapsedMs = elapsed, allowMinutes = a.allowMinutes, selectedMinutes = freeMinutes,
+            canPay = a.canPay, backToApp = a.backToApp, focusEndsAt = settings.activeFocus?.endsAt, nudge = nudge,
+            question = settings.pauseQuestion, reminder = settings.pauseReminder,
+        )
         PauseScreenContent(
-            PauseState(
-                appLabel = appLabel, reason = a.reason, detail = a.detail, gate = a.gate,
-                waitMs = waitMs, elapsedMs = elapsed, allowMinutes = a.allowMinutes,
-                canPay = a.canPay, backToApp = a.backToApp, focusEndsAt = settings.activeFocus?.endsAt, nudge = nudge,
-                question = settings.pauseQuestion, reminder = settings.pauseReminder,
-            ),
-            onClose = onClose, onContinue = onContinue, onBackToApp = onBackToApp, onOpenCoins = { showCoins = true },
+            state,
+            onClose = onClose, onContinue = { onContinue(state.chosenMinutes) }, onBackToApp = onBackToApp,
+            onOpenCoins = { showCoins = true }, onSelectMinutes = { freeMinutes = it },
         )
 
         if (showCoins) {
-            AlertDialog(
-                onDismissRequest = { showCoins = false },
-                icon = { PixelSprite(SpriteCatalog.coin, "spin", Modifier.size(32.dp)) },
-                title = { Text("Use coins") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("You have $coins coins." + if (settings.escalatingPrices) " Each paid unlock today costs more than the last." else "")
-                        if (a.gate == BlockGate.WAIT) {
-                            val cost = settings.skipCost(a.waitSeconds)
-                            FilledTonalButton(enabled = coins >= cost, onClick = { showCoins = false; onSkipWait() }, modifier = Modifier.fillMaxWidth()) {
-                                Text("Skip the wait · $cost coins")
-                            }
-                            Text("Opens $appLabel for ${a.allowMinutes} min.", style = MaterialTheme.typography.bodySmall)
-                        } else {
-                            GameRules.unlockOptions.forEach { m ->
-                                val cost = settings.unlockCost(m)
-                                FilledTonalButton(enabled = coins >= cost, onClick = { showCoins = false; onUnlock(m) }, modifier = Modifier.fillMaxWidth()) {
-                                    Text("Unlock for $m min · $cost coins")
-                                }
-                            }
-                        }
-                    }
-                },
-                confirmButton = { TextButton(onClick = { showCoins = false }) { Text("Never mind") } },
+            val skipWait = if (a.gate == BlockGate.WAIT) a.waitSeconds else null
+            var paidMinutes by rememberSaveable { mutableIntStateOf(GameRules.defaultDuration(GameRules.unlockDurations)) }
+            PaidUnlockDialog(
+                appLabel = appLabel, coins = coins, minutes = paidMinutes, onMinutes = { paidMinutes = it },
+                perMinute = settings.unlockCostPerMinute, timeCost = settings.unlockCost(paidMinutes),
+                skipWaitSeconds = skipWait, skipCost = skipWait?.let { settings.skipCost(it) } ?: 0,
+                escalating = settings.escalatingPrices,
+                onUnlock = { showCoins = false; onUnlock(paidMinutes) }, onDismiss = { showCoins = false },
             )
         }
     }

@@ -262,7 +262,8 @@ private fun GateRow(r: BlockRuleEntity, onChange: (BlockRuleEntity) -> Unit) {
                     PauseConfigEditor(draft, { draft = it })
                     ToggleRow(
                         "Allow coins",
-                        if (draft.gate == BlockGate.WAIT) "Spend coins to skip the wait." else "Spend coins on a 5 or 15 min pass.",
+                        if (draft.gate == BlockGate.WAIT) "Skip the wait with coins, for as long as you pay for."
+                        else "Unlock with coins, for as long as you pay for.",
                         coins,
                     ) { coins = it }
                 }

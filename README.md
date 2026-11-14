@@ -28,10 +28,10 @@ Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 - **Schedules**, including overnight windows such as 22:00–07:00 on chosen days.
 - **Ascent-style pause screen.** Instead of throwing you out, a calm "Do you really need it right now?" screen covers the app. *Close app* earns XP.
 - **You choose, per app, what the pause screen allows** (Shield tab → *Edit*):
-  - **Wait timer:** *Continue in app* fills up over any wait from 5 s to 10 min, then opens the app for 1–120 min.
+  - **Wait timer:** *Continue in app* fills up over any wait from 5 s to 10 min. You then **choose how long to unlock**, up to the app's free maximum (1–120 min).
   - **Fully blocked:** *Close app* is the only option.
   - **Coins on or off:** whether coins may skip the wait or buy a pass for that app.
-- **Skip with coins:** the 🎁 button spends coins to skip a wait, or to buy a 5/15 min pass through a full block.
+- **Unlock with coins:** the 🎁 button lets you pick any unlock length up to an hour. Longer unlocks cost more (coins per minute), and skipping a wait adds its own fee.
 - **Make it yours** (Settings → *Pause screen*):
   - the gate, wait and open time that newly blocked apps start with
   - coin prices (including free), and whether they rise with each paid unlock that day

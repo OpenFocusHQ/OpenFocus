@@ -98,18 +98,18 @@ private fun PauseScreenSettings() {
             color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Text("Coin prices", style = MaterialTheme.typography.titleSmall)
-        PriceStepper("Skip a wait", "coins per 10 s of waiting (short waits count as 30 s)", s.skipCostPer10s) { v ->
+        PriceStepper("Skip a wait", "extra coins per 10 s of waiting skipped (short waits count as 30 s)", s.skipCostPer10s) { v ->
             c.settings.update { it.copy(skipCostPer10s = v) }
         }
-        PriceStepper("Unlock pass", "coins per minute unlocked", s.unlockCostPerMinute) { v ->
+        PriceStepper("Unlock time", "coins per minute you choose to unlock", s.unlockCostPerMinute) { v ->
             c.settings.update { it.copy(unlockCostPerMinute = v) }
         }
         ToggleRow("Prices rise during the day", "Each paid unlock today makes the next one cost more.", s.escalatingPrices) { on ->
             c.settings.update { it.copy(escalatingPrices = on) }
         }
         Text(
-            "Right now: skipping a ${GameRules.formatWait(s.defaultWaitSeconds)} wait costs ${s.skipCost(s.defaultWaitSeconds)} coins, " +
-                "a 15 min pass costs ${s.unlockCost(15)}.",
+            "Right now: unlocking for 5 min costs ${s.unlockCost(5)} coins, 15 min costs ${s.unlockCost(15)}; " +
+                "skipping a ${GameRules.formatWait(s.defaultWaitSeconds)} wait adds ${s.skipCost(s.defaultWaitSeconds)}.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 

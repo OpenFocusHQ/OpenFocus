@@ -18,6 +18,14 @@ class PauseStateTest {
         assertFalse(done.showCoins) // nothing left to pay for
     }
 
+    @Test fun freeUnlockLengthIsChosenWithinTheMaximum() {
+        val s = PauseState("Feed", BlockReason.ALWAYS, gate = BlockGate.WAIT, waitMs = 1, elapsedMs = 1, allowMinutes = 15)
+        assertEquals(listOf(1, 2, 5, 10, 15), s.freeDurations)
+        assertEquals(5, s.chosenMinutes)                         // default
+        assertEquals(15, s.copy(selectedMinutes = 15).chosenMinutes)
+        assertEquals(5, s.copy(selectedMinutes = 60).chosenMinutes) // can't pick past the free max
+    }
+
     @Test fun hardBlockOffersCoinsUnlessStrictOrShorts() {
         assertTrue(PauseState("Feed", BlockReason.ALWAYS).showCoins)
         assertFalse(PauseState("Feed", BlockReason.FOCUS, canPay = false).showCoins)

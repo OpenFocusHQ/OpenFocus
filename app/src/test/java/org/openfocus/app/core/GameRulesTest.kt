@@ -58,6 +58,14 @@ class GameRulesTest {
         assertEquals("5 min", GameRules.formatWait(300))
     }
 
+    @Test fun freeUnlockChoicesStopAtTheAppsMaximum() {
+        assertEquals(listOf(1, 2, 5, 10), GameRules.freeDurations(10))
+        assertEquals(listOf(1, 2, 5, 10, 15, 30, 45), GameRules.freeDurations(45)) // odd max is offered too
+        assertEquals(listOf(1), GameRules.freeDurations(1))
+        assertEquals(5, GameRules.defaultDuration(GameRules.freeDurations(30)))  // short by default
+        assertEquals(2, GameRules.defaultDuration(listOf(1, 2)))
+    }
+
     @Test fun maxHpCapped() {
         assertEquals(GameRules.MAX_MAX_HP, GameRules.maxHpFor(1000))
     }

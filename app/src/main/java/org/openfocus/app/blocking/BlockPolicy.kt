@@ -17,7 +17,8 @@ enum class BlockReason { ALWAYS, DAILY_LIMIT, FOCUS, DEEP_FOCUS, SCHEDULE, SHORT
 
 /**
  * @param gate HARD = only "Close app" (plus a paid unlock if [canPay]); WAIT = "Continue in app"
- *        becomes available after [waitSeconds] and opens the app for [allowMinutes].
+ *        becomes available after [waitSeconds]; the user then picks how long to unlock, up to
+ *        [allowMinutes] for free (paying coins allows longer).
  * @param canPay whether coins may be spent to unlock / skip the wait (false in strict focus).
  * @param backToApp the offending part of the app was already left (e.g. a Shorts feed), so the
  *        rest of the app is safe to return to straight away.

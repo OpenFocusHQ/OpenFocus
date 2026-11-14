@@ -84,7 +84,15 @@ object GameRules {
     fun unlockCost(minutes: Int, unlocksToday: Int, perMinute: Int = DEFAULT_UNLOCK_COST_PER_MINUTE): Int =
         (minutes * perMinute) * (1 + unlocksToday)
 
-    val unlockOptions = listOf(5, 15)
+    /** How long an unlock can last (minutes); chosen on the pause screen each time. */
+    val unlockDurations = listOf(1, 2, 5, 10, 15, 30, 60)
+
+    /** Choices after waiting (free): every standard duration up to the app's maximum, plus that maximum. */
+    fun freeDurations(maxMinutes: Int): List<Int> =
+        (unlockDurations.filter { it <= maxMinutes } + maxMinutes.coerceAtLeast(1)).distinct().sorted()
+
+    /** Pre-selected duration: short by default (the longest option up to 5 min), so more time is a deliberate choice. */
+    fun defaultDuration(options: List<Int>): Int = options.lastOrNull { it <= 5 } ?: options.first()
 
     /** Slider stops when configuring a WAIT gate (seconds) and the open time afterwards (minutes). */
     val waitStepsSeconds = listOf(5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300, 600)

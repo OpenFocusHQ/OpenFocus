@@ -30,6 +30,16 @@ class SettingsStoreTest {
         assertEquals("Marathon in March!", s.pauseReminder)
     }
 
+    @Test fun longerPaidUnlocksCostMoreAndSkippingAddsAFee() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val store = SettingsStore(ctx)
+        store.update { it.copy(unlockCostPerMinute = 2, skipCostPer10s = 1, escalatingPrices = false) }
+        val s = store.value
+        assertEquals(10, s.paidUnlockCost(5))
+        assertEquals(30, s.paidUnlockCost(15))
+        assertEquals(30 + 6, s.paidUnlockCost(15, skipWaitSeconds = 60))
+    }
+
     @Test fun escalationCanBeTurnedOff() {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val store = SettingsStore(ctx)

@@ -61,6 +61,13 @@ data class Settings(
 
     fun skipCost(waitSeconds: Int) = GameRules.skipWaitCost(waitSeconds, priceStep(), skipCostPer10s)
     fun unlockCost(minutes: Int) = GameRules.unlockCost(minutes, priceStep(), unlockCostPerMinute)
+
+    /**
+     * Price of a paid unlock for [minutes]: longer unlocks cost more. On a wait-timer app, skipping
+     * the wait ([skipWaitSeconds]) adds its own fee on top.
+     */
+    fun paidUnlockCost(minutes: Int, skipWaitSeconds: Int? = null): Int =
+        unlockCost(minutes) + (skipWaitSeconds?.let { skipCost(it) } ?: 0)
 }
 
 /**

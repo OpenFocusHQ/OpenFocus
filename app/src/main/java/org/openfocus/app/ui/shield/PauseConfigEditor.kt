@@ -23,7 +23,7 @@ import kotlin.math.roundToInt
 data class PauseConfig(val gate: BlockGate, val waitSeconds: Int, val allowMinutes: Int) {
     fun summary(): String =
         if (gate == BlockGate.HARD) "Fully blocked"
-        else "Wait ${GameRules.formatWait(waitSeconds)}, then open for $allowMinutes min"
+        else "Wait ${GameRules.formatWait(waitSeconds)}, then unlock up to $allowMinutes min"
 }
 
 /** Gate choice plus, for waits, sliders for the wait length and how long the app stays open. */
@@ -45,11 +45,11 @@ fun PauseConfigEditor(config: PauseConfig, onChange: (PauseConfig) -> Unit, modi
                 format = GameRules::formatWait, onChange = { onChange(config.copy(waitSeconds = it)) },
             )
             StepSlider(
-                label = "Then keep the app open for", value = config.allowMinutes, steps = GameRules.allowStepsMinutes,
+                label = "Longest free unlock after waiting", value = config.allowMinutes, steps = GameRules.allowStepsMinutes,
                 format = { "$it min" }, onChange = { onChange(config.copy(allowMinutes = it)) },
             )
         } else {
-            Text("Only \"Close app\" is offered. Coins can still buy a pass if you allow them.",
+            Text("Only \"Close app\" is offered. If coins are allowed, the gift button unlocks it for a time you choose.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
