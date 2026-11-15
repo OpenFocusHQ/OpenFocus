@@ -148,7 +148,7 @@ class ContentValidationTest {
     /** Translation overlays may only target text that exists, and must keep {hero} placeholders. */
     @Test fun translationsMatchTheSource() {
         val source = ContentI18n.keys(Json.parseToJsonElement(repo("app/src/main/resources/content/content.json").readText()))
-        val dir = repo("app/src/main/resources/content/i18n")
+        val dir = File(repo("app/src/main/resources/content"), "i18n") // may not exist until the first translation
         dir.listFiles { f -> f.extension == "json" }.orEmpty().forEach { f ->
             val overlay = ContentI18n.parseOverlay(f.readText())
             overlay.forEach { (k, v) ->
