@@ -42,8 +42,8 @@ fun HabitsScreen(nav: NavController) {
             val list = habits ?: return@LazyColumn
             if (list.isEmpty()) {
                 item {
-                    EmptyState(Icons.Filled.CheckCircle, "No habits yet",
-                        "Habits are small daily quests. Build good ones for XP and coins, track bad ones to break them.",
+                    EmptyState(Icons.Filled.CheckCircle, stringResource(R.string.no_habits_yet),
+                        stringResource(R.string.habits_intro),
                         scene = SpriteCatalog.EMPTY_HABITS)
                 }
             }

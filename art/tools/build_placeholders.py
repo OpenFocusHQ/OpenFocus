@@ -634,7 +634,7 @@ def shield_frames():
 # --------------------------------------------------------------------------------------------
 # Empty-state scenes, 64x48 each, transparent background. Atlas columns: quests, habits, goals.
 # --------------------------------------------------------------------------------------------
-EMPTY_SCENES = ["quests", "habits", "goals"]  # MUST match SpriteCatalog.empty
+EMPTY_SCENES = ["today", "habits", "goals"]  # MUST match SpriteCatalog.empty
 
 
 def empty_quests():

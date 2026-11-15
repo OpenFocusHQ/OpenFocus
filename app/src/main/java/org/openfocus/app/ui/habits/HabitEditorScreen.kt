@@ -139,7 +139,7 @@ fun HabitEditorScreen(nav: NavController, habitId: String?) {
                 }
             }
 
-            Text(stringResource(R.string.difficulty_bigger_rewards_for_harder_quests), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.difficulty_bigger_rewards_for_harder_habits), style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Difficulty.entries.forEach { d -> FilterChip(selected = difficulty == d, onClick = { difficulty = d }, label = { Text(d.label) }) }
             }

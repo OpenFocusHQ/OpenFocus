@@ -13,7 +13,7 @@ import org.openfocus.app.data.db.HabitFrequency
 import org.openfocus.app.data.db.HabitKind
 
 /*
- * All game content (cosmetics, achievements, starter quests, titles, messages) lives in
+ * All game content (cosmetics, achievements, starter habits, quest lines, titles, messages) lives in
  * src/main/resources/content/content.json and is edited with the developer tool in
  * tools/content-editor. Nothing about specific items is hard-coded in Kotlin.
  */
@@ -77,7 +77,7 @@ data class AchievementDef(
 )
 
 @Serializable
-data class QuestDef(
+data class StarterHabitDef(
     val id: String,
     val title: String,
     val icon: String = "Star",
@@ -86,7 +86,7 @@ data class QuestDef(
     val difficulty: Difficulty = Difficulty.EASY,
     val frequency: HabitFrequency = HabitFrequency.DAILY,
     val target: Int = 1,
-    /** Offered on the onboarding "pick a few starter quests" page. */
+    /** Offered on the onboarding "pick a few starter habits" page. */
     val starter: Boolean = true,
 )
 
@@ -226,7 +226,7 @@ data class GameContentData(
     val slots: List<SlotDef>,
     val items: List<ItemDef>,
     val achievements: List<AchievementDef>,
-    val quests: List<QuestDef>,
+    val starterHabits: List<StarterHabitDef>,
     val titles: List<TitleDef>,
     val messages: MessagesDef,
     val questLines: List<QuestLineDef> = emptyList(),

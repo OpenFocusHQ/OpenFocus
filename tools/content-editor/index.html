@@ -231,20 +231,20 @@ const TABS = {
     template: () => ({ id: uniqueId("new_enemy"), name: "New enemy", description: "", hp: 150, strength: 3, color: "#F06A4D", shape: "slime",
       sprite: null, dialogue: { appear: ["..."], hit: ["..."], defeat: ["..."] } }),
   },
-  quests: {
-    label: "Starter habits", key: "quests",
+  starterHabits: {
+    label: "Starter habits", key: "starterHabits",
     title: x => x.title, sub: x => `${x.kind ?? "BUILD"} · ${x.frequency ?? "DAILY"}${x.starter === false ? "" : " · starter"}`,
     fields: () => [
       { k: "id", t: "id" }, { k: "title", t: "text" },
-      { k: "icon", t: "enum", options: enumFrom("properties/quests/items/properties/icon") },
+      { k: "icon", t: "enum", options: enumFrom("properties/starterHabits/items/properties/icon") },
       { k: "color", t: "palette" },
-      { k: "kind", t: "enum", options: enumFrom("properties/quests/items/properties/kind") },
-      { k: "difficulty", t: "enum", options: enumFrom("properties/quests/items/properties/difficulty") },
-      { k: "frequency", t: "enum", options: enumFrom("properties/quests/items/properties/frequency") },
+      { k: "kind", t: "enum", options: enumFrom("properties/starterHabits/items/properties/kind") },
+      { k: "difficulty", t: "enum", options: enumFrom("properties/starterHabits/items/properties/difficulty") },
+      { k: "frequency", t: "enum", options: enumFrom("properties/starterHabits/items/properties/frequency") },
       { k: "target", t: "int" },
-      { k: "starter", t: "bool", hint: "Offered on the onboarding starter-quests page." },
+      { k: "starter", t: "bool", hint: "Offered on the onboarding starter-habits page." },
     ],
-    template: () => ({ id: uniqueId("new_quest"), title: "New quest", icon: "Star", color: 0, kind: "BUILD", difficulty: "EASY",
+    template: () => ({ id: uniqueId("new_habit"), title: "New habit", icon: "Star", color: 0, kind: "BUILD", difficulty: "EASY",
       frequency: "DAILY", target: 1, starter: true }),
   },
   titles: {
@@ -276,9 +276,9 @@ function validate() {
     const seen = {};
     content[TABS[t].key].forEach((x, i) => { const v = x[key]; if (v in seen) add(t, i, `duplicate ${key} "${v}"`); seen[v] = i; });
   };
-  dupes("items", "id"); dupes("achievements", "id"); dupes("slots", "id"); dupes("quests", "id"); dupes("titles", "minLevel");
+  dupes("items", "id"); dupes("achievements", "id"); dupes("slots", "id"); dupes("starterHabits", "id"); dupes("titles", "minLevel");
   const idRe = /^[a-z][a-z0-9_]*$/;
-  ["items", "achievements", "slots", "quests"].forEach(t => content[t].forEach((x, i) => { if (!idRe.test(x.id || "")) add(t, i, `id "${x.id}" must be lower_snake_case`); }));
+  ["items", "achievements", "slots", "starterHabits"].forEach(t => content[t].forEach((x, i) => { if (!idRe.test(x.id || "")) add(t, i, `id "${x.id}" must be lower_snake_case`); }));
   const slotIds = new Set(content.slots.map(s => s.id));
   if (content.slots.filter(s => s.kind === "BACKDROP").length !== 1) add("slots", 0, "need exactly one BACKDROP slot");
   const layers = {};
@@ -307,7 +307,7 @@ function validate() {
   const badges = sprites["px_badges"];
   if (badges && Math.floor(badges.width / 24) * Math.floor(badges.height / 24) < content.achievements.length)
     add("achievements", content.achievements.length - 1, "badge atlas is out of date: regenerate art");
-  if (!content.quests.some(q => q.starter !== false)) add("quests", 0, "no starter quests");
+  if (!content.starterHabits.some(q => q.starter !== false)) add("starterHabits", 0, "no starter habits");
   if (!content.titles.some(t => t.minLevel === 1)) add("titles", 0, "need a title for level 1");
   for (const [k, v] of Object.entries(content.messages)) if (!v.length) add("messages", 0, `no "${k}" messages`);
 
@@ -780,7 +780,7 @@ async function renderPreview() {
   } else if (tab === "slots") {
     const items = content.items.filter(i => i.slot === x.id);
     p.replaceChildren(el("p", { textContent: `${items.length} item(s): ${items.map(i => i.name).join(", ") || "none"}` }));
-  } else if (tab === "quests") {
+  } else if (tab === "starterHabits") {
     p.replaceChildren(el("p", {}, el("span", { style: `display:inline-block;width:14px;height:14px;border-radius:50%;background:${PALETTE[x.color ?? 0]};margin-right:6px` }),
       `${x.icon ?? "Star"} · ${x.title}`));
   } else if (tab === "npcs") {

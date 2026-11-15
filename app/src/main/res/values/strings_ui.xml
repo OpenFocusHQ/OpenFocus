@@ -48,7 +48,7 @@
     <string name="delete">Delete</string>
     <string name="delete_goal">Delete goal?</string>
     <string name="delete_habit">Delete habit?</string>
-    <string name="difficulty_bigger_rewards_for_harder_quests">Difficulty (bigger rewards for harder quests)</string>
+    <string name="difficulty_bigger_rewards_for_harder_habits">Difficulty (bigger rewards for harder habits)</string>
     <string name="during_focus_schedules">During focus &amp; schedules</string>
     <string name="e_g_watch_an_episode_guilt">e.g. Watch an episode guilt-free</string>
     <string name="e_g_you_re_training_for">e.g. You\'re training for the half marathon.</string>
@@ -103,7 +103,7 @@
     <string name="pause_screen_for">Pause screen for %1$s</string>
     <string name="payment_apps">Payment apps</string>
     <string name="personal_reminder_optional">Personal reminder (optional)</string>
-    <string name="pick_a_few_starter_quests">Pick a few starter quests</string>
+    <string name="pick_a_few_starter_habits">Pick a few starter habits</string>
     <string name="put_the_phone_down_blocked_apps">Put the phone down. Blocked apps will bounce you back here.</string>
     <string name="question">Question</string>
     <string name="raise_your_shield">Raise your Shield</string>
@@ -163,4 +163,6 @@
     <string name="your_hero">Your hero</string>
     <string name="your_hp_ran_out_so_your">Your HP ran out, so your hero took a rest and lost a few coins. %1$s</string>
     <string name="your_price_set_above_doesn_t">Your price, set above, doesn\'t rise during the day.</string>
+    <string name="habits_intro">Habits are small daily wins. Build good ones for XP and coins, track bad ones to break them.</string>
+    <string name="no_habits_yet">No habits yet</string>
 </resources>

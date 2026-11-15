@@ -125,9 +125,9 @@ fun TodayScreen(nav: NavController) {
         }
         if (habits != null && due.isEmpty() && breakHabits.isEmpty()) item {
             EmptyState(
-                Icons.Filled.ShieldMoon, "Your quest log is empty",
+                Icons.Filled.ShieldMoon, stringResource(R.string.no_habits_yet),
                 "Add a habit or two — small and specific works best. \"Read 10 pages\" beats \"read more\".",
-                scene = SpriteCatalog.EMPTY_QUESTS,
+                scene = SpriteCatalog.EMPTY_TODAY,
             )
         }
         items(due, key = { it.habit.id }) { s ->

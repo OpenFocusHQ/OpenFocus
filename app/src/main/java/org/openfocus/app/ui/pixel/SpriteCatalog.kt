@@ -159,12 +159,12 @@ object SpriteCatalog {
     val shield = SpriteSheet(R.drawable.px_shield, 48, 48, mapOf(IDLE to SpriteAnim(0, 4, 1f)))
 
     /** 64x48 empty-state scenes. MUST match EMPTY_SCENES order in build_placeholders.py. */
-    const val EMPTY_QUESTS = "quests"
+    const val EMPTY_TODAY = "today"
     const val EMPTY_HABITS = "habits"
     const val EMPTY_GOALS = "goals"
     val empty = SpriteSheet(
         R.drawable.px_empty, 64, 48,
-        listOf(EMPTY_QUESTS, EMPTY_HABITS, EMPTY_GOALS).mapIndexed { i, n -> n to SpriteAnim(0, 1, col = i) }.toMap(),
+        listOf(EMPTY_TODAY, EMPTY_HABITS, EMPTY_GOALS).mapIndexed { i, n -> n to SpriteAnim(0, 1, col = i) }.toMap(),
     )
 
     val coin = SpriteSheet(R.drawable.px_coin, 16, 16, mapOf("spin" to SpriteAnim(0, 6, 8f)))

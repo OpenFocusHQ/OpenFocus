@@ -43,7 +43,7 @@ class ContentValidationTest {
         assertUnique("slot layers", c.slots.map { it.layer } + 1) // 1 = the hero's body
         assertUnique("item ids", c.items.map { it.id })
         assertUnique("achievement ids", c.achievements.map { it.id })
-        assertUnique("quest ids", c.quests.map { it.id })
+        assertUnique("starter habit ids", c.starterHabits.map { it.id })
         assertUnique("title levels", c.titles.map { it.minLevel })
     }
 
@@ -75,12 +75,12 @@ class ContentValidationTest {
         }
     }
 
-    @Test fun questsTitlesAndMessages() {
-        c.quests.forEach { q ->
+    @Test fun starterHabitsTitlesAndMessages() {
+        c.starterHabits.forEach { q ->
             assertTrue("${q.id}: unknown icon '${q.icon}'", q.icon in AppIcons.habitChoices.keys)
             assertTrue("${q.id}: colour index 0..7", q.color in 0..7)
         }
-        assertTrue("some starter quests", c.quests.any { it.starter })
+        assertTrue("some starter habits", c.starterHabits.any { it.starter })
         assertTrue("a title for level 1", c.titles.any { it.minLevel == 1 })
         with(c.messages) { listOf(general, resist, blocked, shorts, comeback).forEach { assertTrue(it.isNotEmpty()) } }
     }
@@ -164,7 +164,7 @@ class ContentValidationTest {
     @Test fun schemaEnumsMatchTheCode() {
         assertEquals(GameStats.STATS, enumOf("properties/achievements/items/properties/stat"))
         assertEquals(SlotKind.entries.map { it.name }, enumOf("properties/slots/items/properties/kind"))
-        val quest = "properties/quests/items/properties"
+        val quest = "properties/starterHabits/items/properties"
         assertEquals(AppIcons.habitChoices.keys.toList(), enumOf("$quest/icon"))
         assertEquals(HabitKind.entries.map { it.name }, enumOf("$quest/kind"))
         assertEquals(Difficulty.entries.map { it.name }, enumOf("$quest/difficulty"))

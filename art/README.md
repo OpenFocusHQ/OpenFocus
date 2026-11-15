@@ -70,7 +70,7 @@ To add an achievement, use the [content editor](../tools/content-editor/README.m
 | Sheet | Frame | Use |
 |---|---|---|
 | `px_shield.png` | 48×48 × 4 @ 1 fps | Block screen and onboarding; the glow cycle lasts one 4 s breath |
-| `px_empty.png` | 64×48 atlas: `quests`, `habits`, `goals` | `EmptyState(scene = …)`; order must match `EMPTY_SCENES` |
+| `px_empty.png` | 64×48 atlas: `today`, `habits`, `goals` | `EmptyState(scene = …)`; order must match `EMPTY_SCENES` |
 
 ### Launcher icon
 The icon is drawn on a 54×54 canvas and exported at ×2/×3/×4/×6/×8 to `mipmap-*/ic_launcher_fg.png`, with a white `ic_launcher_mono.png` for Android 13+ themed icons. Keep content inside the central 36×36 (the adaptive-icon safe zone); the background is `@color/launcher_background`. `art/export/ic_launcher_store.png` (486 px, 54×9) is ready for store listings; pad it to 512 if a store requires that size. The notification icon is still the vector `drawable/ic_launcher_foreground.xml`.
@@ -104,6 +104,6 @@ Every file must be listed in `CREDITS.md`.
 - [x] Phase 2: 3 skin tones (stored in the profile, DB v2), pixel backdrops, celebrate animation. Placeholder quality: hand-drawn replacements welcome.
 - [x] Phase 3: goal mountain scene: one 160×112 sheet per goal colour (climbing / summit rows), tents (unlit / lit flicker), climber, flag (red / gold)
 - [x] Phase 4: 20 achievement medals (bronze / silver / gold), locked silhouettes, level-up sparkle burst, coin in reward snackbars
-- [x] Phase 5: breathing block-screen shield, empty-state scenes (quests / habits / goals), onboarding art, pixel launcher icon (+ monochrome + 486px store export)
+- [x] Phase 5: breathing block-screen shield, empty-state scenes (today / habits / goals), onboarding art, pixel launcher icon (+ monochrome + 486px store export)
 - [x] Phase 6: dark-theme pass: night versions of every goal scene and of the default backdrop, translucent ground shadows, dark screenshots in `docs/screenshots/dark/`, a test that every loop divides the 12 s clock
 - [ ] Next: replace the placeholders with hand-drawn art and review on real devices (contributors welcome!)

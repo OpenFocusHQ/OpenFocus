@@ -30,7 +30,7 @@ import kotlin.random.Random
 class QuestRepositoryTest {
     private val content = GameContent.parse(
         """
-        {"slots":[],"items":[{"id":"prize","name":"Prize","slot":"hat","price":0}],"achievements":[],"quests":[],
+        {"slots":[],"items":[{"id":"prize","name":"Prize","slot":"hat","price":0}],"achievements":[],"starterHabits":[],
          "titles":[{"minLevel":1,"title":"T"}],"messages":{"general":["g"],"resist":["r"],"blocked":["b"],"shorts":["s"],"comeback":["c"]},
          "npcs":[{"id":"guide","name":"Guide","dialogue":{"greeting":["Hi {hero}"]}}],
          "enemies":[{"id":"blob","name":"Blob","hp":20,"strength":5,"dialogue":{"appear":["Rawr"],"hit":["Gotcha"],"defeat":["Bleh"]}}],

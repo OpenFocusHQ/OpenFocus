@@ -54,7 +54,7 @@ import org.openfocus.app.ui.pixel.SpriteCatalog
 import org.openfocus.app.ui.components.SkinTonePicker
 import org.openfocus.app.ui.components.appContainer
 
-private val starters get() = GameContent.current.quests.filter { it.starter }
+private val starters get() = GameContent.current.starterHabits.filter { it.starter }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -88,8 +88,8 @@ fun OnboardingScreen() {
                     Button(onClick = { page = 1 }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.next)) }
                 }
                 1 -> {
-                    PixelSprite(SpriteCatalog.empty, SpriteCatalog.EMPTY_QUESTS, Modifier.size(width = 192.dp, height = 144.dp), animate = false)
-                    Text(stringResource(R.string.pick_a_few_starter_quests), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                    PixelSprite(SpriteCatalog.empty, SpriteCatalog.EMPTY_TODAY, Modifier.size(width = 192.dp, height = 144.dp), animate = false)
+                    Text(stringResource(R.string.pick_a_few_starter_habits), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
                     Text(stringResource(R.string.start_small_you_can_edit_or), textAlign = TextAlign.Center)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         starters.forEachIndexed { i, s ->

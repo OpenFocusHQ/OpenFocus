@@ -4,7 +4,9 @@ A local editor for `app/src/main/resources/content/content.json`. That file hold
 - **Items:** hats, cloaks/clothes, armour, backdrops and any new slot
 - **Slots:** the equipment layers
 - **Achievements**
-- **Quests:** onboarding starter habits
+- **Starter habits:** habit templates offered during onboarding
+- **Quest lines, NPCs, Enemies:** story quests, the characters who give them and the bosses you fight
+- **Translations:** content translations per language
 - **Titles:** by level
 - **Messages:** encouragement and pause-screen lines
 

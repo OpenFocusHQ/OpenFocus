@@ -393,7 +393,7 @@
       "tier": "silver"
     }
   ],
-  "quests": [
+  "starterHabits": [
     {
       "id": "water",
       "title": "Drink a glass of water",

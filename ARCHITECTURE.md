@@ -5,7 +5,7 @@ OpenFocus is a single-module Kotlin app built with Jetpack Compose, Material 3, 
 ```
 org.openfocus.app
 ├── core/        Pure Kotlin logic with no Android dependencies. Unit-tested.
-│   ├── content/         GameContent: loads content.json (slots, items, achievements, quests, titles, messages)
+│   ├── content/         GameContent: loads content.json (slots, items, achievements, starter habits, quest lines, NPCs, enemies, titles, messages)
 │   ├── GameRules        XP, coin, HP, level curve and unlock prices (all the tuning lives here)
 │   ├── HabitSchedule    whether a habit is due or satisfied, its streak, and misses
 │   ├── Achievements     declarative achievement list evaluated against GameStats

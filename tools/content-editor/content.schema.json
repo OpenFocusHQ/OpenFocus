@@ -9,7 +9,7 @@
     "slots",
     "items",
     "achievements",
-    "quests",
+    "starterHabits",
     "titles",
     "messages"
   ],
@@ -198,7 +198,7 @@
         }
       }
     },
-    "quests": {
+    "starterHabits": {
       "type": "array",
       "items": {
         "type": "object",
@@ -278,7 +278,8 @@
             "type": "boolean"
           }
         }
-      }
+      },
+      "description": "Habit templates offered during onboarding."
     },
     "questLines": {
       "type": "array",
