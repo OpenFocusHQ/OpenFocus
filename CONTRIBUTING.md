@@ -5,7 +5,7 @@ Contributions are welcome. Areas where help is especially useful:
 ## Short-video detection rules
 Apps rename their internal view IDs fairly often. To update a rule:
 1. Open the app's short-video feed with *Layout Inspector*, or use `adb shell uiautomator dump` and look for a stable `resource-id`.
-2. Add it to the matching `ShortsRule` in `app/src/main/java/org/openfocus/app/blocking/ShortsDetector.kt`.
+2. Add it to the matching `ShortsRule` in `app/src/main/java/com/openfocushq/openfocus/blocking/ShortsDetector.kt`.
 3. Say which app version you tested in the PR.
 
 ## Game content

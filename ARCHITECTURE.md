@@ -3,7 +3,7 @@
 OpenFocus is a single-module Kotlin app built with Jetpack Compose, Material 3, Room and WorkManager. It has no DI framework. Instead, `AppContainer` wires the dependencies together by hand.
 
 ```
-org.openfocus.app
+com.openfocushq.openfocus
 ├── core/        Pure Kotlin logic with no Android dependencies. Unit-tested.
 │   ├── content/         GameContent: loads content.json (slots, items, achievements, starter habits, quest lines, NPCs, enemies, titles, messages)
 │   ├── GameRules        XP, coin, HP, level curve and unlock prices (all the tuning lives here)

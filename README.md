@@ -1,7 +1,5 @@
 # OpenFocus
 
-[![Build](https://github.com/graphicmismatch/OpenFocus/actions/workflows/build.yml/badge.svg)](https://github.com/graphicmismatch/OpenFocus/actions/workflows/build.yml)
-
 **An open-source Android app blocker, Shorts/Reels blocker, focus timer and habit tracker, all wrapped in a gentle RPG.**
 
 OpenFocus mixes ideas from a few kinds of apps: an app blocker and a pause-before-you-scroll screen, a focus timer, a Habitica-style hero with XP, HP and coins, and an "ascent" view where each long-term goal is a mountain you climb.
@@ -45,7 +43,7 @@ Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 - **YouTube Shorts** and **Instagram Reels**: only the short-video player is blocked, so the rest of each app keeps working.
 - **TikTok / TikTok Lite**: the whole app is blocked.
 - **Snapchat Spotlight**: experimental.
-- The detection rules are plain data in [`ShortsDetector.kt`](app/src/main/java/org/openfocus/app/blocking/ShortsDetector.kt), so they are easy to update when apps change.
+- The detection rules are plain data in [`ShortsDetector.kt`](app/src/main/java/com/openfocushq/openfocus/blocking/ShortsDetector.kt), so they are easy to update when apps change.
 
 ### ⏱️ Focus
 - Pomodoro-style sessions from 5 to 180 minutes, with a foreground-service countdown in the notification shade.
@@ -90,7 +88,7 @@ Requirements: JDK 17+ and the Android SDK (API 35).
 
 The screenshot tests write their PNGs to `docs/screenshots/`.
 
-Every pull request and push to `main` runs all tests and a minified release build in GitHub Actions ([`build.yml`](.github/workflows/build.yml)). Each push to `main` that passes is published as a **[GitHub Release](../../releases)** with the APK attached. Signing and versioning are covered in [docs/RELEASING.md](docs/RELEASING.md).
+Play Store builds are signed app bundles from GitHub Actions ([`play-bundle.yml`](.github/workflows/play-bundle.yml)). Each one runs the tests first. Signing, versioning and uploading to Play are covered in [docs/RELEASING.md](docs/RELEASING.md).
 
 ### Game content
 All cosmetics (cloaks, armour, hats, backdrops and any new slot), achievements, starter habits, quest lines, NPCs and their dialogue, bosses, level titles and messages are **data**, in [`app/src/main/resources/content/content.json`](app/src/main/resources/content/content.json). To add more, use the local developer-only [content editor](tools/content-editor/README.md):

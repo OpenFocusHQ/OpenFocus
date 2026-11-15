@@ -14,6 +14,9 @@ Grid conventions
   * Each row string is CENTERED in the frame, so symmetric shapes only need their middle part.
   * '.' is transparent. Every other character is a palette key (see PALETTE).
   * Sheets are fixed grids: one row per animation, frames left-to-right.
+  * Every frame sits in a labelled cell: a LABEL_H-pixel label band, then a 1px GUIDE box whose
+    inside is the frame (the most space the sprite can use). The app reads only the inside, so
+    guides and labels never show. Cell size: see cell_size(); SpriteSheet in Kotlin mirrors it.
 """
 import json
 import os
@@ -24,7 +27,7 @@ import zlib
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "app", "src", "main", "res", "drawable-nodpi")
 CONTENT = os.path.join(ROOT, "app", "src", "main", "resources", "content", "content.json")
-REGISTRY = os.path.join(ROOT, "app", "src", "main", "java", "org", "openfocus", "app", "ui", "pixel", "SpriteRegistry.kt")
+REGISTRY = os.path.join(ROOT, "app", "src", "main", "java", "com", "openfocushq", "openfocus", "ui", "pixel", "SpriteRegistry.kt")
 
 
 def load_content():
@@ -374,7 +377,7 @@ def ascent_scene(summit, night=False):
 
 # --------------------------------------------------------------------------------------------
 # Achievement badges: 24x24 medal (bronze / silver / gold) + ribbon + 12x12 glyph.
-# Order MUST match org.openfocus.app.core.Achievements.all (checked by a test).
+# Order MUST match com.openfocushq.openfocus.core.Achievements.all (checked by a test).
 # --------------------------------------------------------------------------------------------
 TIERS = {  # rim, face, shadow
     "bronze": ("F0B57E", "C9844A", "8A5226"),
@@ -788,15 +791,67 @@ def split(g, keep):
     return [[ch if keep(ch) else "." for ch in row] for row in g]
 
 
-def sheet(frames_by_row, fw, fh):
+# Sheet cells. MUST match SpriteSheet.LABEL_HEIGHT / MIN_CELL_WIDTH in SpriteCatalog.kt.
+LABEL_H = 7  # 1px gap, 5px text, 1px gap
+MIN_CELL_W = 58  # fits a 14-character label
+GUIDE = "#FF00FF"  # guide boxes and labels; outside every frame, so never drawn in the app
+
+FONT = {  # 3x5, used for cell labels
+    "a": [".o.", "o.o", "ooo", "o.o", "o.o"], "b": ["oo.", "o.o", "oo.", "o.o", "oo."],
+    "c": [".oo", "o..", "o..", "o..", ".oo"], "d": ["oo.", "o.o", "o.o", "o.o", "oo."],
+    "e": ["ooo", "o..", "oo.", "o..", "ooo"], "f": ["ooo", "o..", "oo.", "o..", "o.."],
+    "g": [".oo", "o..", "o.o", "o.o", ".oo"], "h": ["o.o", "o.o", "ooo", "o.o", "o.o"],
+    "i": ["ooo", ".o.", ".o.", ".o.", "ooo"], "j": ["..o", "..o", "..o", "o.o", ".o."],
+    "k": ["o.o", "o.o", "oo.", "o.o", "o.o"], "l": ["o..", "o..", "o..", "o..", "ooo"],
+    "m": ["o.o", "ooo", "ooo", "o.o", "o.o"], "n": ["oo.", "o.o", "o.o", "o.o", "o.o"],
+    "o": [".o.", "o.o", "o.o", "o.o", ".o."], "p": ["oo.", "o.o", "oo.", "o..", "o.."],
+    "q": [".o.", "o.o", "o.o", "oo.", ".oo"], "r": ["oo.", "o.o", "oo.", "o.o", "o.o"],
+    "s": [".oo", "o..", ".o.", "..o", "oo."], "t": ["ooo", ".o.", ".o.", ".o.", ".o."],
+    "u": ["o.o", "o.o", "o.o", "o.o", "ooo"], "v": ["o.o", "o.o", "o.o", "o.o", ".o."],
+    "w": ["o.o", "o.o", "ooo", "ooo", "o.o"], "x": ["o.o", "o.o", ".o.", "o.o", "o.o"],
+    "y": ["o.o", "o.o", ".o.", ".o.", ".o."], "z": ["ooo", "..o", ".o.", "o..", "ooo"],
+    "0": ["ooo", "o.o", "o.o", "o.o", "ooo"], "1": [".o.", "oo.", ".o.", ".o.", "ooo"],
+    "2": ["ooo", "..o", "ooo", "o..", "ooo"], "3": ["ooo", "..o", ".oo", "..o", "ooo"],
+    "4": ["o.o", "o.o", "ooo", "..o", "..o"], "5": ["ooo", "o..", "ooo", "..o", "ooo"],
+    "6": ["ooo", "o..", "ooo", "o.o", "ooo"], "7": ["ooo", "..o", "..o", ".o.", ".o."],
+    "8": ["ooo", "o.o", "ooo", "o.o", "ooo"], "9": ["ooo", "o.o", "ooo", "..o", "ooo"],
+    "_": ["...", "...", "...", "...", "ooo"], "-": ["...", "...", "ooo", "...", "..."],
+    " ": ["...", "...", "...", "...", "..."],
+}
+
+
+def cell_size(fw, fh):
+    return max(fw + 2, MIN_CELL_W), LABEL_H + fh + 2
+
+
+def sheet(frames_by_row, fw, fh, names):
+    """Lays frames out in labelled, guide-boxed cells. names[r] is the row's animation name
+    (cells become "name 0", "name 1", ... when it has several frames) or a list of per-cell names."""
+    cw, ch = cell_size(fw, fh)
     rows = len(frames_by_row)
     cols = max(len(r) for r in frames_by_row)
-    out = [["."] * (fw * cols) for _ in range(fh * rows)]
+    out = [["."] * (cw * cols) for _ in range(ch * rows)]
     for r, frames in enumerate(frames_by_row):
         for c, f in enumerate(frames):
+            x0, y0 = c * cw, r * ch
+            label = names[r][c] if isinstance(names[r], list) else (names[r] if len(frames) == 1 else f"{names[r]} {c}")
+            if 4 * len(label) - 1 > cw - 2:
+                warn(f"label '{label}' is wider than its {cw}px cell; it will be cut off")
+            for i, letter in enumerate(label.lower()):
+                if letter not in FONT:
+                    raise SystemExit(f"label '{label}': no glyph for {letter!r} (add it to FONT)")
+                for y, glyph_row in enumerate(FONT[letter]):
+                    for x, px in enumerate(glyph_row):
+                        if px != "." and 1 + 4 * i + x < cw:
+                            out[y0 + 1 + y][x0 + 1 + 4 * i + x] = GUIDE
+            top, left = y0 + LABEL_H, x0
+            for x in range(left, left + fw + 2):
+                out[top][x] = out[top + fh + 1][x] = GUIDE
+            for y in range(top, top + fh + 2):
+                out[y][left] = out[y][left + fw + 1] = GUIDE
             for y in range(fh):
                 for x in range(fw):
-                    out[r * fh + y][c * fw + x] = f[y][x]
+                    out[top + 1 + y][left + 1 + x] = f[y][x]
     return out
 
 
@@ -850,6 +905,7 @@ def main():
     colors = {k: v[0] for k, v in PALETTE.items()}
 
     # Sheet rows: 0 idle (4 frames), 1 rest (1), 2 celebrate (2).
+    POSES = ["idle", "rest", "celebrate"]
     poses = [
         [hero_frame(b, bl) for b, bl in zip(IDLE_BOB, IDLE_BLINK)],
         [hero_frame(1, False, closed=True)],
@@ -860,7 +916,7 @@ def main():
     for tone, (light, shadow, blush) in SKIN_TONES.items():
         tc = dict(colors, s=light, S=shadow, p=blush)
         write_png(os.path.join(OUT, f"px_hero_body_{tone}.png"),
-                  sheet([[split(f, is_body) for f in row] for row in poses], 32, 32), tc)
+                  sheet([[split(f, is_body) for f in row] for row in poses], 32, 32, POSES), tc)
     content = load_content()
     slot_kind = {s["id"]: s.get("kind", "OVERLAY") for s in content["slots"]}
     by_slot = lambda kind: [i for i in content["items"] if slot_kind.get(i["slot"]) == kind and i.get("sprite")]
@@ -871,7 +927,7 @@ def main():
         cloak_ramps[item["id"]] = (light, mid, dark)
         cc = dict(colors, c=light, C=mid, D=dark)
         write_png(os.path.join(OUT, f"{item['sprite']}.png"),
-                  sheet([[split(f, is_cloak) for f in row] for row in poses], 32, 32), cc)
+                  sheet([[split(f, is_cloak) for f in row] for row in poses], 32, 32, POSES), cc)
 
     default_bg = next(s.get("defaultSprite") for s in content["slots"] if s.get("kind") == "BACKDROP")
     for sprite in [default_bg] + [i["sprite"] for i in by_slot("BACKDROP")]:
@@ -879,25 +935,26 @@ def main():
         if kind not in BACKDROPS:
             warn(f"no generator art for backdrop '{sprite}' (draw it by hand or add it to BACKDROPS)")
             continue
-        rows = [[backdrop(kind, f) for f in range(BACKDROPS[kind])]]
+        rows, names = [[backdrop(kind, f) for f in range(BACKDROPS[kind])]], ["idle"]
         if sprite == default_bg:  # row 1 = dark-theme version of the default backdrop
             rows.append([backdrop("default_night")])
-        write_png(os.path.join(OUT, f"{sprite}.png"), sheet(rows, 48, 48), colors)
+            names.append("night")
+        write_png(os.path.join(OUT, f"{sprite}.png"), sheet(rows, 48, 48, names), colors)
 
     for item in by_slot("OVERLAY"):
         if item["id"] in HATS:
-            write_png(os.path.join(OUT, f"{item['sprite']}.png"), sheet([[grid(HATS[item['id']], 32, 32)]], 32, 32), colors)
+            write_png(os.path.join(OUT, f"{item['sprite']}.png"), sheet([[grid(HATS[item['id']], 32, 32)]], 32, 32, ["idle"]), colors)
         elif item["id"] in ARMOUR:
             light, mid, dark = ramp_from(item["color"])
             ac = dict(colors, **{"1": light, "2": mid, "3": dark})
-            write_png(os.path.join(OUT, f"{item['sprite']}.png"), sheet([[grid(ARMOUR[item['id']], 32, 32)]], 32, 32), ac)
+            write_png(os.path.join(OUT, f"{item['sprite']}.png"), sheet([[grid(ARMOUR[item['id']], 32, 32)]], 32, 32, ["idle"]), ac)
         elif not os.path.exists(os.path.join(OUT, f"{item['sprite']}.png")):
             warn(f"no art for '{item['id']}' ({item['sprite']}.png); the app falls back to the shape-drawn hero")
 
-    write_png(os.path.join(OUT, "px_coin.png"), sheet([coin_frames()], 16, 16), colors)
+    write_png(os.path.join(OUT, "px_coin.png"), sheet([coin_frames()], 16, 16, ["spin"]), colors)
 
-    write_png(os.path.join(OUT, "px_shield.png"), sheet([shield_frames()], 48, 48), colors)
-    write_png(os.path.join(OUT, "px_empty.png"), sheet([[empty_quests(), empty_habits(), empty_goals()]], 64, 48), colors)
+    write_png(os.path.join(OUT, "px_shield.png"), sheet([shield_frames()], 48, 48, ["idle"]), colors)
+    write_png(os.path.join(OUT, "px_empty.png"), sheet([[empty_quests(), empty_habits(), empty_goals()]], 64, 48, [EMPTY_SCENES]), colors)
 
     icon = launcher_icon()
     mono = [["#FFFFFF" if ch != "." else "." for ch in row] for row in icon]
@@ -918,12 +975,12 @@ def main():
     for npc in content.get("npcs", []):
         if npc.get("sprite"):
             g, cc = npc_portrait(npc, colors)
-            write_png(os.path.join(OUT, f"{npc['sprite']}.png"), sheet([[g]], 32, 32), cc)
+            write_png(os.path.join(OUT, f"{npc['sprite']}.png"), sheet([[g]], 32, 32, ["idle"]), cc)
     for enemy in content.get("enemies", []):
         if enemy.get("sprite"):
             light, mid, dark = ramp_from(enemy.get("color", "#F06A4D"))
             ec = dict(colors, **{"1": light, "2": mid, "3": dark})
-            write_png(os.path.join(OUT, f"{enemy['sprite']}.png"), sheet([enemy_frames(enemy)], 48, 48), ec)
+            write_png(os.path.join(OUT, f"{enemy['sprite']}.png"), sheet([enemy_frames(enemy)], 48, 48, ["idle"]), ec)
 
     badges = [(a["id"], a.get("tier", "bronze")) for a in content["achievements"]]
     for aid, tier in badges:
@@ -931,31 +988,27 @@ def main():
             warn(f"achievement '{aid}' has no glyph yet; using a star")
         if tier not in TIERS:
             raise SystemExit(f"achievement '{aid}' has unknown tier '{tier}' (use {', '.join(TIERS)})")
-    rows = [badges[i:i + BADGE_COLS] for i in range(0, len(badges), BADGE_COLS)]
-    out = [["."] * (24 * BADGE_COLS) for _ in range(24 * len(rows))]
-    for r, row in enumerate(rows):
-        for c, (aid, tier) in enumerate(row):
-            rim, face, shadow = TIERS[tier]
-            tc = dict(colors, **{"1": rim, "2": face, "3": shadow})
-            g = badge(GLYPHS.get(aid) or star("w"))
-            for y in range(24):
-                for x in range(24):
-                    ch = g[y][x]
-                    out[r * 24 + y][c * 24 + x] = "." if ch == "." else ("#" + tc[ch])
-    write_png(os.path.join(OUT, "px_badges.png"), out, {})
-    write_png(os.path.join(OUT, "px_sparkle.png"), sheet([sparkle_frames()], 48, 48), colors)
+    medals = []
+    for aid, tier in badges:
+        rim, face, shadow = TIERS[tier]
+        tc = dict(colors, **{"1": rim, "2": face, "3": shadow})
+        medals.append([["." if ch == "." else "#" + tc[ch] for ch in row] for row in badge(GLYPHS.get(aid) or star("w"))])
+    rows = [medals[i:i + BADGE_COLS] for i in range(0, len(medals), BADGE_COLS)]
+    names = [[aid for aid, _ in badges[i:i + BADGE_COLS]] for i in range(0, len(badges), BADGE_COLS)]
+    write_png(os.path.join(OUT, "px_badges.png"), sheet(rows, 24, 24, names), {})
+    write_png(os.path.join(OUT, "px_sparkle.png"), sheet([sparkle_frames()], 48, 48, ["idle"]), colors)
 
     # Rows: 0 climbing, 1 summit, 2 climbing (night / dark theme), 3 summit (night).
     scenes = [[ascent_scene(False)], [ascent_scene(True)], [ascent_scene(False, True)], [ascent_scene(True, True)]]
     for i, base in enumerate(GOAL_COLORS):
-        write_png(os.path.join(OUT, f"px_ascent_{i}.png"), sheet(scenes, SCENE_W, SCENE_H),
+        write_png(os.path.join(OUT, f"px_ascent_{i}.png"), sheet(scenes, SCENE_W, SCENE_H, ["climbing", "summit", "climbing_night", "summit_night"]),
                   dict(colors, **scene_colors(base)))
     write_png(os.path.join(OUT, "px_tent.png"),
-              sheet([[grid(f, 8, 8) for f in TENT["unlit"]], [grid(f, 8, 8) for f in TENT["lit"]]], 8, 8), colors)
-    write_png(os.path.join(OUT, "px_climber.png"), sheet([[[list(r) for r in f] for f in CLIMBER]], 10, 12), colors)
+              sheet([[grid(f, 8, 8) for f in TENT["unlit"]], [grid(f, 8, 8) for f in TENT["lit"]]], 8, 8, ["unlit", "lit"]), colors)
+    write_png(os.path.join(OUT, "px_climber.png"), sheet([[[list(r) for r in f] for f in CLIMBER]], 10, 12, ["idle"]), colors)
     gold = [[r.replace("r", "g") for r in f] for f in FLAG]
     write_png(os.path.join(OUT, "px_flag.png"),
-              sheet([[[list(r) for r in f] for f in FLAG], [[list(r) for r in f] for f in gold]], 8, 8), colors)
+              sheet([[[list(r) for r in f] for f in FLAG], [[list(r) for r in f] for f in gold]], 8, 8, ["red", "gold"]), colors)
 
     # Palette exports (base palette + cloak ramps).
     entries = [(v[0], v[1]) for v in PALETTE.values() if len(v[0]) == 6] + [(LAUNCHER_BG, "launcher background")]
@@ -995,9 +1048,9 @@ def write_registry():
     for n in names:
         w, h = png_size(os.path.join(OUT, n + ".png"))
         lines.append(f'        "{n}" to SpriteInfo(R.drawable.{n}, {w}, {h}),')
-    code = """package org.openfocus.app.ui.pixel
+    code = """package com.openfocushq.openfocus.ui.pixel
 
-import org.openfocus.app.R
+import com.openfocushq.openfocus.R
 
 // GENERATED by art/tools/build_placeholders.py from res/drawable-nodpi/px_*.png. Do not edit.
 // Re-run the generator (or the content editor's "Regenerate art") after adding or resizing a sprite.

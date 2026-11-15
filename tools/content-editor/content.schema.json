@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/graphicmismatch/OpenFocus/tools/content-editor/content.schema.json",
+  "$id": "https://github.com/OpenFocusHQ/OpenFocus/tools/content-editor/content.schema.json",
   "title": "OpenFocus game content",
   "description": "All cosmetics, achievements, starter habits, quest lines, NPCs, enemies, titles and messages. Edit with tools/content-editor.",
   "type": "object",

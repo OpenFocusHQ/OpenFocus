@@ -21,10 +21,13 @@ Real art is very welcome. This guide explains how to make art that fits.
 ## Sprite sheets
 Cosmetics and their slots are defined in `content.json` (see the [content editor](../tools/content-editor/README.md)), which references sprites by file name. After adding or resizing any `px_*.png`, run the generator. It regenerates `ui/pixel/SpriteRegistry.kt`, and a test fails if the registry is stale.
 
-- Sheets are **fixed grids**: one row per animation, frames left to right, no padding.
+- Sheets are **fixed grids**: one row per animation, frames left to right.
+- **Every frame sits in a labelled cell.** A magenta (`#FF00FF`) **guide box** marks the most space the sprite can use. Draw only inside the box, never on the line. Above the box, a 7px band names the frame, e.g. `idle 0`, `celebrate 1`, or an achievement id. The app reads only the inside of each box, so the guides and labels never appear on screen. Keep them when you redraw a sheet.
+- Cell size, for a frame of `w`×`h`: **`max(w + 2, 58)` wide by `h + 9` tall**. The frame's top-left pixel in cell (`col`, `row`) is at `(col × cellWidth + 1, row × cellHeight + 8)`. The constants are `LABEL_H` / `MIN_CELL_W` in the generator and `SpriteSheet.LABEL_HEIGHT` / `MIN_CELL_WIDTH` in Kotlin, and a test keeps them in sync. The 58px minimum width is there so labels of up to 14 characters fit, even over small frames such as the 8×8 tent.
+- The sizes in this guide (32×32, 160×112, …) are **frame** sizes. The PNG is bigger because of the cells. Positions such as "feet at (4, 6)" or the hero's offset (8, 13) are likewise measured from the frame's top-left pixel, just inside the box, not from the PNG's corner.
 - Export as **PNG to `app/src/main/res/drawable-nodpi/`**. The `-nodpi` folder stops Android from resizing the image.
 - Name files `px_<thing>.png`. Cosmetics use their shop id, e.g. `hat_wizard` becomes `px_hat_wizard.png`.
-- Register the sheet in `app/src/main/java/org/openfocus/app/ui/pixel/SpriteCatalog.kt` with its frame size, its animations (`row`, `frames`, `fps`) and any anchors.
+- Register the sheet in `app/src/main/java/com/openfocushq/openfocus/ui/pixel/SpriteCatalog.kt` with its frame size, its animations (`row`, `frames`, `fps`) and any anchors.
 
 ### The hero, a layered "paper doll"
 The hero is drawn as layers, bottom to top:
@@ -49,7 +52,7 @@ Body and cloak sheets share this layout:
 **Hats** are drawn against the head in idle frame 0. The renderer moves them by the body's `head` anchor on each frame, so a hat bobs with the head without needing its own animation. If you change the body animation, update `HEAD_BOB` in `SpriteCatalog.kt` (and `IDLE_BOB` in the generator).
 
 ### Goal ascent
-`px_ascent_<colorIndex>.png` is 160×224: row 0 is the climbing scene, row 1 the summit-reached scene. The dashed trail is baked into the art. Its waypoints are listed in **both** `TRAIL` in the generator and `AscentTrail.POINTS` in Kotlin, and a test checks that every waypoint lands on the mountain rather than the sky. If you redraw the mountain, update both lists.
+`px_ascent_<colorIndex>.png` has 160×112 frames: row 0 is the climbing scene, row 1 the summit-reached scene, and rows 2–3 their night versions. The dashed trail is baked into the art. Its waypoints are listed in **both** `TRAIL` in the generator and `AscentTrail.POINTS` in Kotlin, and a test checks that every waypoint lands on the mountain rather than the sky. If you redraw the mountain, update both lists.
 
 | Sheet | Frame | Rows | Placement |
 |---|---|---|---|
@@ -87,7 +90,7 @@ Sprites are drawn once and must read on both the light (`#F7F4FF`) and dark (`#1
 ## Workflow
 1. Draw in [Pixelorama](https://orama-interactive.itch.io/pixelorama) (MIT), [LibreSprite](https://libresprite.github.io/) (GPL), or any editor that exports PNG sprite sheets. Load `palette.gpl` first.
 2. Put the editable source file (`.pxo`, `.ase`, `.aseprite` or a layered `.png`) in `art/src/`.
-3. Export the PNG sheet into `drawable-nodpi/` and register it in `SpriteCatalog.kt`.
+3. Export the PNG sheet into `drawable-nodpi/` and register it in `SpriteCatalog.kt`. Start from the generated placeholder so the guide boxes and labels are already there, and keep them in the export.
 4. If you are replacing a generated placeholder, delete its entry in `tools/build_placeholders.py` so it isn't overwritten.
 5. Add a line to [`CREDITS.md`](CREDITS.md).
 6. Run `./gradlew :app:testDebugUnitTest`. It checks sheet dimensions and that every shop item has art, and regenerates `docs/screenshots/sprites.png` so reviewers can see your work.

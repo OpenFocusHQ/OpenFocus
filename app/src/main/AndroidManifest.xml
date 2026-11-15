@@ -47,7 +47,7 @@
             android:excludeFromRecents="true"
             android:exported="false"
             android:launchMode="singleInstance"
-            android:taskAffinity="org.openfocus.app.block"
+            android:taskAffinity="com.openfocushq.openfocus.block"
             android:theme="@style/Theme.OpenFocus.Pause" />
 
         <service

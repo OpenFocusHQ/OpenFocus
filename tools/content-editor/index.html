@@ -113,6 +113,10 @@
 const PALETTE = ["#7C6CF2", "#2BB3A3", "#F06A4D", "#E0A526", "#4DA3F0", "#E85D75", "#3E8E5E", "#9B59B6"]; // Theme.kt PaletteColors
 const BADGE_COLS = 5;          // SpriteCatalog.BADGE_COLUMNS
 const HERO_AT = [8, 13];       // SpriteCatalog.HERO_IN_BACKDROP
+// Sheet cells (SpriteSheet.LABEL_HEIGHT / MIN_CELL_WIDTH): label band, 1px guide box, frame inside.
+const LABEL_H = 7, MIN_CELL_W = 58;
+const cellW = fw => Math.max(fw + 2, MIN_CELL_W), cellH = fh => LABEL_H + fh + 2;
+const frameAt = (fw, fh, col, row) => [col * cellW(fw) + 1, row * cellH(fh) + LABEL_H + 1];
 let content = null, schema = null, sprites = {}, dirty = false;
 let tab = "items", sel = 0, filter = "";
 let langs = [], lang = null, overlay = {}, overlayDirty = false, trFilter = "missing", trSearch = "";
@@ -305,7 +309,7 @@ function validate() {
     if (!(a.target > 0)) add("achievements", i, "target must be > 0");
   });
   const badges = sprites["px_badges"];
-  if (badges && Math.floor(badges.width / 24) * Math.floor(badges.height / 24) < content.achievements.length)
+  if (badges && Math.floor(badges.width / cellW(24)) * Math.floor(badges.height / cellH(24)) < content.achievements.length)
     add("achievements", content.achievements.length - 1, "badge atlas is out of date: regenerate art");
   if (!content.starterHabits.some(q => q.starter !== false)) add("starterHabits", 0, "no starter habits");
   if (!content.titles.some(t => t.minLevel === 1)) add("titles", 0, "need a title for level 1");
@@ -756,8 +760,8 @@ async function heroPreview(equip) {
   layers.sort((a, b) => a.layer - b.layer);
   for (const l of layers) {
     const im = await img(l.sprite); if (!im) continue;
-    if (l.kind === "BACKDROP") g.drawImage(im, 0, 0, 48, 48, 0, 0, 48, 48);
-    else g.drawImage(im, 0, 0, 32, 32, HERO_AT[0], HERO_AT[1], 32, 32);
+    if (l.kind === "BACKDROP") g.drawImage(im, ...frameAt(48, 48, 0, 0), 48, 48, 0, 0, 48, 48);
+    else g.drawImage(im, ...frameAt(32, 32, 0, 0), 32, 32, HERO_AT[0], HERO_AT[1], 32, 32);
   }
   return c;
 }
@@ -775,7 +779,7 @@ async function renderPreview() {
     const c = el("canvas", { className: "px", width: 24, height: 24 }); c.style.width = c.style.height = "120px";
     const g = c.getContext("2d"); g.imageSmoothingEnabled = false;
     const im = await img("px_badges");
-    if (im) g.drawImage(im, (sel % BADGE_COLS) * 24, Math.floor(sel / BADGE_COLS) * 24, 24, 24, 0, 0, 24, 24);
+    if (im) g.drawImage(im, ...frameAt(24, 24, sel % BADGE_COLS, Math.floor(sel / BADGE_COLS)), 24, 24, 0, 0, 24, 24);
     p.replaceChildren(c, el("p", { textContent: "Badge from the last generator run. Regenerate art after changes." }));
   } else if (tab === "slots") {
     const items = content.items.filter(i => i.slot === x.id);
@@ -820,7 +824,7 @@ async function spritePreview(name, w, h, scale) {
   const c = el("canvas", { className: "px", width: w, height: h }); c.style.width = `${w * scale}px`; c.style.height = `${h * scale}px`;
   const g = c.getContext("2d"); g.imageSmoothingEnabled = false;
   const im = name ? await img(name) : null;
-  if (im) g.drawImage(im, 0, 0, w, h, 0, 0, w, h);
+  if (im) g.drawImage(im, ...frameAt(w, h, 0, 0), w, h, 0, 0, w, h);
   return im ? c : el("p", { className: "sub", textContent: name ? `${name}.png doesn't exist yet: Regenerate art.` : "No sprite set." });
 }
 
