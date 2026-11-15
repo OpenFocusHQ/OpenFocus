@@ -79,7 +79,7 @@ App text lives in `res/values/strings*.xml` and game content has its own transla
 
 ## Building
 
-Requirements: JDK 17+ and the Android SDK (API 35).
+Requirements: JDK 17+ and the Android SDK (API 36).
 
 ```bash
 ./gradlew :app:assembleDebug        # APK in app/build/outputs/apk/debug/

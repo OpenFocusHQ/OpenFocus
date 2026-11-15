@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.openfocushq.openfocus"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.openfocushq.openfocus"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         // CI sets these per build (see .github/workflows/play-bundle.yml); local builds use 1 / "<base>.0-dev".
         val build = System.getenv("OPENFOCUS_BUILD_NUMBER")?.toIntOrNull()
         versionCode = build ?: 1
