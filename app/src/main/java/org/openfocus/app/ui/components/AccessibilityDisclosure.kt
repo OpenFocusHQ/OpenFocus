@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.components
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -29,19 +31,19 @@ fun AccessibilityDisclosureDialog(onAgree: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Filled.Shield, contentDescription = null) },
-        title = { Text("Turn on OpenFocus Shield?") },
+        title = { Text(stringResource(R.string.turn_on_openfocus_shield)) },
         text = {
             Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("To block apps and Shorts/Reels, OpenFocus uses Android's Accessibility Service.")
-                Text("What it uses", fontWeight = FontWeight.Bold)
-                Text("• Which app is open, to show the pause screen for apps you chose.\n" +
+                Text(stringResource(R.string.to_block_apps_and_shorts_reels))
+                Text(stringResource(R.string.what_it_uses), fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.which_app_is_open_to_show) +
                     "• Only inside the video apps you enabled (YouTube, Instagram…): the names of on-screen elements, " +
                     "to recognise their short-video feed and press Back.")
-                Text("What it never does", fontWeight = FontWeight.Bold)
-                Text("• Read what you type, passwords, messages or payments.\n" +
+                Text(stringResource(R.string.what_it_never_does), fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.read_what_you_type_passwords_messages) +
                     "• Record your screen.\n" +
                     "• Send anything anywhere: OpenFocus has no internet permission.")
-                Text("Payment apps", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.payment_apps), fontWeight = FontWeight.Bold)
                 Text(
                     "Some payment and banking apps (for example Google Pay) limit payments while an accessibility " +
                         "service installed outside Google Play is on. If that happens, switch the Shield off in " +
@@ -50,8 +52,8 @@ fun AccessibilityDisclosureDialog(onAgree: () -> Unit, onDismiss: () -> Unit) {
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onAgree) { Text("Agree and open settings") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Not now") } },
+        confirmButton = { TextButton(onClick = onAgree) { Text(stringResource(R.string.agree_and_open_settings)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.not_now)) } },
     )
 }
 

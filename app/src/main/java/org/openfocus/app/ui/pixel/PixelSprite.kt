@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.pixel
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import android.provider.Settings
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -78,11 +80,11 @@ fun PixelSprite(
     val animated = frame == null && animate && !reduceMotion && layers.any { it.sheet.anim(it.anim).frames > 1 }
 
     val clock: State<Float>? = if (animated) {
-        rememberInfiniteTransition(label = "sprite").animateFloat(
+        rememberInfiniteTransition(label = stringResource(R.string.sprite)).animateFloat(
             initialValue = 0f,
             targetValue = CLOCK_MS.toFloat(),
             animationSpec = infiniteRepeatable(tween(CLOCK_MS, easing = LinearEasing)),
-            label = "clock",
+            label = stringResource(R.string.clock),
         )
     } else null
 

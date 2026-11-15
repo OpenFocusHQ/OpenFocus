@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.goals
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,11 +81,11 @@ fun GoalEditorScreen(nav: NavController, goalId: String?) {
         )
         if (!loaded) return@Column
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), label = { Text("Goal, e.g. Run a half marathon") }, singleLine = true)
-            OutlinedTextField(why, { why = it }, Modifier.fillMaxWidth(), label = { Text("Why does it matter to you?") }, minLines = 2)
-            OutlinedTextField(summit, { summit = it }, Modifier.fillMaxWidth(), label = { Text("Name your summit (optional)") }, singleLine = true)
+            OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.goal_e_g_run_a_half)) }, singleLine = true)
+            OutlinedTextField(why, { why = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.why_does_it_matter_to_you)) }, minLines = 2)
+            OutlinedTextField(summit, { summit = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.name_your_summit_optional)) }, singleLine = true)
             OutlinedButton(onClick = { pickDate = true }) { Text(target?.let { "Target: ${Days.date(it)}" } ?: "Set a target date (optional)") }
-            Text("Color", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.color), style = MaterialTheme.typography.titleSmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PaletteColors.forEachIndexed { i, col ->
                     Box(
@@ -96,8 +98,8 @@ fun GoalEditorScreen(nav: NavController, goalId: String?) {
             if (goalId == null) {
                 OutlinedTextField(
                     milestones, { milestones = it }, Modifier.fillMaxWidth(), minLines = 4,
-                    label = { Text("Milestones, one per line") },
-                    placeholder = { Text("Run 5 km without stopping\nRun 10 km\nSign up for a race\nRun 16 km") },
+                    label = { Text(stringResource(R.string.milestones_one_per_line)) },
+                    placeholder = { Text(stringResource(R.string.run_5_km_without_stopping_run)) },
                 )
             }
             Button(
@@ -113,7 +115,7 @@ fun GoalEditorScreen(nav: NavController, goalId: String?) {
                         nav.popBackStack()
                     }
                 },
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.save)) }
         }
     }
     if (pickDate) {
@@ -121,9 +123,9 @@ fun GoalEditorScreen(nav: NavController, goalId: String?) {
         DatePickerDialog(
             onDismissRequest = { pickDate = false },
             confirmButton = {
-                TextButton(onClick = { target = state.selectedDateMillis?.let { it / 86_400_000L }; pickDate = false }) { Text("OK") }
+                TextButton(onClick = { target = state.selectedDateMillis?.let { it / 86_400_000L }; pickDate = false }) { Text(stringResource(R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { target = null; pickDate = false }) { Text("Clear") } },
+            dismissButton = { TextButton(onClick = { target = null; pickDate = false }) { Text(stringResource(R.string.clear)) } },
         ) { DatePicker(state) }
     }
 }

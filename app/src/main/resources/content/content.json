@@ -678,7 +678,7 @@
     {
       "id": "slime_hunt",
       "title": "The Procrastislime",
-      "summary": "A sticky blob is oozing over the trail. Habitica rules: finish tasks to hit it, miss dailies and it hits back.",
+      "summary": "A sticky blob is oozing over the trail. Finish habits to hit it; miss your dailies and it hits back.",
       "npc": "mira",
       "unlockLevel": 2,
       "requires": null,

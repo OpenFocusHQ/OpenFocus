@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.shield
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,7 +67,7 @@ fun AppPickerScreen(nav: NavController, mode: String) {
             title = { Text(if (mode == "allow") "Allowed during deep focus" else "Choose apps to block") },
             navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
         )
-        OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 16.dp), label = { Text("Search") }, singleLine = true)
+        OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 16.dp), label = { Text(stringResource(R.string.search)) }, singleLine = true)
         val list = apps
         if (list == null) {
             CircularProgressIndicator(Modifier.padding(32.dp).align(Alignment.CenterHorizontally))

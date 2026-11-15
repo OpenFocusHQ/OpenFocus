@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.habits
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -103,18 +105,18 @@ fun HabitEditorScreen(nav: NavController, habitId: String?) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(kind == HabitKind.BUILD, { kind = HabitKind.BUILD }, SegmentedButtonDefaults.itemShape(0, 2)) { Text("Build a habit") }
-                SegmentedButton(kind == HabitKind.BREAK, { kind = HabitKind.BREAK }, SegmentedButtonDefaults.itemShape(1, 2)) { Text("Break a habit") }
+                SegmentedButton(kind == HabitKind.BUILD, { kind = HabitKind.BUILD }, SegmentedButtonDefaults.itemShape(0, 2)) { Text(stringResource(R.string.build_a_habit)) }
+                SegmentedButton(kind == HabitKind.BREAK, { kind = HabitKind.BREAK }, SegmentedButtonDefaults.itemShape(1, 2)) { Text(stringResource(R.string.break_a_habit)) }
             }
             OutlinedTextField(
                 title, { title = it }, Modifier.fillMaxWidth(),
                 label = { Text(if (kind == HabitKind.BUILD) "e.g. Read 10 pages" else "e.g. Doomscrolling in bed") },
                 singleLine = true,
             )
-            OutlinedTextField(notes, { notes = it }, Modifier.fillMaxWidth(), label = { Text("Notes (optional)") })
+            OutlinedTextField(notes, { notes = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.notes_optional)) })
 
             if (kind == HabitKind.BUILD) {
-                Text("How often?", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.how_often), style = MaterialTheme.typography.titleSmall)
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                     HabitFrequency.entries.forEachIndexed { i, f ->
                         SegmentedButton(freq == f, { freq = f; if (f == HabitFrequency.WEEKLY && target < 2) target = 3 }, SegmentedButtonDefaults.itemShape(i, 3)) {
@@ -137,12 +139,12 @@ fun HabitEditorScreen(nav: NavController, habitId: String?) {
                 }
             }
 
-            Text("Difficulty (bigger rewards for harder quests)", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.difficulty_bigger_rewards_for_harder_quests), style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Difficulty.entries.forEach { d -> FilterChip(selected = difficulty == d, onClick = { difficulty = d }, label = { Text(d.label) }) }
             }
 
-            Text("Icon", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.icon), style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 AppIcons.habitChoices.forEach { (name, vec) ->
                     val sel = name == icon
@@ -154,7 +156,7 @@ fun HabitEditorScreen(nav: NavController, habitId: String?) {
                     ) { Icon(vec, name, tint = if (sel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
-            Text("Color", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.color), style = MaterialTheme.typography.titleSmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PaletteColors.forEachIndexed { i, col ->
                     Box(
@@ -167,14 +169,14 @@ fun HabitEditorScreen(nav: NavController, habitId: String?) {
 
             val activeGoals = goals.map { it.goal }
             if (activeGoals.isNotEmpty()) {
-                Text("Supports a long-term goal?", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.supports_a_long_term_goal), style = MaterialTheme.typography.titleSmall)
                 var open by remember { mutableStateOf(false) }
                 Box {
                     OutlinedButton(onClick = { open = true }) {
                         Text(activeGoals.firstOrNull { it.id == goalId }?.title ?: "None")
                     }
                     DropdownMenu(open, { open = false }) {
-                        DropdownMenuItem(text = { Text("None") }, onClick = { goalId = null; open = false })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.none)) }, onClick = { goalId = null; open = false })
                         activeGoals.forEach { g -> DropdownMenuItem(text = { Text(g.title) }, onClick = { goalId = g.id; open = false }) }
                     }
                 }
@@ -197,7 +199,7 @@ fun HabitEditorScreen(nav: NavController, habitId: String?) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.save)) }
         }
     }
 }

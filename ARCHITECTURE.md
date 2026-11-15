@@ -25,12 +25,14 @@ org.openfocus.app
 ```
 
 ## Game content is data
-`app/src/main/resources/content/content.json` holds every cosmetic, slot, achievement, starter quest, title and message. It's a Java resource, so the same loader (`GameContent`) works in the APK and in plain JVM tests. Kotlin keeps only *rules*:
+`app/src/main/resources/content/content.json` holds every cosmetic, slot, achievement, starter habit, quest line, NPC, enemy, title and message. It's a Java resource, so the same loader (`GameContent`) works in the APK and in plain JVM tests. Kotlin keeps only *rules*:
 - achievement conditions are `stat ≥ target`, with stats from `GameStats.STATS`;
 - slots are stacked by `layer` around the hero's body (layer 1);
 - `OVERLAY` slots follow a body anchor (`head` or `body`).
 
 A profile's outfit is a `{slot: item}` JSON map (`ProfileEntity.equipped`), so a new slot needs no schema change. Sprites are referenced by name and resolved through the generated `SpriteRegistry`. `ContentValidationTest` checks the file against the code and against `tools/content-editor/content.schema.json`. The [content editor](tools/content-editor/README.md) is a local developer tool and isn't shipped.
+
+Content is translated with flat overlays in `content/i18n/<lang>.json` (`"items.hat_party.name": "…"`). `ContentI18n` builds each key from the JSON path, naming list entries by their `id`, and only text fields can be overridden. `GameContent.current` loads the overlay for the current locale (`pt-BR`, then `pt`) and falls back to English for missing keys. UI text is in `res/values/strings*.xml`; repositories that need text outside Compose get it through `core/Strings`. See [docs/TRANSLATING.md](docs/TRANSLATING.md).
 
 ## How blocking works
 1. `BlockerAccessibilityService` receives `TYPE_WINDOW_STATE_CHANGED` events and re-checks the foreground app every 15 seconds, which catches time limits and schedules that start while an app is already open.
@@ -49,6 +51,13 @@ Every user action goes through a repository, which calls `GameEngine.apply()`. T
 - appends an `ActivityEventEntity`,
 - checks achievements,
 - and emits `GameFeedback`. The UI shows this as a snackbar, or as a celebration dialog for level-ups and achievements.
+
+`GameEngine` also notifies `listeners` with a `GameEvent` after each change. `QuestRepository` is one of them, and it runs Habitica-style quests from `content.questLines`:
+- **Boss stages:** `HABIT_DONE` / `FOCUS_DONE` / `RESISTED` / `MILESTONE_DONE` / `GOAL_DONE` deal damage (`GameRules.habitDamage`, `focusDamage`, …). `HABIT_SLIP` and `HABIT_MISSED` (whose `refId` carries the number of misses) make the boss strike for `strength × hits` HP, unless gentle mode is on.
+- **Collect stages:** each event rolls `GameRules.dropChance`.
+- **Objective stages:** store a stat `baseline` when the stage starts. `GAIN` counts from it; `REACH` uses the total.
+- Progress is one `quest_progress` row per line (stage index, progress, status, times completed). Stage rewards and the quest's own events (`QUEST_*`, `BOSS_STRIKE`) go back through `GameEngine.apply`, and the repository ignores those events so it never re-enters itself.
+- Intros, outros and boss lines are emitted on `conversations` and shown by `DialogueHost`.
 
 Day rollover works like Habitica's "cron" (`HabitRepository.rollover`). It processes each day that has fully passed since the last run, at most the past 7 days, and runs when the app starts, when it resumes, and every 2 hours from `DailyWorker`.
 

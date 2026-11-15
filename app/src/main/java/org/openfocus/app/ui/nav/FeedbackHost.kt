@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.nav
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,7 +74,7 @@ fun FeedbackHost(snackbar: SnackbarHostState) {
         Snackbar {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (((data.visuals as? RewardSnackbar)?.coins ?: 0) > 0) {
-                    PixelSprite(SpriteCatalog.coin, "spin", Modifier.size(24.dp), contentDescription = "Coins earned")
+                    PixelSprite(SpriteCatalog.coin, "spin", Modifier.size(24.dp), contentDescription = stringResource(R.string.coins_earned))
                     Spacer(Modifier.width(10.dp))
                 }
                 Text(data.visuals.message)
@@ -101,8 +103,8 @@ fun FeedbackHost(snackbar: SnackbarHostState) {
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (fb.fainted) Text("Your HP ran out, so your hero took a rest and lost a few coins. ${Encouragement.comeback()}")
-                    if (fb.newLevel != null) Text("You're getting stronger. HP fully restored!")
+                    if (fb.fainted) Text(stringResource(R.string.your_hp_ran_out_so_your, Encouragement.comeback()))
+                    if (fb.newLevel != null) Text(stringResource(R.string.you_re_getting_stronger_hp_fully))
                     fb.achievements.forEach { a ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             AchievementBadge(a.id, unlocked = true, modifier = Modifier.size(48.dp))
@@ -117,7 +119,7 @@ fun FeedbackHost(snackbar: SnackbarHostState) {
                     if (!fb.fainted && fb.message.isNotBlank() && fb.achievements.isEmpty()) Text(fb.message)
                 }
             },
-            confirmButton = { TextButton(onClick = { big = null }) { Text("Onwards!") } },
+            confirmButton = { TextButton(onClick = { big = null }) { Text(stringResource(R.string.onwards)) } },
         )
     }
 }

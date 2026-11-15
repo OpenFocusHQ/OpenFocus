@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.shield
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,23 +35,23 @@ fun PauseConfigEditor(config: PauseConfig, onChange: (PauseConfig) -> Unit, modi
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
             SegmentedButton(config.gate == BlockGate.WAIT, { onChange(config.copy(gate = BlockGate.WAIT)) }, SegmentedButtonDefaults.itemShape(0, 2)) {
-                Text("Wait timer")
+                Text(stringResource(R.string.wait_timer))
             }
             SegmentedButton(config.gate == BlockGate.HARD, { onChange(config.copy(gate = BlockGate.HARD)) }, SegmentedButtonDefaults.itemShape(1, 2)) {
-                Text("Fully blocked")
+                Text(stringResource(R.string.fully_blocked))
             }
         }
         if (config.gate == BlockGate.WAIT) {
             StepSlider(
-                label = "Wait before \"Continue\"", value = config.waitSeconds, steps = GameRules.waitStepsSeconds,
+                label = stringResource(R.string.wait_before_continue), value = config.waitSeconds, steps = GameRules.waitStepsSeconds,
                 format = GameRules::formatWait, onChange = { onChange(config.copy(waitSeconds = it)) },
             )
             StepSlider(
-                label = "Longest free unlock after waiting", value = config.allowMinutes, steps = GameRules.allowStepsMinutes,
+                label = stringResource(R.string.longest_free_unlock_after_waiting), value = config.allowMinutes, steps = GameRules.allowStepsMinutes,
                 format = { "$it min" }, onChange = { onChange(config.copy(allowMinutes = it)) },
             )
         } else {
-            Text("Only \"Close app\" is offered. If coins are allowed, the gift button unlocks it for a time you choose.",
+            Text(stringResource(R.string.only_close_app_is_offered_if),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.focus
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -80,7 +82,7 @@ fun FocusScreen(nav: NavController) {
     val c = appContainer()
     val active by c.focus.active.collectAsState()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Focus", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.focus), style = MaterialTheme.typography.headlineMedium)
         val a = active
         if (a != null) RunningSession(a) else SessionSetup(nav)
         FocusStats()
@@ -116,23 +118,23 @@ private fun RunningSession(a: ActiveFocus) {
                 Text(if (a.deep) "Deep focus" else "Focus", style = MaterialTheme.typography.labelLarge)
             }
         }
-        Text("+${GameRules.focusXp(a.plannedMinutes, a.deep)} XP waiting at the finish line", style = MaterialTheme.typography.bodyMedium)
-        Text("Put the phone down. Blocked apps will bounce you back here.", style = MaterialTheme.typography.bodySmall,
+        Text(stringResource(R.string.xp_waiting_at_the_finish_line, GameRules.focusXp(a.plannedMinutes, a.deep)), style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.put_the_phone_down_blocked_apps), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-        OutlinedButton(onClick = { confirm = true }) { Text("End early") }
+        OutlinedButton(onClick = { confirm = true }) { Text(stringResource(R.string.end_early)) }
     }
     if (confirm) {
         val gentle = c.settings.value.gentleMode
         AlertDialog(
             onDismissRequest = { confirm = false },
-            title = { Text("End this session?") },
+            title = { Text(stringResource(R.string.end_this_session)) },
             text = {
-                Text("You'll get partial credit for the minutes you've done" +
+                Text(stringResource(R.string.you_ll_get_partial_credit_for) +
                     (if (gentle) "." else ", but lose ${GameRules.FOCUS_ABANDON_DAMAGE} HP.") +
                     "\n\nThe urge to quit usually passes in a minute or two.")
             },
-            confirmButton = { TextButton(onClick = { confirm = false; scope.launch { c.focus.abandon() } }) { Text("End session") } },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text("Keep going") } },
+            confirmButton = { TextButton(onClick = { confirm = false; scope.launch { c.focus.abandon() } }) { Text(stringResource(R.string.end_session)) } },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.keep_going)) } },
         )
     }
 }
@@ -159,31 +161,31 @@ private fun SessionSetup(nav: NavController) {
                 }
             }
             Slider(minutes, { minutes = (Math.round(it / 5f) * 5f).coerceIn(5f, 180f) }, valueRange = 5f..180f)
-            OutlinedTextField(label, { label = it }, Modifier.fillMaxWidth(), label = { Text("What are you working on?") }, singleLine = true)
+            OutlinedTextField(label, { label = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.what_are_you_working_on)) }, singleLine = true)
             val active = goals.filter { it.goal.status == GoalStatus.ACTIVE }
             if (active.isNotEmpty()) {
                 var open by remember { mutableStateOf(false) }
                 Box {
                     OutlinedButton(onClick = { open = true }) {
-                        Text("Goal: " + (active.firstOrNull { it.goal.id == goalId }?.goal?.title ?: "none"))
+                        Text(stringResource(R.string.goal) + (active.firstOrNull { it.goal.id == goalId }?.goal?.title ?: "none"))
                     }
                     DropdownMenu(open, { open = false }) {
-                        DropdownMenuItem(text = { Text("None") }, onClick = { goalId = null; open = false })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.none)) }, onClick = { goalId = null; open = false })
                         active.forEach { g -> DropdownMenuItem(text = { Text(g.goal.title) }, onClick = { goalId = g.goal.id; open = false }) }
                     }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Deep focus", style = MaterialTheme.typography.titleSmall)
-                    Text("Block every app except your allow-list (+25% XP)", style = MaterialTheme.typography.bodySmall,
+                    Text(stringResource(R.string.deep_focus), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.block_every_app_except_your_allow), style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Switch(deep, { deep = it })
             }
-            if (deep) TextButton(onClick = { nav.navigate("apps/allow") }) { Text("Allowed apps (${settings.focusAllowlist.size})") }
+            if (deep) TextButton(onClick = { nav.navigate("apps/allow") }) { Text(stringResource(R.string.allowed_apps, settings.focusAllowlist.size)) }
             if (!BlockerAccessibilityService.isEnabled(context)) {
-                Text("Shield is off, so apps won't be blocked during this session.", style = MaterialTheme.typography.bodySmall,
+                Text(stringResource(R.string.shield_is_off_so_apps_won), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error)
             }
             Button(
@@ -192,7 +194,7 @@ private fun SessionSetup(nav: NavController) {
                     c.focus.start(minutes.toInt(), label.trim(), goalId, deep)
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Start focusing  ·  +${GameRules.focusXp(minutes.toInt(), deep)} XP") }
+            ) { Text(stringResource(R.string.start_focusing_xp, GameRules.focusXp(minutes.toInt(), deep))) }
         }
     }
 }
@@ -210,7 +212,7 @@ private fun FocusStats() {
         val end = Days.startOfDayMillis(day + 1)
         week.filter { it.outcome == FocusOutcome.COMPLETED && it.startedAt in start until end }.sumOf { it.actualMinutes }
     }
-    SectionHeader("This week  ·  ${formatMinutes(perDay.sum())}")
+    SectionHeader(stringResource(R.string.this_week, formatMinutes(perDay.sum())))
     val max = (perDay.maxOrNull() ?: 0).coerceAtLeast(30)
     Row(Modifier.fillMaxWidth().height(120.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
         perDay.forEachIndexed { i, m ->
@@ -226,7 +228,7 @@ private fun FocusStats() {
         }
     }
     if (recent.isNotEmpty()) {
-        SectionHeader("Recent sessions")
+        SectionHeader(stringResource(R.string.recent_sessions))
         val fmt = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
         recent.take(10).forEach { s ->
             Row(verticalAlignment = Alignment.CenterVertically) {

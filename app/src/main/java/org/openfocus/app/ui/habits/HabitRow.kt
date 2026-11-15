@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.habits
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +69,7 @@ fun HabitRow(state: HabitState, onTap: () -> Unit, onUndo: () -> Unit, onOpen: (
                 if (state.todayCount > 0 && (h.target > 1 || h.frequency == HabitFrequency.WEEKLY)) {
                     IconButton(onClick = onUndo) { Icon(Icons.Filled.Remove, "Undo") }
                 }
-                val bg by animateColorAsState(if (state.satisfied) color else color.copy(alpha = 0.12f), label = "check")
+                val bg by animateColorAsState(if (state.satisfied) color else color.copy(alpha = 0.12f), label = stringResource(R.string.check))
                 FilledIconButton(
                     onClick = { if (state.satisfied && h.target <= 1 && h.frequency != HabitFrequency.WEEKLY) onUndo() else onTap() },
                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = bg, contentColor = if (state.satisfied) Color.White else color),

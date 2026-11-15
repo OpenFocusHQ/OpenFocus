@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.habits
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,7 +38,7 @@ fun HabitsScreen(nav: NavController) {
             contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 96.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item { Text("Habits", style = MaterialTheme.typography.headlineMedium) }
+            item { Text(stringResource(R.string.habits), style = MaterialTheme.typography.headlineMedium) }
             val list = habits ?: return@LazyColumn
             if (list.isEmpty()) {
                 item {
@@ -61,7 +63,7 @@ fun HabitsScreen(nav: NavController) {
         ExtendedFloatingActionButton(
             onClick = { nav.navigate("habit_edit/new") },
             icon = { Icon(Icons.Filled.Add, null) },
-            text = { Text("New habit") },
+            text = { Text(stringResource(R.string.new_habit)) },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
         )
     }

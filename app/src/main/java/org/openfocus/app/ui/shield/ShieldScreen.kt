@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.shield
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
@@ -91,21 +93,21 @@ fun ShieldScreen(nav: NavController) {
 
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("Shield", style = MaterialTheme.typography.headlineMedium)
-            Text("Block distracting apps and endless short-video feeds.", style = MaterialTheme.typography.bodyMedium,
+            Text(stringResource(R.string.shield), style = MaterialTheme.typography.headlineMedium)
+            Text(stringResource(R.string.block_distracting_apps_and_endless_short), style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             PermissionCard(
-                ok = a11y, title = "Accessibility service",
-                body = "Required. Lets OpenFocus see which app is open so it can step in. Nothing is recorded or sent anywhere.",
+                ok = a11y, title = stringResource(R.string.accessibility_service),
+                body = stringResource(R.string.required_lets_openfocus_see_which_app),
                 action = "Open settings",
             ) { disclose = true }
         }
         item {
             PermissionCard(
-                ok = usage, title = "Usage access",
-                body = "Optional. Needed for daily time limits.",
+                ok = usage, title = stringResource(R.string.usage_access),
+                body = stringResource(R.string.optional_needed_for_daily_time_limits),
                 action = "Grant",
             ) { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
@@ -120,7 +122,7 @@ fun ShieldScreen(nav: NavController) {
             }
         }
 
-        item { SectionHeader("Short-form video blocker") }
+        item { SectionHeader(stringResource(R.string.short_form_video_blocker)) }
         items(ShortsPlatform.entries) { p ->
             ToggleRow(p.label, p.note, p in settings.shorts) { on ->
                 c.settings.update { it.copy(shorts = if (on) it.shorts + p else it.shorts - p) }
@@ -128,12 +130,12 @@ fun ShieldScreen(nav: NavController) {
         }
 
         item {
-            SectionHeader("Blocked apps") {
-                TextButton(onClick = { nav.navigate("apps/block") }) { Icon(Icons.Filled.Add, null, Modifier.size(18.dp)); Text("Add") }
+            SectionHeader(stringResource(R.string.blocked_apps)) {
+                TextButton(onClick = { nav.navigate("apps/block") }) { Icon(Icons.Filled.Add, null, Modifier.size(18.dp)); Text(stringResource(R.string.add)) }
             }
         }
         if (rules.isEmpty()) item {
-            Text("No apps yet. Add the ones that steal your time — they'll be blocked during focus sessions and schedules.",
+            Text(stringResource(R.string.no_apps_yet_add_the_ones),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         items(rules, key = { it.packageName }) { r ->
@@ -143,14 +145,14 @@ fun ShieldScreen(nav: NavController) {
         }
 
         item {
-            SectionHeader("Schedules") {
+            SectionHeader(stringResource(R.string.schedules)) {
                 TextButton(onClick = { editSchedule = BlockScheduleEntity(name = "Evening wind-down", startMinute = 21 * 60, endMinute = 7 * 60) }) {
-                    Icon(Icons.Filled.Add, null, Modifier.size(18.dp)); Text("Add")
+                    Icon(Icons.Filled.Add, null, Modifier.size(18.dp)); Text(stringResource(R.string.add))
                 }
             }
         }
         if (schedules.isEmpty()) item {
-            Text("Schedules block your app list automatically, e.g. work hours or bedtime.",
+            Text(stringResource(R.string.schedules_block_your_app_list_automatically),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         items(schedules, key = { it.id }) { s ->
@@ -214,7 +216,7 @@ private fun RuleRow(r: BlockRuleEntity, usageMinutes: Int?, onChange: (BlockRule
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(r.label, style = MaterialTheme.typography.titleSmall)
-                    usageMinutes?.let { Text("${it}m used today", style = MaterialTheme.typography.bodySmall) }
+                    usageMinutes?.let { Text(stringResource(R.string.m_used_today, it), style = MaterialTheme.typography.bodySmall) }
                 }
                 Switch(r.enabled, { onChange(r.copy(enabled = it)) })
                 IconButton(onClick = onRemove) { Icon(Icons.Filled.Delete, "Remove") }
@@ -230,11 +232,11 @@ private fun RuleRow(r: BlockRuleEntity, usageMinutes: Int?, onChange: (BlockRule
                     )
                 }
                 DropdownMenu(menu, { menu = false }) {
-                    DropdownMenuItem(text = { Text("During focus & schedules") }, onClick = { menu = false; onChange(r.copy(mode = BlockMode.FOCUS_AND_SCHEDULE)) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.during_focus_schedules)) }, onClick = { menu = false; onChange(r.copy(mode = BlockMode.FOCUS_AND_SCHEDULE)) })
                     listOf(15, 30, 60, 90).forEach { m ->
-                        DropdownMenuItem(text = { Text("Daily limit: $m min") }, onClick = { menu = false; onChange(r.copy(mode = BlockMode.DAILY_LIMIT, dailyLimitMinutes = m)) })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.daily_limit_min, m)) }, onClick = { menu = false; onChange(r.copy(mode = BlockMode.DAILY_LIMIT, dailyLimitMinutes = m)) })
                     }
-                    DropdownMenuItem(text = { Text("Always blocked") }, onClick = { menu = false; onChange(r.copy(mode = BlockMode.ALWAYS)) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.always_blocked)) }, onClick = { menu = false; onChange(r.copy(mode = BlockMode.ALWAYS)) })
                 }
             }
             GateRow(r, onChange)
@@ -249,18 +251,18 @@ private fun GateRow(r: BlockRuleEntity, onChange: (BlockRuleEntity) -> Unit) {
     val config = PauseConfig(r.gate, r.waitSeconds, r.allowMinutes)
     Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text("Pause screen", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.pause_screen), style = MaterialTheme.typography.labelMedium)
             Text(config.summary() + if (r.allowCoins) " · coins allowed" else " · no coins",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        TextButton(onClick = { editing = true }) { Text("Edit") }
+        TextButton(onClick = { editing = true }) { Text(stringResource(R.string.edit)) }
     }
     if (editing) {
         var draft by remember { mutableStateOf(config) }
         var coins by remember { mutableStateOf(r.allowCoins) }
         AlertDialog(
             onDismissRequest = { editing = false },
-            title = { Text("Pause screen for ${r.label}") },
+            title = { Text(stringResource(R.string.pause_screen_for, r.label)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     PauseConfigEditor(draft, { draft = it })
@@ -276,9 +278,9 @@ private fun GateRow(r: BlockRuleEntity, onChange: (BlockRuleEntity) -> Unit) {
                 TextButton(onClick = {
                     editing = false
                     onChange(r.copy(gate = draft.gate, waitSeconds = draft.waitSeconds, allowMinutes = draft.allowMinutes, allowCoins = coins))
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.save)) }
             },
-            dismissButton = { TextButton(onClick = { editing = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { editing = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -293,7 +295,7 @@ private fun ScheduleDialog(s: BlockScheduleEntity, onDismiss: () -> Unit, onSave
     var end by remember { mutableIntStateOf(s.endMinute) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Schedule") },
+        title = { Text(stringResource(R.string.schedule)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (editing != null) {
@@ -304,12 +306,12 @@ private fun ScheduleDialog(s: BlockScheduleEntity, onDismiss: () -> Unit, onSave
                         val m = tp.hour * 60 + tp.minute
                         if (editing == "start") start = m else end = m
                         editing = null
-                    }) { Text("Set") }
+                    }) { Text(stringResource(R.string.set)) }
                 } else {
-                    OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true)
+                    OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.name)) }, singleLine = true)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { editing = "start" }) { Text("From ${formatMinuteOfDay(start)}") }
-                        OutlinedButton(onClick = { editing = "end" }) { Text("To ${formatMinuteOfDay(end)}") }
+                        OutlinedButton(onClick = { editing = "start" }) { Text(stringResource(R.string.from, formatMinuteOfDay(start))) }
+                        OutlinedButton(onClick = { editing = "end" }) { Text(stringResource(R.string.to, formatMinuteOfDay(end))) }
                     }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Days.shortNames.forEachIndexed { i, n ->
@@ -321,8 +323,8 @@ private fun ScheduleDialog(s: BlockScheduleEntity, onDismiss: () -> Unit, onSave
         },
         confirmButton = {
             TextButton(enabled = editing == null && days != 0 && start != end,
-                onClick = { onSave(s.copy(name = name.ifBlank { "Schedule" }, startMinute = start, endMinute = end, daysMask = days)) }) { Text("Save") }
+                onClick = { onSave(s.copy(name = name.ifBlank { "Schedule" }, startMinute = start, endMinute = end, daysMask = days)) }) { Text(stringResource(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDelete) { Text("Delete") } },
+        dismissButton = { TextButton(onClick = onDelete) { Text(stringResource(R.string.delete)) } },
     )
 }

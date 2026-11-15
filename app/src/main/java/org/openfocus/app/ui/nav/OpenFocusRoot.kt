@@ -37,6 +37,8 @@ import org.openfocus.app.ui.habits.HabitDetailScreen
 import org.openfocus.app.ui.habits.HabitEditorScreen
 import org.openfocus.app.ui.habits.HabitsScreen
 import org.openfocus.app.ui.hero.HeroScreen
+import org.openfocus.app.ui.quests.DialogueHost
+import org.openfocus.app.ui.quests.QuestsScreen
 import org.openfocus.app.ui.onboarding.OnboardingScreen
 import org.openfocus.app.ui.settings.SettingsScreen
 import org.openfocus.app.ui.shield.AppPickerScreen
@@ -75,6 +77,7 @@ fun OpenFocusRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
         }
     }
 
+    DialogueHost()
     Scaffold(
         snackbarHost = { FeedbackHost(snackbar) },
         bottomBar = {
@@ -99,6 +102,7 @@ fun OpenFocusRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
             composable("goals") { GoalsScreen(nav) }
             composable("shield") { ShieldScreen(nav) }
             composable("hero") { HeroScreen(nav) }
+            composable("quests") { QuestsScreen(nav) }
             composable("settings") { SettingsScreen(nav) }
             composable("habit_edit/{id}", listOf(navArgument("id") { type = NavType.StringType })) {
                 HabitEditorScreen(nav, it.arguments?.getString("id")?.takeIf { id -> id != "new" })

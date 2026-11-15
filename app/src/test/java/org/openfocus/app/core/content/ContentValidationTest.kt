@@ -14,6 +14,7 @@ import org.openfocus.app.data.db.Difficulty
 import org.openfocus.app.data.db.HabitFrequency
 import org.openfocus.app.data.db.HabitKind
 import org.openfocus.app.ui.components.AppIcons
+import org.openfocus.app.ui.pixel.SkinTone
 import org.openfocus.app.ui.pixel.SpriteRegistry
 import java.io.File
 
@@ -84,6 +85,81 @@ class ContentValidationTest {
         with(c.messages) { listOf(general, resist, blocked, shorts, comeback).forEach { assertTrue(it.isNotEmpty()) } }
     }
 
+    @Test fun charactersAreConsistent() {
+        assertUnique("npc ids", c.npcs.map { it.id })
+        assertUnique("enemy ids", c.enemies.map { it.id })
+        val colour = Regex("^#[0-9A-Fa-f]{6}$")
+        c.npcs.forEach { n ->
+            assertTrue("${n.id}: bad colour", colour.matches(n.color))
+            n.hat?.let { assertTrue("${n.id}: hat '$it' is not a head item", c.item(it)?.slot == "hat") }
+            n.sprite?.let { assertTrue("${n.id}: sprite '$it' missing (run the generator)", it in SpriteRegistry.sprites) }
+        }
+        c.enemies.forEach { e ->
+            assertTrue("${e.id}: hp must be positive", e.hp > 0)
+            assertTrue("${e.id}: bad colour", colour.matches(e.color))
+            e.sprite?.let { assertTrue("${e.id}: sprite '$it' missing (run the generator)", it in SpriteRegistry.sprites) }
+        }
+    }
+
+    @Test fun questLinesAreConsistent() {
+        assertUnique("quest line ids", c.questLines.map { it.id })
+        val speakers = c.npcs.map { it.id } + c.enemies.map { it.id } + "hero"
+        c.questLines.forEach { q ->
+            assertTrue("${q.id}: unknown npc '${q.npc}'", c.npc(q.npc) != null)
+            assertTrue("${q.id}: needs stages", q.stages.isNotEmpty())
+            assertTrue("${q.id}: unlockLevel >= 1", q.unlockLevel >= 1)
+            assertTrue("${q.id}: cost >= 0", q.cost >= 0)
+            q.requires?.let { assertTrue("${q.id}: requires unknown line '$it'", c.questLine(it) != null && it != q.id) }
+            assertUnique("${q.id} stage ids", q.stages.map { it.id })
+            q.stages.forEach { s ->
+                val where = "${q.id}/${s.id}"
+                val wins = listOfNotNull(s.objective, s.boss, s.collect).size
+                assertEquals("$where: exactly one of objective / boss / collect", 1, wins)
+                s.objective?.let {
+                    assertTrue("$where: unknown stat '${it.stat}'", it.stat in GameStats.STATS)
+                    assertTrue("$where: amount must be positive", it.amount > 0)
+                }
+                s.boss?.let { assertTrue("$where: unknown enemy '$it'", c.enemy(it) != null) }
+                s.collect?.let {
+                    assertTrue("$where: amount must be positive", it.amount > 0)
+                    assertTrue("$where: unknown icon '${it.icon}'", it.icon in AppIcons.names)
+                }
+                s.reward.item?.let { assertTrue("$where: unknown reward item '$it'", c.item(it) != null) }
+                (s.intro + s.outro).forEach { l -> assertTrue("$where: unknown speaker '${l.speaker}'", l.speaker in speakers) }
+            }
+        }
+        // No cycles in `requires`, or a line could never unlock.
+        c.questLines.forEach { q ->
+            val seen = mutableSetOf(q.id)
+            var next = q.requires
+            while (next != null) {
+                assertTrue("${q.id}: requires cycle through '$next'", seen.add(next))
+                next = c.questLine(next)?.requires
+            }
+        }
+    }
+
+    /** Every stat a quest objective can use has wording in strings_quests.xml. */
+    @Test fun objectiveWordingCoversEveryStat() {
+        assertEquals(GameStats.STATS.toSet(), org.openfocus.app.ui.quests.OBJECTIVE_GAIN.keys)
+        assertEquals(GameStats.STATS.toSet(), org.openfocus.app.ui.quests.OBJECTIVE_REACH.keys)
+    }
+
+    /** Translation overlays may only target text that exists, and must keep {hero} placeholders. */
+    @Test fun translationsMatchTheSource() {
+        val source = ContentI18n.keys(Json.parseToJsonElement(repo("app/src/main/resources/content/content.json").readText()))
+        val dir = repo("app/src/main/resources/content/i18n")
+        dir.listFiles { f -> f.extension == "json" }.orEmpty().forEach { f ->
+            val overlay = ContentI18n.parseOverlay(f.readText())
+            overlay.forEach { (k, v) ->
+                val en = source[k]
+                assertTrue("${f.name}: unknown key '$k' (renamed or removed?)", en != null)
+                if ("{hero}" in en!!) assertTrue("${f.name}: '$k' lost the {hero} placeholder", "{hero}" in v || v.isBlank())
+            }
+            GameContent.forLocale(java.util.Locale.forLanguageTag(f.nameWithoutExtension)) // must still parse
+        }
+    }
+
     /** The editor and IDEs read enums from the schema; they must match what the app accepts. */
     @Test fun schemaEnumsMatchTheCode() {
         assertEquals(GameStats.STATS, enumOf("properties/achievements/items/properties/stat"))
@@ -93,6 +169,10 @@ class ContentValidationTest {
         assertEquals(HabitKind.entries.map { it.name }, enumOf("$quest/kind"))
         assertEquals(Difficulty.entries.map { it.name }, enumOf("$quest/difficulty"))
         assertEquals(HabitFrequency.entries.map { it.name }, enumOf("$quest/frequency"))
+        val stage = "properties/questLines/items/properties/stages/items/properties"
+        assertEquals(GameStats.STATS, enumOf("$stage/objective/properties/stat"))
+        assertEquals(ObjectiveMode.entries.map { it.name }, enumOf("$stage/objective/properties/mode"))
+        assertEquals(SkinTone.entries.map { it.id }, enumOf("properties/npcs/items/properties/skin"))
     }
 
     /** Hand-drawn sprites must be registered too; a stale registry means someone forgot to run the generator. */

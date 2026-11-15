@@ -55,7 +55,7 @@ object Notifications {
         NotificationCompat.Builder(context, CH_FOCUS)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("Focus session complete!")
-            .setContentText("$minutes minutes done. +$xp XP. Time for a short break.")
+            .setContentText(context.getString(R.string.minutes_done_xp_time_for_a, minutes, xp))
             .setAutoCancel(true)
             .setContentIntent(openApp(context, "focus"))
             .build(),

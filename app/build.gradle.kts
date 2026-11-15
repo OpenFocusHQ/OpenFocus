@@ -36,7 +36,18 @@ android {
         }
     }
 
+    androidResources {
+        // Builds res/xml/_generated_res_locale_config.xml from the values-<lang> folders, so the
+        // per-app language picker (Android 13+) lists every translation automatically.
+        generateLocaleConfig = true
+    }
+
     buildTypes {
+        debug {
+            // en-XA (accented, longer) and ar-XB (right-to-left) pseudolocales for spotting
+            // untranslated or clipped text: Settings > System > Languages on a debug build.
+            isPseudoLocalesEnabled = true
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

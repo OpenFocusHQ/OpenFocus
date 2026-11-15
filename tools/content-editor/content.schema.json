@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/graphicmismatch/OpenFocus/tools/content-editor/content.schema.json",
   "title": "OpenFocus game content",
-  "description": "All cosmetics, achievements, starter quests, titles and messages. Edit with tools/content-editor.",
+  "description": "All cosmetics, achievements, starter habits, quest lines, NPCs, enemies, titles and messages. Edit with tools/content-editor.",
   "type": "object",
   "required": [
     "version",
@@ -276,6 +276,345 @@
           },
           "starter": {
             "type": "boolean"
+          }
+        }
+      }
+    },
+    "questLines": {
+      "type": "array",
+      "description": "Multi-stage story quests (Habitica-style). One can be active at a time.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "npc",
+          "stages"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string"
+          },
+          "npc": {
+            "type": "string",
+            "description": "An npc id."
+          },
+          "unlockLevel": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "requires": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Another quest line that must be finished first."
+          },
+          "cost": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Coins for the quest scroll; 0 = free."
+          },
+          "repeatable": {
+            "type": "boolean",
+            "default": false
+          },
+          "stages": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "title"
+              ],
+              "additionalProperties": false,
+              "description": "Exactly one win condition: objective, boss or collect.",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "story": {
+                  "type": "string"
+                },
+                "intro": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "speaker",
+                      "text"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "speaker": {
+                        "type": "string",
+                        "description": "An npc id, an enemy id, or 'hero'."
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "outro": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "speaker",
+                      "text"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "speaker": {
+                        "type": "string",
+                        "description": "An npc id, an enemy id, or 'hero'."
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "objective": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "required": [
+                    "stat",
+                    "amount"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "stat": {
+                      "enum": [
+                        "level",
+                        "habitCompletions",
+                        "bestHabitStreak",
+                        "focusMinutes",
+                        "focusSessions",
+                        "goalsCompleted",
+                        "milestonesDone",
+                        "temptationsResisted",
+                        "shortsBlocked",
+                        "rewardsRedeemed",
+                        "itemsOwned"
+                      ]
+                    },
+                    "mode": {
+                      "enum": [
+                        "GAIN",
+                        "REACH"
+                      ],
+                      "default": "GAIN"
+                    },
+                    "amount": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                },
+                "boss": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "An enemy id."
+                },
+                "collect": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "required": [
+                    "item",
+                    "amount"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "item": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "itemPlural": {
+                      "type": "string"
+                    },
+                    "icon": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                },
+                "reward": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "xp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "coins": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "item": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "npcs": {
+      "type": "array",
+      "description": "Characters who give quests and talk to the player.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "skin": {
+            "enum": [
+              "light",
+              "medium",
+              "deep"
+            ],
+            "default": "light"
+          },
+          "hat": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "An item id from the hat slot, drawn on the portrait."
+          },
+          "sprite": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "px_ sprite; the generator draws px_npc_<id>."
+          },
+          "dialogue": {
+            "type": "object",
+            "description": "Dialogue key -> lines; one is picked at random. Use {hero} for the player's name.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "enemies": {
+      "type": "array",
+      "description": "Bosses for BOSS quest stages. Your habits and focus deal damage.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "hp"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
+          "hp": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "strength": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "HP lost per missed daily / slip while fighting (not in gentle mode)."
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "shape": {
+            "enum": [
+              "slime",
+              "ghost",
+              "golem"
+            ],
+            "default": "slime"
+          },
+          "sprite": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dialogue": {
+            "type": "object",
+            "description": "Keys: appear, hit, defeat.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
           }
         }
       }

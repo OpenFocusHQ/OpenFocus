@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.goals
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,8 +53,8 @@ fun GoalsScreen(nav: NavController) {
     Box(Modifier.fillMaxSize()) {
         LazyColumn(contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
-                Text("Long-term goals", style = MaterialTheme.typography.headlineMedium)
-                Text("Each goal is a mountain. Milestones are camps on the way up.",
+                Text(stringResource(R.string.long_term_goals), style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(R.string.each_goal_is_a_mountain_milestones),
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val list = goals ?: return@LazyColumn
@@ -73,7 +75,7 @@ fun GoalsScreen(nav: NavController) {
         }
         ExtendedFloatingActionButton(
             onClick = { nav.navigate("goal_edit/new") },
-            icon = { Icon(Icons.Filled.Add, null) }, text = { Text("New goal") },
+            icon = { Icon(Icons.Filled.Add, null) }, text = { Text(stringResource(R.string.new_goal)) },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
         )
     }
@@ -92,7 +94,7 @@ private fun GoalCard(g: GoalState, onClick: () -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(g.goal.title, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(4.dp))
-                Text("${(g.progress * 100).toInt()}% · ${g.done}/${g.milestones.size} camps", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.camps, (g.progress * 100).toInt(), g.done, g.milestones.size), style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(6.dp))
                 g.goal.targetEpochDay?.let { t ->
                     val left = t - Days.today()

@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.onboarding
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.content.Intent
 import android.os.Build
@@ -76,19 +78,19 @@ fun OnboardingScreen() {
             when (page) {
                 0 -> {
                     HeroAvatar(mapOf("backdrop" to "bg_sunrise"), size = 140.dp, skinTone = tone)
-                    Text("Welcome to OpenFocus", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.welcome_to_openfocus), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
                     Text(
                         "Turn your attention into an adventure. Build habits, focus deeply, block the endless feeds, and climb towards the goals that matter.",
                         textAlign = TextAlign.Center,
                     )
-                    OutlinedTextField(name, { name = it.take(24) }, label = { Text("Name your hero") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(name, { name = it.take(24) }, label = { Text(stringResource(R.string.name_your_hero)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     SkinTonePicker(tone, emptyMap(), onPick = { tone = it })
-                    Button(onClick = { page = 1 }, modifier = Modifier.fillMaxWidth()) { Text("Next") }
+                    Button(onClick = { page = 1 }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.next)) }
                 }
                 1 -> {
                     PixelSprite(SpriteCatalog.empty, SpriteCatalog.EMPTY_QUESTS, Modifier.size(width = 192.dp, height = 144.dp), animate = false)
-                    Text("Pick a few starter quests", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-                    Text("Start small. You can edit or add more any time.", textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.pick_a_few_starter_quests), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.start_small_you_can_edit_or), textAlign = TextAlign.Center)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         starters.forEachIndexed { i, s ->
                             FilterChip(i in picked, { picked = if (i in picked) picked - i else picked + i },
@@ -96,22 +98,22 @@ fun OnboardingScreen() {
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { page = 0 }) { Text("Back") }
-                        Button(onClick = { page = 2 }) { Text("Next") }
+                        TextButton(onClick = { page = 0 }) { Text(stringResource(R.string.back)) }
+                        Button(onClick = { page = 2 }) { Text(stringResource(R.string.next)) }
                     }
                 }
                 else -> {
                     PixelSprite(SpriteCatalog.shield, SpriteCatalog.IDLE, Modifier.size(144.dp))
-                    Text("Raise your Shield", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.raise_your_shield), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
                     Text(
                         "To block apps and Shorts/Reels, OpenFocus uses Android's accessibility service to see which app is in front. " +
                             "It only looks at screen content inside the video apps you enable, never reads what you type, never records the screen and never sends anything off your device.",
                         textAlign = TextAlign.Center,
                     )
                     var disclose by remember { mutableStateOf(false) }
-                    OutlinedButton(onClick = { disclose = true }) { Text("Turn on the Shield") }
+                    OutlinedButton(onClick = { disclose = true }) { Text(stringResource(R.string.turn_on_the_shield)) }
                     if (disclose) AccessibilityDisclosureDialog(onAgree = { disclose = false; openAccessibilitySettings(context) }, onDismiss = { disclose = false })
-                    Text("You can also do this later from the Shield tab.", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.you_can_also_do_this_later), style = MaterialTheme.typography.bodySmall)
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
@@ -127,7 +129,7 @@ fun OnboardingScreen() {
                                 c.settings.update { it.copy(onboardingDone = true) }
                             }
                         },
-                    ) { Text("Begin the adventure") }
+                    ) { Text(stringResource(R.string.begin_the_adventure)) }
                 }
             }
         }

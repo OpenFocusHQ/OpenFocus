@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.components
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -58,7 +60,7 @@ inline fun <reified VM : ViewModel> appViewModel(key: String? = null, crossinlin
 
 @Composable
 fun StatBar(icon: ImageVector, label: String, value: Float, color: Color, modifier: Modifier = Modifier) {
-    val v by animateFloatAsState(value.coerceIn(0f, 1f), label = "bar")
+    val v by animateFloatAsState(value.coerceIn(0f, 1f), label = stringResource(R.string.bar))
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(6.dp))
@@ -93,7 +95,7 @@ fun HeroCard(profile: ProfileEntity?, modifier: Modifier = Modifier, onClick: ((
                 StatBar(Icons.Filled.Bolt, "${lp.intoLevel}/${lp.levelSpan}", lp.fraction, Xp)
                 StatBar(Icons.Filled.Favorite, "${p.hp}/${p.maxHp}", p.hp / p.maxHp.toFloat().coerceAtLeast(1f), Hp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    PixelSprite(SpriteCatalog.coin, "spin", Modifier.size(16.dp), animate = false, contentDescription = "Coins")
+                    PixelSprite(SpriteCatalog.coin, "spin", Modifier.size(16.dp), animate = false, contentDescription = stringResource(R.string.coins))
                     Spacer(Modifier.width(6.dp))
                     Text("${p.coins}", style = MaterialTheme.typography.labelLarge)
                     if (p.currentStreak > 0) {

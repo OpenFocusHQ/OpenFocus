@@ -22,6 +22,8 @@ import org.openfocus.app.core.content.withHero
 import org.openfocus.app.data.db.AppDatabase
 import org.openfocus.app.data.db.InventoryEntity
 import org.openfocus.app.data.db.QuestProgressEntity
+import org.openfocus.app.R
+import org.openfocus.app.core.Strings
 import org.openfocus.app.data.db.QuestStatus
 import org.openfocus.app.data.prefs.SettingsStore
 import org.openfocus.app.game.EventTypes
@@ -37,8 +39,15 @@ data class QuestEntry(
     val state: QuestState,
     val progress: QuestProgressEntity?,
     /** Why a locked quest can't be started yet. */
-    val lockReason: String? = null,
+    val lock: QuestLock? = null,
 )
+
+/** Why a quest line is locked; the UI turns it into localised text. */
+sealed interface QuestLock {
+    data class Level(val level: Int) : QuestLock
+    data class Requires(val title: String) : QuestLock
+    data object Busy : QuestLock
+}
 
 /** The running quest's current stage, ready to render. */
 data class ActiveQuest(
@@ -69,6 +78,7 @@ class QuestRepository(
     private val db: AppDatabase,
     private val game: GameEngine,
     private val settings: SettingsStore,
+    private val strings: Strings,
     private val content: () -> GameContentData = { GameContent.current },
     private val random: Random = Random.Default,
 ) {
@@ -92,10 +102,10 @@ class QuestRepository(
             when {
                 p?.status == QuestStatus.ACTIVE -> QuestEntry(line, QuestState.ACTIVE, p)
                 done > 0 && !line.repeatable -> QuestEntry(line, QuestState.COMPLETED, p)
-                level < line.unlockLevel -> QuestEntry(line, QuestState.LOCKED, p, "Reach level ${line.unlockLevel}")
+                level < line.unlockLevel -> QuestEntry(line, QuestState.LOCKED, p, QuestLock.Level(line.unlockLevel))
                 line.requires != null && (byId[line.requires]?.timesCompleted ?: 0) == 0 ->
-                    QuestEntry(line, QuestState.LOCKED, p, "Finish \"${c.questLine(line.requires)?.title ?: line.requires}\" first")
-                anyActive -> QuestEntry(line, QuestState.LOCKED, p, "Finish your current quest first")
+                    QuestEntry(line, QuestState.LOCKED, p, QuestLock.Requires(c.questLine(line.requires)?.title ?: line.requires))
+                anyActive -> QuestEntry(line, QuestState.LOCKED, p, QuestLock.Busy)
                 else -> QuestEntry(line, QuestState.AVAILABLE, p)
             }
         }
@@ -127,17 +137,26 @@ class QuestRepository(
         val line = c.questLine(lineId) ?: return@withLock false
         val entry = board(currentRows()).entries.firstOrNull { it.line.id == lineId } ?: return@withLock false
         if (entry.state != QuestState.AVAILABLE) return@withLock false
-        if (line.cost > 0 && !game.spend(line.cost, EventTypes.QUEST_STARTED, lineId, "Bought the quest scroll: ${line.title}")) return@withLock false
+        if (line.cost > 0 && !game.spend(line.cost, EventTypes.QUEST_STARTED, lineId, strings.get(R.string.quest_scroll_bought, line.title))) return@withLock false
         val prev = dao.get(lineId)
         val p = QuestProgressEntity(
             lineId = lineId, stageIndex = 0, progress = 0, baseline = baselineFor(line.stages.first()),
             status = QuestStatus.ACTIVE, timesCompleted = prev?.timesCompleted ?: 0,
         )
         dao.upsert(p)
-        game.apply(EventTypes.QUEST_STARTED, lineId, message = "Quest started: ${line.title}", emit = false)
+        game.apply(EventTypes.QUEST_STARTED, lineId, message = strings.get(R.string.quest_started, line.title), emit = false)
         _conversations.tryEmit(Conversation(line.title, stageOpening(line.stages.first())))
         checkObjective(line, p)
         true
+    }
+
+    /** Show a random line from an NPC's (or enemy's) dialogue, e.g. "idle" when the player taps Talk. */
+    suspend fun chat(speakerId: String, key: String = "idle"): Boolean {
+        val c = content()
+        val lines = c.npc(speakerId)?.dialogue?.get(key) ?: c.enemy(speakerId)?.dialogue?.get(key) ?: return false
+        val text = lines.randomOrNull(random) ?: return false
+        val title = c.npc(speakerId)?.name ?: c.enemy(speakerId)?.name ?: ""
+        return _conversations.tryEmit(Conversation(title, withHero(listOf(DialogueLine(speakerId, text)))))
     }
 
     /** Give up the current quest (Habitica lets you leave a quest; progress is lost). */
@@ -192,7 +211,7 @@ class QuestRepository(
             val dealt = (p.progress + damage).coerceAtMost(enemy.hp)
             val updated = p.copy(progress = dealt, updatedAt = System.currentTimeMillis())
             dao.upsert(updated)
-            game.notify("You hit ${enemy.name} for $damage! (${enemy.hp - dealt}/${enemy.hp} HP left)")
+            game.notify(strings.get(R.string.quest_hit, enemy.name, damage, enemy.hp - dealt, enemy.hp))
             if (dealt >= enemy.hp) completeStage(line, updated)
             return
         }
@@ -204,7 +223,8 @@ class QuestRepository(
         if (hits > 0 && enemy.strength > 0 && !settings.value.gentleMode) {
             val taunt = enemy.dialogue["hit"]?.randomOrNull(random)?.withHero(heroName())
             game.apply(EventTypes.BOSS_STRIKE, enemy.id, hp = -enemy.strength * hits,
-                message = "${enemy.name} strikes you for ${enemy.strength * hits} HP!" + (taunt?.let { " “$it”" } ?: ""))
+                message = if (taunt != null) strings.get(R.string.quest_strike_taunt, enemy.name, enemy.strength * hits, taunt)
+                else strings.get(R.string.quest_strike, enemy.name, enemy.strength * hits))
         }
     }
 
@@ -215,7 +235,7 @@ class QuestRepository(
         val found = (p.progress + 1).coerceAtMost(collect.amount)
         val updated = p.copy(progress = found, updatedAt = System.currentTimeMillis())
         dao.upsert(updated)
-        game.notify("Found a ${collect.item}! ($found/${collect.amount})")
+        game.notify(strings.get(R.string.quest_found, collect.item, found, collect.amount))
         if (found >= collect.amount) completeStage(line, updated)
     }
 
@@ -230,7 +250,8 @@ class QuestRepository(
         val reward = stage.reward
         reward.item?.let { db.gameDao().addItem(InventoryEntity(it)) }
         game.apply(EventTypes.QUEST_STAGE_DONE, "${line.id}/${stage.id}", xp = reward.xp, coins = reward.coins,
-            message = "Stage complete: ${stage.title}" + (reward.item?.let { id -> " · new item: ${content().item(id)?.name ?: id}" } ?: ""))
+            message = reward.item?.let { id -> strings.get(R.string.quest_stage_done_item, stage.title, content().item(id)?.name ?: id) }
+                ?: strings.get(R.string.quest_stage_done, stage.title))
         val enemy = content().enemy(stage.boss)
         val defeat = enemy?.dialogue?.get("defeat")?.firstOrNull()?.let { DialogueLine(enemy.id, it) }
         val outro = listOfNotNull(defeat) + stage.outro
@@ -243,7 +264,7 @@ class QuestRepository(
         } else {
             dao.upsert(p.copy(status = QuestStatus.COMPLETED, completedAt = System.currentTimeMillis(),
                 timesCompleted = p.timesCompleted + 1, updatedAt = System.currentTimeMillis()))
-            game.apply(EventTypes.QUEST_DONE, line.id, message = "Quest complete: ${line.title}!")
+            game.apply(EventTypes.QUEST_DONE, line.id, message = strings.get(R.string.quest_done, line.title))
             if (outro.isNotEmpty()) _conversations.tryEmit(Conversation(line.title, withHero(outro)))
         }
     }

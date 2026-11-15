@@ -69,5 +69,8 @@ object AppIcons {
 
     val rewardChoices = listOf("CardGiftcard", "Coffee", "Movie", "Gamepad", "Icecream", "Cake")
 
+    /** Every icon name content may refer to. */
+    val names: Set<String> get() = habitChoices.keys + extra.keys
+
     fun get(name: String?): ImageVector = habitChoices[name] ?: extra[name] ?: Icons.Filled.Star
 }

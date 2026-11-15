@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.components
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,13 +26,14 @@ fun SkinTonePicker(selected: String?, equipped: Map<String, String>, onPick: (St
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         SkinTone.entries.forEach { tone ->
             val isSel = tone == current
+            val toneLabel = stringResource(R.string.skin_tone, tone.label)
             HeroAvatar(
                 equipped - "backdrop", size = 64.dp, skinTone = tone.id, animate = false,
                 modifier = Modifier
                     .clip(CircleShape)
                     .border(3.dp, if (isSel) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape)
                     .clickable(role = Role.RadioButton) { onPick(tone.id) }
-                    .semantics { contentDescription = "${tone.label} skin tone"; this.selected = isSel },
+                    .semantics { contentDescription = toneLabel; this.selected = isSel },
             )
         }
     }

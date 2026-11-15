@@ -24,6 +24,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.ui.res.stringResource
+import org.openfocus.app.R
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -85,9 +88,12 @@ fun HeroScreen(nav: NavController) {
     var rename by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Your hero") },
+            title = { Text(stringResource(R.string.your_hero)) },
             navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
-            actions = { IconButton(onClick = { rename = true }) { Icon(Icons.Filled.Edit, "Customise hero") } },
+            actions = {
+                IconButton(onClick = { nav.navigate("quests") }) { Icon(Icons.Filled.Map, stringResource(R.string.quests_title)) }
+                IconButton(onClick = { rename = true }) { Icon(Icons.Filled.Edit, "Customise hero") }
+            },
         )
         HeroCard(profile, Modifier.padding(horizontal = 16.dp))
         Spacer(Modifier.height(8.dp))
@@ -109,11 +115,11 @@ fun HeroScreen(nav: NavController) {
         val scope = rememberCoroutineScope()
         AlertDialog(
             onDismissRequest = { rename = false },
-            title = { Text("Customise your hero") },
+            title = { Text(stringResource(R.string.customise_your_hero)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(name, { name = it.take(24) }, singleLine = true, label = { Text("Name") })
-                    Text("Skin tone", style = MaterialTheme.typography.titleSmall)
+                    OutlinedTextField(name, { name = it.take(24) }, singleLine = true, label = { Text(stringResource(R.string.name)) })
+                    Text(stringResource(R.string.skin_tone_2), style = MaterialTheme.typography.titleSmall)
                     SkinTonePicker(tone, profile?.equippedMap().orEmpty(), onPick = { tone = it })
                 }
             },
@@ -121,9 +127,9 @@ fun HeroScreen(nav: NavController) {
                 TextButton(onClick = {
                     rename = false
                     scope.launch { c.game.updateProfile { it.copy(displayName = name.ifBlank { "Adventurer" }, skinTone = tone) } }
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.save)) }
             },
-            dismissButton = { TextButton(onClick = { rename = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { rename = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -144,7 +150,7 @@ private fun AchievementsTab() {
                 MiniStat("Resisted", "${stats.temptationsResisted}", Modifier.weight(1f))
             }
         }
-        item { Text("${ids.size}/${Achievements.all.size} unlocked", style = MaterialTheme.typography.titleSmall) }
+        item { Text(stringResource(R.string.unlocked, ids.size, Achievements.all.size), style = MaterialTheme.typography.titleSmall) }
         items(Achievements.all.sortedBy { it.id !in ids }, key = { it.id }) { a ->
             val done = a.id in ids
             val (cur, goal) = a.progress(stats)
@@ -188,7 +194,7 @@ private fun ShopTab(profile: ProfileEntity?) {
     val level = GameRules.levelFor(profile?.totalXp ?: 0)
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            Text("Spend coins on cosmetics for your hero. (Placeholder art — contributions welcome!)",
+            Text(stringResource(R.string.spend_coins_on_cosmetics_for_your),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         val wearing = ShopCatalog.resolveEquipped(profile?.equippedMap().orEmpty())
@@ -219,7 +225,7 @@ private fun ShopTab(profile: ProfileEntity?) {
                             else -> FilledTonalButton(
                                 enabled = level >= item.minLevel && (profile?.coins ?: 0) >= item.price,
                                 onClick = { scope.launch { c.shop.buy(item) } },
-                            ) { Text("Buy") }
+                            ) { Text(stringResource(R.string.buy)) }
                         }
                     }
                 }
@@ -242,7 +248,7 @@ private fun RewardsTab(profile: ProfileEntity?) {
     }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            Text("Treat yourself! Create rewards and buy them with the coins you earn. A reward can also unlock a blocked app " +
+            Text(stringResource(R.string.treat_yourself_create_rewards_and_buy) +
                 "for a while, and then it shows up on that app's pause screen too.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -267,7 +273,7 @@ private fun RewardsTab(profile: ProfileEntity?) {
         }
         item {
             OutlinedButton(onClick = { editing = RewardEntity(ownerId = "", title = "", cost = 50) }) {
-                Icon(Icons.Filled.Add, null); Text("New reward")
+                Icon(Icons.Filled.Add, null); Text(stringResource(R.string.new_reward))
             }
         }
     }
@@ -280,18 +286,18 @@ private fun RewardsTab(profile: ProfileEntity?) {
         var appMenu by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { editing = null },
-            title = { Text("Reward") },
+            title = { Text(stringResource(R.string.reward)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(title, { title = it }, label = { Text("e.g. Watch an episode guilt-free") }, singleLine = true)
-                    OutlinedTextField(cost, { cost = it.filter(Char::isDigit).take(5) }, label = { Text("Cost in coins") }, singleLine = true)
+                    OutlinedTextField(title, { title = it }, label = { Text(stringResource(R.string.e_g_watch_an_episode_guilt)) }, singleLine = true)
+                    OutlinedTextField(cost, { cost = it.filter(Char::isDigit).take(5) }, label = { Text(stringResource(R.string.cost_in_coins)) }, singleLine = true)
                     Row { AppIcons.rewardChoices.forEach { n -> IconButton(onClick = { icon = n }) { Icon(AppIcons.get(n), n, tint = if (n == icon) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline) } } }
-                    Text("Also unlocks (optional)", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.also_unlocks_optional), style = MaterialTheme.typography.titleSmall)
                     Box {
                         OutlinedButton(onClick = { appMenu = true }) { Text(appName(unlockPkg)?.replaceFirstChar { it.uppercase() } ?: "Nothing, just a treat") }
                         DropdownMenu(appMenu, { appMenu = false }) {
-                            DropdownMenuItem(text = { Text("Nothing, just a treat") }, onClick = { unlockPkg = null; appMenu = false })
-                            DropdownMenuItem(text = { Text("Any blocked app") }, onClick = { unlockPkg = RewardEntity.ANY_BLOCKED_APP; appMenu = false })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.nothing_just_a_treat)) }, onClick = { unlockPkg = null; appMenu = false })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.any_blocked_app)) }, onClick = { unlockPkg = RewardEntity.ANY_BLOCKED_APP; appMenu = false })
                             rules.forEach { rule ->
                                 DropdownMenuItem(text = { Text(rule.label) }, onClick = { unlockPkg = rule.packageName; appMenu = false })
                             }
@@ -299,7 +305,7 @@ private fun RewardsTab(profile: ProfileEntity?) {
                     }
                     if (unlockPkg != null) {
                         DurationChips("For", GameRules.unlockDurations, unlockMin, { unlockMin = it })
-                        Text("Your price, set above, doesn't rise during the day.", style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.your_price_set_above_doesn_t), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
@@ -311,10 +317,10 @@ private fun RewardsTab(profile: ProfileEntity?) {
                             unlockPackage = unlockPkg, unlockMinutes = if (unlockPkg != null) unlockMin else 0))
                     }
                     editing = null
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.save)) }
             },
             dismissButton = {
-                if (r.title.isNotBlank()) TextButton(onClick = { scope.launch { c.shop.deleteReward(r) }; editing = null }) { Text("Delete") }
+                if (r.title.isNotBlank()) TextButton(onClick = { scope.launch { c.shop.deleteReward(r) }; editing = null }) { Text(stringResource(R.string.delete)) }
             },
         )
     }

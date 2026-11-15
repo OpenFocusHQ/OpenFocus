@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.settings
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import org.openfocus.app.ui.theme.Body
 import org.openfocus.app.blocking.pauseColors
@@ -66,7 +68,7 @@ fun SettingsScreen(nav: NavController) {
     val s by c.settings.state.collectAsState()
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Settings") },
+            title = { Text(stringResource(R.string.settings)) },
             navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
         )
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -78,8 +80,8 @@ fun SettingsScreen(nav: NavController) {
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Evening reminder", style = MaterialTheme.typography.titleSmall)
-                    Text("If habits are still open after this hour", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.evening_reminder), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.if_habits_are_still_open_after), style = MaterialTheme.typography.bodySmall)
                 }
                 IconButton(onClick = { c.settings.update { it.copy(reminderHour = (it.reminderHour - 1).coerceAtLeast(12)) } }) { Icon(Icons.Filled.Remove, "Earlier") }
                 Text("%02d:00".format(s.reminderHour), style = MaterialTheme.typography.titleMedium)
@@ -88,7 +90,7 @@ fun SettingsScreen(nav: NavController) {
             HorizontalDivider()
             PauseScreenSettings()
             HorizontalDivider()
-            Text("About", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.about), style = MaterialTheme.typography.titleMedium)
             Text(
                 "OpenFocus is free and open-source software (GPL-3.0-or-later). Everything stays on your device — " +
                     "no accounts, no analytics, no network access.\n\n" +
@@ -107,14 +109,14 @@ private fun PauseScreenSettings() {
     val c = appContainer()
     val s by c.settings.state.collectAsState()
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("Pause screen", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.pause_screen), style = MaterialTheme.typography.titleMedium)
 
         // Look: live preview, icon, colours (like the screen you see when an app is paused).
         PausePreview(
             PauseState("it", BlockReason.ALWAYS, question = s.pauseQuestion, reminder = s.pauseReminder,
                 icon = PauseIcon.of(s.pauseIcon), colors = PauseColors.of(s.pauseColors)),
         )
-        Text("Icon", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.icon), style = MaterialTheme.typography.titleSmall)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PauseIcon.entries.forEach { icon ->
                 val selected = icon.id == PauseIcon.of(s.pauseIcon).id
@@ -128,17 +130,18 @@ private fun PauseScreenSettings() {
                 ) { PauseIconView(icon, MaterialTheme.colorScheme.onSurface, Modifier.size(30.dp)) }
             }
         }
-        Text("Colour", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.colour), style = MaterialTheme.typography.titleSmall)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PauseColors.entries.forEach { pc ->
                 val selected = pc.id == PauseColors.of(s.pauseColors).id
+                val colourLabel = stringResource(R.string.colours, pc.label)
                 val (bg, fg) = if (pc == PauseColors.SYSTEM) Color(PauseColors.LIGHT_BG) to Color(PauseColors.DARK_BG) else Color(pc.background) to Color(pc.foreground)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
                         Modifier.size(60.dp).clip(CircleShape).background(bg)
                             .border(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant, CircleShape)
                             .clickable(role = Role.RadioButton) { c.settings.update { it.copy(pauseColors = pc.id) } }
-                            .semantics { contentDescription = "${pc.label} colours"; this.selected = selected },
+                            .semantics { contentDescription = colourLabel; this.selected = selected },
                         contentAlignment = Alignment.Center,
                     ) { Box(Modifier.size(22.dp).clip(CircleShape).background(fg)) }
                     Text(pc.label, style = MaterialTheme.typography.labelSmall)
@@ -148,27 +151,27 @@ private fun PauseScreenSettings() {
         OutlinedTextField(
             s.pauseQuestion, { v -> c.settings.update { it.copy(pauseQuestion = v.take(120)) } },
             Modifier.fillMaxWidth(),
-            label = { Text("Question") },
+            label = { Text(stringResource(R.string.question)) },
             placeholder = { Text(DEFAULT_QUESTION) },
-            supportingText = { Text("{app} is replaced with the app's name. Leave empty for the default.") },
+            supportingText = { Text(stringResource(R.string.app_is_replaced_with_the_app)) },
         )
         OutlinedTextField(
             s.pauseReminder, { v -> c.settings.update { it.copy(pauseReminder = v.take(160)) } },
             Modifier.fillMaxWidth(),
-            label = { Text("Personal reminder (optional)") },
-            placeholder = { Text("e.g. You're training for the half marathon.") },
-            supportingText = { Text("A quiet line under the question.") },
+            label = { Text(stringResource(R.string.personal_reminder_optional)) },
+            placeholder = { Text(stringResource(R.string.e_g_you_re_training_for)) },
+            supportingText = { Text(stringResource(R.string.a_quiet_line_under_the_question)) },
         )
 
-        Text("Defaults for newly blocked apps", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.defaults_for_newly_blocked_apps), style = MaterialTheme.typography.titleSmall)
         PauseConfigEditor(
             PauseConfig(s.defaultGate, s.defaultWaitSeconds, s.defaultAllowMinutes),
             { cfg -> c.settings.update { it.copy(defaultGate = cfg.gate, defaultWaitSeconds = cfg.waitSeconds, defaultAllowMinutes = cfg.allowMinutes) } },
         )
-        Text("Each app can be changed later in the Shield tab.", style = MaterialTheme.typography.bodySmall,
+        Text(stringResource(R.string.each_app_can_be_changed_later), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        Text("Coin prices", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.coin_prices), style = MaterialTheme.typography.titleSmall)
         PriceStepper("Skip a wait", "extra coins per 10 s of waiting skipped (short waits count as 30 s)", s.skipCostPer10s) { v ->
             c.settings.update { it.copy(skipCostPer10s = v) }
         }
@@ -202,7 +205,7 @@ private fun PausePreview(state: PauseState) {
             style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(4.dp))
         Box(Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(14.dp)).background(fg), contentAlignment = Alignment.Center) {
-            Text("Close app", color = bg, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.close_app), color = bg, style = MaterialTheme.typography.titleSmall)
         }
     }
 }

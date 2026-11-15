@@ -51,7 +51,7 @@ class QuestRepositoryTest {
     private val game = GameEngine(db)
     private val settings = SettingsStore(ctx).also { s -> s.update { it.copy(gentleMode = false) } }
     private val alwaysDrop = object : Random() { override fun nextBits(bitCount: Int) = 0 } // nextDouble() == 0.0
-    private val quests = QuestRepository(db, game, settings, content = { content }, random = alwaysDrop)
+    private val quests = QuestRepository(db, game, settings, org.openfocus.app.core.Strings.of(ctx), content = { content }, random = alwaysDrop)
         .also { q -> game.listeners += { e -> q.onEvent(e) } }
     private val talks = mutableListOf<Conversation>()
 

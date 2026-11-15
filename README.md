@@ -66,9 +66,18 @@ Dark theme: [`docs/screenshots/dark/`](docs/screenshots/dark)
 - **20 achievements**, a "perfect day" streak, celebration dialogs and a journal of everything you've earned.
 - Original encouragement lines throughout.
 
+### ⚔️ Quests and bosses
+- **Story quest lines** with several stages, given by NPCs (Mira the trail guide, Oren the hermit) who talk to you in short conversations with pixel portraits.
+- **Boss fights, Habitica-style:** while a boss stage is active, every habit you complete deals damage equal to its XP, focus deals 1 damage per minute, and resisting a blocked app, reaching a milestone or finishing a goal hit harder. Missed dailies and slips let the boss **strike back** (not in gentle mode).
+- **Collection quests:** habits and focus sessions can turn up quest items.
+- **Objective stages** ("focus for 25 minutes", "resist 5 temptations"), quest scrolls bought with coins, repeatable boss hunts, and prerequisites that unlock later chapters. One quest runs at a time; you can leave it whenever you like.
+
 ### 🏔️ Long-term goals
 - Each goal is a mountain. **Milestones are camps** along a winding trail, and your climber moves up as you reach them.
 - Goals can have a "why", a target date and a summit name. The goal also shows the linked habit check-ins and focus minutes that went into it.
+
+### 🌍 Translations
+App text lives in `res/values/strings*.xml` and game content has its own translation files, so a new language needs no code. Android 13+ lists every translation in the per-app language picker automatically. See **[docs/TRANSLATING.md](docs/TRANSLATING.md)**.
 
 ## Building
 
@@ -84,7 +93,7 @@ The screenshot tests write their PNGs to `docs/screenshots/`.
 Every pull request and push to `main` runs all tests and a minified release build in GitHub Actions ([`build.yml`](.github/workflows/build.yml)). Each push to `main` that passes is published as a **[GitHub Release](../../releases)** with the APK attached. Signing and versioning are covered in [docs/RELEASING.md](docs/RELEASING.md).
 
 ### Game content
-All cosmetics (cloaks, armour, hats, backdrops and any new slot), achievements, starter quests, level titles and messages are **data**, in [`app/src/main/resources/content/content.json`](app/src/main/resources/content/content.json). To add more, use the local developer-only [content editor](tools/content-editor/README.md):
+All cosmetics (cloaks, armour, hats, backdrops and any new slot), achievements, starter habits, quest lines, NPCs and their dialogue, bosses, level titles and messages are **data**, in [`app/src/main/resources/content/content.json`](app/src/main/resources/content/content.json). To add more, use the local developer-only [content editor](tools/content-editor/README.md):
 
 ```bash
 python3 tools/content-editor/server.py   # http://127.0.0.1:8765

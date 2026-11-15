@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.today
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -49,6 +51,7 @@ import org.openfocus.app.blocking.BlockerAccessibilityService
 import org.openfocus.app.core.Encouragement
 import org.openfocus.app.data.db.GoalStatus
 import org.openfocus.app.data.db.HabitFrequency
+import org.openfocus.app.ui.quests.TodayQuestCard
 import org.openfocus.app.ui.components.EmptyState
 import org.openfocus.app.ui.pixel.SpriteCatalog
 import org.openfocus.app.ui.components.HeroCard
@@ -68,6 +71,8 @@ fun TodayScreen(nav: NavController) {
     val profile by remember { c.db.profileDao().observe() }.collectAsState(initial = null)
     val goals by remember { c.goals.observeGoals() }.collectAsState(initial = emptyList())
     val focus by c.focus.active.collectAsState()
+    val questBoard by remember { c.quests.observeBoard() }.collectAsState(initial = null)
+    val settings by c.settings.state.collectAsState()
     val context = LocalContext.current
     var shieldOn by remember { mutableStateOf(true) }
     LifecycleResumeEffect(Unit) {
@@ -101,19 +106,20 @@ fun TodayScreen(nav: NavController) {
                     Icon(Icons.Filled.WarningAmber, null)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Shield is off", style = MaterialTheme.typography.titleMedium)
-                        Text("Turn it on to block distracting apps and Shorts/Reels.", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.shield_is_off), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.turn_it_on_to_block_distracting), style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
         }
 
         item { FocusCard(focus?.endsAt, focus?.label, onOpen = { nav.navigate("focus") }) }
+        item { TodayQuestCard(questBoard, settings.gentleMode, profile?.displayName.orEmpty(), onOpen = { nav.navigate("quests") }) }
 
         item {
-            SectionHeader("Today's quests  ·  $doneCount/${due.size}") {
+            SectionHeader(stringResource(R.string.today_s_habits, doneCount, due.size)) {
                 TextButton(onClick = { nav.navigate("habit_edit/new") }) {
-                    Icon(Icons.Filled.Add, null, Modifier.size(18.dp)); Text("Add")
+                    Icon(Icons.Filled.Add, null, Modifier.size(18.dp)); Text(stringResource(R.string.add))
                 }
             }
         }
@@ -128,7 +134,7 @@ fun TodayScreen(nav: NavController) {
             HabitRow(s, onTap = { vm.tap(s.habit.id) }, onUndo = { vm.undo(s.habit.id) }, onOpen = { nav.navigate("habit/${s.habit.id}") })
         }
         if (breakHabits.isNotEmpty()) {
-            item { SectionHeader("Breaking free") }
+            item { SectionHeader(stringResource(R.string.breaking_free)) }
             items(breakHabits, key = { "b" + it.habit.id }) { s ->
                 HabitRow(s, onTap = { vm.tap(s.habit.id) }, onUndo = { vm.undo(s.habit.id) }, onOpen = { nav.navigate("habit/${s.habit.id}") })
             }
@@ -136,7 +142,7 @@ fun TodayScreen(nav: NavController) {
 
         val active = goals.filter { it.goal.status == GoalStatus.ACTIVE }.take(3)
         if (active.isNotEmpty()) {
-            item { SectionHeader("Your ascents") { TextButton(onClick = { nav.navigate("goals") }) { Text("All") } } }
+            item { SectionHeader(stringResource(R.string.your_ascents)) { TextButton(onClick = { nav.navigate("goals") }) { Text(stringResource(R.string.all)) } } }
             items(active, key = { "g" + it.goal.id }) { g ->
                 Card(onClick = { nav.navigate("goal/${g.goal.id}") }, shape = RoundedCornerShape(20.dp)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp)) {
@@ -149,7 +155,7 @@ fun TodayScreen(nav: NavController) {
                             drawStopIndicator = {},
                         )
                         Spacer(Modifier.height(4.dp))
-                        Text("${g.done}/${g.milestones.size} camps reached", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.camps_reached, g.done, g.milestones.size), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
@@ -175,13 +181,13 @@ private fun FocusCard(endsAt: Long?, label: String?, onOpen: () -> Unit) {
                 if (endsAt != null) {
                     val left = ((endsAt - now) / 1000).coerceAtLeast(0)
                     Text("Focusing${if (!label.isNullOrBlank()) ": $label" else ""}", style = MaterialTheme.typography.titleMedium)
-                    Text("%d:%02d remaining".format(left / 60, left % 60), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.time_remaining, left / 60, left % 60), style = MaterialTheme.typography.bodyMedium)
                 } else {
-                    Text("Ready to focus?", style = MaterialTheme.typography.titleMedium)
-                    Text("Earn XP for every distraction-free minute.", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.ready_to_focus), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.earn_xp_for_every_distraction_free), style = MaterialTheme.typography.bodySmall)
                 }
             }
-            if (endsAt == null) FilledTonalButton(onClick = onOpen) { Text("Start") }
+            if (endsAt == null) FilledTonalButton(onClick = onOpen) { Text(stringResource(R.string.start)) }
         }
     }
 }

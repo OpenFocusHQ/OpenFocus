@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.components
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -44,7 +46,7 @@ fun HeroAvatar(
         SpriteCatalog.heroLayers(equipped, pose, SkinTone.of(skinTone), withBackdrop = true, night = night)
     }
     if (layers != null) {
-        PixelSprite(layers, modifier.size(size), animate = animate, contentDescription = "Your hero")
+        PixelSprite(layers, modifier.size(size), animate = animate, contentDescription = stringResource(R.string.your_hero))
     } else {
         val eq = ShopCatalog.resolveEquipped(equipped)
         Canvas(modifier.size(size)) {

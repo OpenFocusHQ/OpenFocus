@@ -714,6 +714,55 @@ def scaled(g, k):
     return [[ch for ch in row for _ in range(k)] for row in g for _ in range(k)]
 
 
+# --------------------------------------------------------------------------------------------
+# Characters from content.json: NPC portraits (hero template) and enemies (procedural monsters).
+# --------------------------------------------------------------------------------------------
+def npc_portrait(npc, colors):
+    """32x32: the hero body in the NPC's skin tone, a cloak in their colour and their hat."""
+    tone = SKIN_TONES.get(npc.get("skin", "light"), SKIN_TONES["light"])
+    light, mid, dark = ramp_from(npc.get("color", "#7C6CF2"))
+    cc = dict(colors, s=tone[0], S=tone[1], p=tone[2], c=light, C=mid, D=dark)
+    g = hero_frame(0, False)
+    hat = HATS.get(npc.get("hat") or "")
+    if hat:
+        for y, row in enumerate(grid(hat, 32, 32)):
+            for x, ch in enumerate(row):
+                if ch != ".":
+                    g[y][x] = ch
+    return g, cc
+
+
+def enemy_frames(enemy):
+    """48x48 x2 (idle bob). Shapes: ghost, slime, golem. Ramp chars 1/2/3 from the enemy colour."""
+    import math
+    shape = enemy.get("shape", "slime")
+    frames = []
+    for bob in (0, 1):
+        g = blank(48, 48)
+        stamp(g, ellipse_mask(24, 44, 14, 2.5, 48, 48), "_", outline=None)  # shadow
+        oy = bob
+        if shape == "ghost":
+            body = {(x, y) for y in range(48) for x in range(48)
+                    if ((x + .5 - 24) / 14) ** 2 + ((y + .5 - 20 - oy) / 14) ** 2 <= 1 and y < 20 + oy
+                    or (10 <= x < 38 and 20 + oy <= y < 36 + oy - int(2 * (1 + math.sin((x + 2 * bob) / 2.2))))}
+        elif shape == "golem":
+            body = rect_mask(12, 10 + oy, 36, 40) | rect_mask(8, 18 + oy, 12, 32) | rect_mask(36, 18 + oy, 40, 32)
+        else:  # slime
+            body = {(x, y) for (x, y) in ellipse_mask(24, 32 + oy, 16, 12 - oy, 48, 48) if y < 41}
+        stamp(g, body, "2", shade=lambda x, y: "3" if x > 28 or y > 34 else ("1" if x < 18 and y < 24 else None))
+        if shape == "golem":
+            for (x, y) in [(18, 16 + oy), (19, 17 + oy), (20, 18 + oy), (30, 27 + oy), (29, 28 + oy), (16, 30 + oy), (17, 31 + oy)]:
+                g[y][x] = "o"
+        ey = {"ghost": 18, "slime": 30, "golem": 20}[shape] + oy
+        for ex in (19, 28):
+            stamp(g, rect_mask(ex - 1, ey - 2, ex + 2, ey + 2), "w" if shape != "golem" else "y")
+            g[ey][ex] = "o" if shape != "golem" else "K"
+        for x in range(21, 27):  # mouth
+            g[ey + 5][x] = "o" if (x % 2 or shape == "golem") else "w"
+        frames.append(g)
+    return frames
+
+
 TENT = {  # 8x8, feet at (4, 6). Row 0 unlit, row 1 lit (2-frame flicker).
     "unlit": [{1: "oo", 2: "oKKo", 3: "oKKKKo", 4: "oKKooKKo", 5: "oKKooKKo", 6: "oooooooo"}],
     "lit": [{1: "oo", 2: "oKKo", 3: "oKKKKo", 4: "oKKyyKKo", 5: "oKKyyKKo", 6: "oooooooo"},
@@ -865,6 +914,16 @@ def main():
                 store[y][x] = icon[y][x]
     os.makedirs(os.path.join(ROOT, "art", "export"), exist_ok=True)
     write_png(os.path.join(ROOT, "art", "export", "ic_launcher_store.png"), scaled(store, 9), colors)  # 486 px
+
+    for npc in content.get("npcs", []):
+        if npc.get("sprite"):
+            g, cc = npc_portrait(npc, colors)
+            write_png(os.path.join(OUT, f"{npc['sprite']}.png"), sheet([[g]], 32, 32), cc)
+    for enemy in content.get("enemies", []):
+        if enemy.get("sprite"):
+            light, mid, dark = ramp_from(enemy.get("color", "#F06A4D"))
+            ec = dict(colors, **{"1": light, "2": mid, "3": dark})
+            write_png(os.path.join(OUT, f"{enemy['sprite']}.png"), sheet([enemy_frames(enemy)], 48, 48), ec)
 
     badges = [(a["id"], a.get("tier", "bronze")) for a in content["achievements"]]
     for aid, tier in badges:

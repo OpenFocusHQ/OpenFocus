@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.components
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +34,7 @@ fun AscentMountain(
     val n = milestones.size
     val done = milestones.count { it }
     val target = AscentTrail.climberFraction(done, n, completed)
-    val f by animateFloatAsState(target, tween(if (animate) 900 else 0), label = "climb")
+    val f by animateFloatAsState(target, tween(if (animate) 900 else 0), label = stringResource(R.string.climb))
 
     val layers = buildList {
         val scene = when {

@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.habits
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -63,8 +65,8 @@ fun HabitDetailScreen(nav: NavController, id: String) {
                 IconButton(onClick = { nav.navigate("habit_edit/$id") }) { Icon(Icons.Filled.Edit, "Edit") }
                 IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, "More") }
                 DropdownMenu(menu, { menu = false }) {
-                    DropdownMenuItem(text = { Text("Archive") }, onClick = { menu = false; scope.launch { c.habits.archive(id); nav.popBackStack() } })
-                    DropdownMenuItem(text = { Text("Delete") }, onClick = { menu = false; confirmDelete = true })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.archive)) }, onClick = { menu = false; scope.launch { c.habits.archive(id); nav.popBackStack() } })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.delete)) }, onClick = { menu = false; confirmDelete = true })
                 }
             },
         )
@@ -79,7 +81,7 @@ fun HabitDetailScreen(nav: NavController, id: String) {
                 Stat(if (h.kind == HabitKind.BREAK) "Slips" else "Completions", "$total", Modifier.weight(1f))
                 Stat("Next reward", if (h.kind == HabitKind.BREAK) "—" else "${GameRules.habitXp(h.difficulty, s.streak + 1)} XP", Modifier.weight(1f))
             }
-            SectionHeader("Last 18 weeks")
+            SectionHeader(stringResource(R.string.last_18_weeks))
             Heatmap(s.counts, h.target, if (h.kind == HabitKind.BREAK) MaterialTheme.colorScheme.error else color, Days.today())
             Text(
                 when (h.frequency) {
@@ -94,10 +96,10 @@ fun HabitDetailScreen(nav: NavController, id: String) {
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete habit?") },
-            text = { Text("History for this habit will no longer be shown. XP you've earned stays yours.") },
-            confirmButton = { TextButton(onClick = { confirmDelete = false; scope.launch { c.habits.delete(id); nav.popBackStack() } }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.delete_habit)) },
+            text = { Text(stringResource(R.string.history_for_this_habit_will_no)) },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; scope.launch { c.habits.delete(id); nav.popBackStack() } }) { Text(stringResource(R.string.delete)) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

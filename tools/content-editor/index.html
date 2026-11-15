@@ -57,11 +57,39 @@
   .swatches { display: flex; gap: 6px; }
   .swatches span { width: 26px; height: 26px; border-radius: 50%; display: inline-block; cursor: pointer; border: 2px solid transparent; }
   .swatches span.on { border-color: var(--ink); }
+  .nest { display: grid; gap: 10px; }
+  .dkey { display: grid; gap: 4px; }
+  .dkey small, .sub { color: var(--muted); font-size: 12px; }
+  .stages { display: grid; gap: 12px; max-width: 900px; margin-top: 18px; }
+  details.stage { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  details.stage > summary { padding: 10px 12px; cursor: pointer; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+  details.stage > summary .kind { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--muted); }
+  details.stage > summary .bad { color: var(--warn); }
+  .stage-body { padding: 4px 12px 12px; display: grid; gap: 10px; }
+  .grid2 { display: grid; grid-template-columns: 130px 1fr; gap: 8px 10px; align-items: center; }
+  .grid2 label { color: var(--muted); }
+  .lines { display: grid; gap: 6px; }
+  .line { display: grid; grid-template-columns: 150px 1fr auto; gap: 6px; align-items: start; }
+  .line textarea { min-height: 38px; }
+  .mini { display: flex; gap: 4px; }
+  .mini button { padding: 4px 8px; }
+  .bubble { background: var(--chip); border-radius: 12px; padding: 8px 10px; max-width: 260px; }
+  .flow { margin: 0; padding-left: 18px; }
+  .flow li { margin-bottom: 6px; }
+  table.tr { width: 100%; border-collapse: collapse; }
+  table.tr td { border-bottom: 1px solid var(--line); padding: 8px 6px; vertical-align: top; }
+  table.tr td.k { width: 34%; }
+  table.tr td.k code { font-size: 11px; color: var(--muted); word-break: break-all; display: block; margin-top: 2px; }
+  table.tr textarea { min-height: 38px; }
+  table.tr tr.missing textarea { border-color: var(--warn); }
+  .langs li { justify-content: space-between; }
+  .meter { height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; margin-top: 4px; }
+  .meter span { display: block; height: 100%; background: var(--ok); }
 </style>
 </head>
 <body>
 <header>
-  <h1>OpenFocus Content Editor</h1>
+  <h1>OpenFocus content</h1>
   <nav id="tabs"></nav>
   <span class="spacer"></span>
   <span id="status">Loading…</span>
@@ -87,6 +115,7 @@ const BADGE_COLS = 5;          // SpriteCatalog.BADGE_COLUMNS
 const HERO_AT = [8, 13];       // SpriteCatalog.HERO_IN_BACKDROP
 let content = null, schema = null, sprites = {}, dirty = false;
 let tab = "items", sel = 0, filter = "";
+let langs = [], lang = null, overlay = {}, overlayDirty = false, trFilter = "missing", trSearch = "";
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.flat().forEach(k => e.append(k)); return e; };
 
@@ -149,8 +178,61 @@ const TABS = {
     ],
     template: () => ({ id: uniqueId("new_slot"), name: "New slot", layer: Math.max(...content.slots.map(s => s.layer)) + 1, kind: "OVERLAY", anchor: "body" }),
   },
+  questLines: {
+    label: "Quest lines", key: "questLines",
+    title: x => x.title, sub: x => `${(x.stages ?? []).length} stage(s) · ${content.npcs.find(n => n.id === x.npc)?.name ?? x.npc}` +
+      `${x.cost ? " · " + x.cost + " coins" : ""}${x.repeatable ? " · repeatable" : ""}${(x.unlockLevel ?? 1) > 1 ? " · Lv " + x.unlockLevel : ""}`,
+    fields: () => [
+      { k: "id", t: "id", hint: "Saved in players' quest progress. Don't rename after release." },
+      { k: "title", t: "text" },
+      { k: "summary", t: "textarea", hint: "Shown on the quest board." },
+      { k: "npc", t: "enum", options: () => content.npcs.map(n => n.id), hint: "Quest giver: portrait on the board and default speaker." },
+      { k: "unlockLevel", t: "int" },
+      { k: "requires", t: "enum", options: () => [""].concat(content.questLines.filter(q => q !== cur()).map(q => q.id)), optional: true,
+        hint: "Another quest line the player must finish first." },
+      { k: "cost", t: "int", hint: "Coins for the quest scroll. 0 = free." },
+      { k: "repeatable", t: "bool", hint: "Can be bought and run again after finishing (boss farming)." },
+    ],
+    after: x => stagesEditor(x),
+    template: () => ({ id: uniqueId("new_quest_line"), title: "New quest line", summary: "", npc: content.npcs[0]?.id ?? "",
+      unlockLevel: 1, cost: 0, repeatable: false,
+      stages: [{ id: "start", title: "First steps", story: "", objective: { stat: "habitCompletions", mode: "GAIN", amount: 3 } }] }),
+    note: "Stages run in order. Each has exactly one win condition: an objective (stat goal), a boss (habits deal damage, missed dailies let it strike back) or a collection (drops from habits/focus).",
+  },
+  npcs: {
+    label: "NPCs", key: "npcs",
+    title: x => x.name, sub: x => x.title || "",
+    fields: () => [
+      { k: "id", t: "id", hint: "Used as the speaker in quest dialogue." },
+      { k: "name", t: "text" }, { k: "title", t: "text", hint: "e.g. Trail guide" },
+      { k: "color", t: "color", hint: "Cloak colour on the generated portrait and the portrait ring." },
+      { k: "skin", t: "enum", options: enumFrom("properties/npcs/items/properties/skin") },
+      { k: "hat", t: "enum", options: () => [""].concat(content.items.filter(i => i.slot === "hat").map(i => i.id)), optional: true },
+      { k: "sprite", t: "sprite", hint: "Regenerate art to draw px_npc_<id> from colour, skin and hat." },
+      { k: "dialogue", t: "dialogue", keys: ["greeting", "idle", "comeback"],
+        hint: "greeting: Today card when a quest is waiting. idle: the Talk button. Add any key you like for your own use." },
+    ],
+    template: () => ({ id: uniqueId("new_npc"), name: "New character", title: "", color: "#7C6CF2", skin: "light", hat: null,
+      sprite: null, dialogue: { greeting: ["Hello, {hero}!"] } }),
+  },
+  enemies: {
+    label: "Enemies", key: "enemies",
+    title: x => x.name, sub: x => `${x.hp} HP · strength ${x.strength ?? 0} · ${x.shape ?? "slime"}`,
+    fields: () => [
+      { k: "id", t: "id" }, { k: "name", t: "text" }, { k: "description", t: "textarea" },
+      { k: "hp", t: "int", hint: `Damage: habit = its XP, focus = 1 per minute, resisting = 5, milestone = 25, goal = 100.` },
+      { k: "strength", t: "int", hint: "HP the player loses per missed daily or slip while fighting (off in gentle mode)." },
+      { k: "color", t: "color" },
+      { k: "shape", t: "enum", options: enumFrom("properties/enemies/items/properties/shape"), hint: "Body for the generated sprite." },
+      { k: "sprite", t: "sprite", hint: "Regenerate art to draw px_enemy_<id>." },
+      { k: "dialogue", t: "dialogue", keys: ["appear", "hit", "defeat"],
+        hint: "appear: when the fight starts. hit: taunt when it strikes you. defeat: its last words." },
+    ],
+    template: () => ({ id: uniqueId("new_enemy"), name: "New enemy", description: "", hp: 150, strength: 3, color: "#F06A4D", shape: "slime",
+      sprite: null, dialogue: { appear: ["..."], hit: ["..."], defeat: ["..."] } }),
+  },
   quests: {
-    label: "Quests", key: "quests",
+    label: "Starter habits", key: "quests",
     title: x => x.title, sub: x => `${x.kind ?? "BUILD"} · ${x.frequency ?? "DAILY"}${x.starter === false ? "" : " · starter"}`,
     fields: () => [
       { k: "id", t: "id" }, { k: "title", t: "text" },
@@ -172,12 +254,13 @@ const TABS = {
     template: () => ({ minLevel: Math.max(...content.titles.map(t => t.minLevel)) + 5, title: "New title" }),
   },
   messages: { label: "Messages", special: true },
+  translations: { label: "Translations", special: true },
 };
 
 const cur = () => content[TABS[tab].key]?.[sel];
 
 function uniqueId(base) {
-  const all = new Set(Object.values(TABS).filter(t => t.key).flatMap(t => content[t.key].map(x => x.id)));
+  const all = new Set(Object.values(TABS).filter(t => t.key).flatMap(t => (content[t.key] ?? []).map(x => x.id)));
   let id = base, n = 2;
   while (all.has(id)) id = `${base}_${n++}`;
   return id;
@@ -227,12 +310,58 @@ function validate() {
   if (!content.quests.some(q => q.starter !== false)) add("quests", 0, "no starter quests");
   if (!content.titles.some(t => t.minLevel === 1)) add("titles", 0, "need a title for level 1");
   for (const [k, v] of Object.entries(content.messages)) if (!v.length) add("messages", 0, `no "${k}" messages`);
+
+  // Characters and quest lines (mirrors ContentValidationTest.charactersAreConsistent / questLinesAreConsistent)
+  dupes("npcs", "id"); dupes("enemies", "id"); dupes("questLines", "id");
+  ["npcs", "enemies", "questLines"].forEach(t => content[t].forEach((x, i) => { if (!idRe.test(x.id || "")) add(t, i, `id "${x.id}" must be lower_snake_case`); }));
+  const colour = /^#[0-9A-Fa-f]{6}$/;
+  content.npcs.forEach((n, i) => {
+    if (n.color && !colour.test(n.color)) add("npcs", i, "bad colour");
+    if (n.hat && content.items.find(it => it.id === n.hat)?.slot !== "hat") add("npcs", i, `hat "${n.hat}" is not a hat item`);
+    if (n.sprite && !(n.sprite in sprites)) add("npcs", i, `sprite ${n.sprite}.png doesn't exist yet (regenerate art)`);
+  });
+  content.enemies.forEach((e, i) => {
+    if (!(e.hp > 0)) add("enemies", i, "hp must be > 0");
+    if (e.color && !colour.test(e.color)) add("enemies", i, "bad colour");
+    if (e.sprite && !(e.sprite in sprites)) add("enemies", i, `sprite ${e.sprite}.png doesn't exist yet (regenerate art)`);
+  });
+  const speakers = new Set(["hero", ...content.npcs.map(n => n.id), ...content.enemies.map(e => e.id)]);
+  const lines = new Map(content.questLines.map(q => [q.id, q]));
+  content.questLines.forEach((q, i) => {
+    const bad = (m) => add("questLines", i, m);
+    if (!content.npcs.some(n => n.id === q.npc)) bad(`unknown npc "${q.npc}"`);
+    if (q.requires && (!lines.has(q.requires) || q.requires === q.id)) bad(`requires unknown line "${q.requires}"`);
+    if (!(q.cost >= 0 || q.cost === undefined)) bad("cost must be ≥ 0");
+    const seen = new Set([q.id]); let next = q.requires;
+    while (next && lines.has(next)) { if (seen.has(next)) { bad(`requires cycle through "${next}"`); break; } seen.add(next); next = lines.get(next).requires; }
+    const stages = q.stages ?? [];
+    if (!stages.length) bad("needs at least one stage");
+    const ids = new Set();
+    stages.forEach((st, j) => {
+      const w = `stage ${j + 1} (${st.id})`;
+      if (ids.has(st.id)) bad(`${w}: duplicate stage id`); ids.add(st.id);
+      if (!idRe.test(st.id || "")) bad(`${w}: id must be lower_snake_case`);
+      const wins = [st.objective, st.boss, st.collect].filter(v => v !== undefined && v !== null).length;
+      if (wins !== 1) bad(`${w}: needs exactly one of objective / boss / collect`);
+      if (st.objective) {
+        if (!stats.includes(st.objective.stat)) bad(`${w}: unknown stat "${st.objective.stat}"`);
+        if (!(st.objective.amount > 0)) bad(`${w}: amount must be > 0`);
+      }
+      if (st.boss && !content.enemies.some(e => e.id === st.boss)) bad(`${w}: unknown enemy "${st.boss}"`);
+      if (st.collect && !(st.collect.amount > 0)) bad(`${w}: collect amount must be > 0`);
+      if (st.collect && !st.collect.item) bad(`${w}: name the item to collect`);
+      if (st.reward?.item && !content.items.some(it => it.id === st.reward.item)) bad(`${w}: unknown reward item "${st.reward.item}"`);
+      [...(st.intro ?? []), ...(st.outro ?? [])].forEach(l => { if (!speakers.has(l.speaker)) bad(`${w}: unknown speaker "${l.speaker}"`); });
+    });
+  });
   return out;
 }
 
 // ---------------------------------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------------------------------
+let savedJson = "";
+const contentDirty = () => JSON.stringify(content) !== savedJson;
 function setDirty(d) { dirty = d; $("save").disabled = !d; status(d ? "Unsaved changes" : "Saved"); }
 function status(t, cls) { $("status").textContent = t; $("status").className = cls || ""; }
 
@@ -245,6 +374,7 @@ function render() {
   renderTabs();
   const issues = validate();
   renderIssues(issues);
+  if (tab === "translations") return renderTranslations();
   if (TABS[tab].special) return renderMessages();
   renderList(issues);
   renderForm();
@@ -288,7 +418,7 @@ function renderForm() {
     form.append(el("label", { textContent: f.k, htmlFor: "f_" + f.k }), fieldInput(x, f));
     if (f.hint) form.append(el("div", { className: "hint", textContent: f.hint }));
   }
-  $("center").replaceChildren(el("h2", { textContent: `${t.label} · ${sel + 1} of ${arr.length}` }), tools, form);
+  $("center").replaceChildren(el("h2", { textContent: `${t.label} · ${sel + 1} of ${arr.length}` }), tools, form, t.after ? t.after(x) : "");
 }
 
 function fieldInput(x, f) {
@@ -325,6 +455,8 @@ function fieldInput(x, f) {
         title: "Name the sprite after this item's id", onclick: () => { set(`px_${x.id}`); renderForm(); } }));
       return wrap;
     }
+    case "dialogue":
+      return dialogueEditor(x, f.keys ?? []);
     case "enum": {
       const opts = typeof f.options === "function" ? f.options() : f.options;
       const s = el("select", { id, onchange: e => set(e.target.value) });
@@ -348,6 +480,255 @@ function renderMessages() {
   }
   $("center").replaceChildren(box);
   $("preview").replaceChildren(el("p", { textContent: "No preview for messages." }));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Nested editors: NPC/enemy dialogue, quest-line stages, intro/outro conversations
+// ---------------------------------------------------------------------------------------------
+function changed(rerenderForm = false) {
+  setDirty(true);
+  const issues = validate();
+  renderIssues(issues); renderList(issues); renderPreview();
+  if (rerenderForm) renderForm();
+}
+
+function dialogueEditor(x, suggested) {
+  x.dialogue ??= {};
+  const wrap = el("div", { className: "nest" });
+  const keys = [...new Set([...suggested, ...Object.keys(x.dialogue)])];
+  for (const k of keys) {
+    const lines = x.dialogue[k] ?? [];
+    wrap.append(el("div", { className: "dkey" },
+      el("div", {}, el("strong", { textContent: k }), el("small", { textContent: `  ${lines.length} line(s) · one per line · {hero} = player's name` })),
+      el("textarea", { value: lines.join("\n"), placeholder: `Lines for "${k}" (one picked at random)`, oninput: e => {
+        const v = e.target.value.split("\n").map(s => s.trim()).filter(Boolean);
+        if (v.length) x.dialogue[k] = v; else delete x.dialogue[k];
+        changed();
+      } })));
+  }
+  const name = el("input", { placeholder: "new dialogue key, e.g. victory" });
+  wrap.append(el("div", { className: "mini" }, name, el("button", { className: "act", type: "button", textContent: "+ Key", onclick: () => {
+    const k = name.value.trim();
+    if (!/^[a-z][a-z0-9_]*$/.test(k)) return alert("Keys are lower_snake_case.");
+    x.dialogue[k] ??= []; changed(true);
+  } })));
+  return wrap;
+}
+
+const STAGE_KINDS = { objective: "Objective", boss: "Boss fight", collect: "Collect" };
+const stageKind = st => st.boss != null ? "boss" : st.collect != null ? "collect" : "objective";
+
+function mini(obj, key, type, opts = {}) {
+  const set = v => { if (v === "" || v === null || (typeof v === "number" && isNaN(v))) delete obj[key]; else obj[key] = v; changed(opts.rerender); };
+  if (type === "int") return el("input", { type: "number", step: "1", min: opts.min ?? 0, value: obj[key] ?? "", oninput: e => set(parseInt(e.target.value, 10)) });
+  if (type === "textarea") return el("textarea", { value: obj[key] ?? "", placeholder: opts.placeholder ?? "", oninput: e => set(e.target.value) });
+  if (type === "enum") {
+    const s = el("select", { onchange: e => set(e.target.value) });
+    const val = obj[key] ?? "";
+    const options = [...opts.options]; if (val && !options.includes(val)) options.push(val);
+    options.forEach(o => s.append(el("option", { value: o, textContent: o === "" ? "(none)" : (opts.labels?.[o] ?? o), selected: o === val })));
+    return s;
+  }
+  return el("input", { value: obj[key] ?? "", placeholder: opts.placeholder ?? "", oninput: e => set(type === "id" ? e.target.value.trim() : e.target.value) });
+}
+
+function grid2(...pairs) {
+  const g = el("div", { className: "grid2" });
+  for (let i = 0; i < pairs.length; i += 2) g.append(el("label", { textContent: pairs[i] }), pairs[i + 1]);
+  return g;
+}
+
+function stagesEditor(line) {
+  line.stages ??= [];
+  const issues = validate().filter(p => p.tab === "questLines" && content.questLines[p.index] === line);
+  const box = el("div", { className: "stages" }, el("h2", { textContent: `Stages (${line.stages.length})` }));
+  line.stages.forEach((st, i) => box.append(stageCard(line, st, i, issues.filter(p => p.msg.startsWith(`stage ${i + 1} `)))));
+  box.append(el("div", { className: "row-tools" },
+    ...Object.entries(STAGE_KINDS).map(([k, label]) => el("button", { className: "act", type: "button", textContent: `+ ${label} stage`, onclick: () => {
+      const ids = new Set(line.stages.map(s => s.id)); let id = k, n = 2; while (ids.has(id)) id = `${k}_${n++}`;
+      const st = { id, title: label, story: "" };
+      setKind(st, k); line.stages.push(st); openStages.add(`${line.id}/${id}`); changed(true);
+    } }))));
+  return box;
+}
+
+const openStages = new Set();
+
+function setKind(st, k) {
+  delete st.objective; delete st.boss; delete st.collect;
+  if (k === "objective") st.objective = { stat: "habitCompletions", mode: "GAIN", amount: 3 };
+  if (k === "boss") st.boss = content.enemies[0]?.id ?? "";
+  if (k === "collect") st.collect = { item: "thing", itemPlural: "things", icon: "Star", amount: 5 };
+}
+
+function stageCard(line, st, i, problems) {
+  const kind = stageKind(st);
+  const d = el("details", { className: "stage", open: openStages.has(`${line.id}/${st.id}`) });
+  d.ontoggle = () => { const k = `${line.id}/${st.id}`; d.open ? openStages.add(k) : openStages.delete(k); };
+  d.append(el("summary", {}, `${i + 1}. ${st.title || "(untitled)"}`, el("span", { className: "kind", textContent: STAGE_KINDS[kind] }),
+    problems.length ? el("span", { className: "bad", textContent: "!" , title: problems.map(p => p.msg).join("\n") }) : ""));
+  const move = dlt => { const j = i + dlt; if (j < 0 || j >= line.stages.length) return; [line.stages[i], line.stages[j]] = [line.stages[j], line.stages[i]]; changed(true); };
+  const body = el("div", { className: "stage-body" },
+    el("div", { className: "mini" },
+      el("button", { className: "act", type: "button", textContent: "↑", title: "Move up", onclick: () => move(-1) }),
+      el("button", { className: "act", type: "button", textContent: "↓", title: "Move down", onclick: () => move(1) }),
+      el("button", { className: "act", type: "button", textContent: "Duplicate", onclick: () => {
+        const c = structuredClone(st); c.id = st.id + "_copy"; line.stages.splice(i + 1, 0, c); changed(true); } }),
+      el("button", { className: "act", type: "button", textContent: "Delete", onclick: () => {
+        if (confirm(`Delete stage "${st.title}"?`)) { line.stages.splice(i, 1); changed(true); } } })),
+    grid2(
+      "id", mini(st, "id", "id"),
+      "title", mini(st, "title", "text"),
+      "story", mini(st, "story", "textarea", { placeholder: "Shown on the quest card while this stage is active." }),
+      "win condition", (() => {
+        const s = el("select", { onchange: e => { setKind(st, e.target.value); changed(true); } });
+        Object.entries(STAGE_KINDS).forEach(([k, label]) => s.append(el("option", { value: k, textContent: label, selected: k === kind })));
+        return s;
+      })(),
+    ));
+  if (kind === "objective") {
+    const o = st.objective;
+    body.append(grid2(
+      "stat", mini(o, "stat", "enum", { options: enumFrom("properties/achievements/items/properties/stat") }),
+      "mode", mini(o, "mode", "enum", { options: ["GAIN", "REACH"], labels: { GAIN: "GAIN: do N more from now", REACH: "REACH: total of N" } }),
+      "amount", mini(o, "amount", "int", { min: 1 })));
+  } else if (kind === "boss") {
+    const e = content.enemies.find(x => x.id === st.boss);
+    body.append(grid2(
+      "enemy", mini(st, "boss", "enum", { options: content.enemies.map(x => x.id), rerender: true }),
+      "", el("span", { className: "sub", textContent: e ? `${e.hp} HP, strikes for ${e.strength ?? 0} per missed daily/slip. Its "appear" line plays after the intro, "defeat" before the outro.` : "Add an enemy in the Enemies tab." })));
+  } else {
+    const c = st.collect;
+    body.append(grid2(
+      "item", mini(c, "item", "text", { placeholder: "trail marker" }),
+      "plural", mini(c, "itemPlural", "text", { placeholder: "trail markers" }),
+      "icon", mini(c, "icon", "text", { placeholder: "Flag (Material icon name)" }),
+      "amount", mini(c, "amount", "int", { min: 1 }),
+      "", el("span", { className: "sub", textContent: "Drop chance: habit 40%, focus session / milestone / goal 100%, resisting 25%." })));
+  }
+  st.reward ??= {};
+  body.append(el("h2", { textContent: "Reward" }), grid2(
+    "xp", mini(st.reward, "xp", "int"), "coins", mini(st.reward, "coins", "int"),
+    "item", mini(st.reward, "item", "enum", { options: [""].concat(content.items.map(x => x.id)) })));
+  body.append(el("h2", { textContent: "Intro (when the stage starts)" }), linesEditor(line, st, "intro"));
+  body.append(el("h2", { textContent: "Outro (when it's won)" }), linesEditor(line, st, "outro"));
+  d.append(body);
+  return d;
+}
+
+function linesEditor(line, st, key) {
+  const arr = st[key] ??= [];
+  const speakers = ["hero", ...content.npcs.map(n => n.id), ...content.enemies.map(e => e.id)];
+  const labels = Object.fromEntries([["hero", "hero (player)"], ...content.npcs.map(n => [n.id, n.name]), ...content.enemies.map(e => [e.id, e.name + " (enemy)"])]);
+  const box = el("div", { className: "lines" });
+  arr.forEach((l, i) => box.append(el("div", { className: "line" },
+    mini(l, "speaker", "enum", { options: speakers, labels }),
+    mini(l, "text", "textarea", { placeholder: "Use {hero} for the player's name." }),
+    el("div", { className: "mini" },
+      el("button", { className: "act", type: "button", textContent: "↑", onclick: () => { if (i > 0) { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; changed(true); } } }),
+      el("button", { className: "act", type: "button", textContent: "✕", title: "Remove line", onclick: () => { arr.splice(i, 1); changed(true); } })))));
+  box.append(el("div", {}, el("button", { className: "act", type: "button", textContent: "+ Line", onclick: () => {
+    arr.push({ speaker: arr.at(-1)?.speaker ?? line.npc, text: "" }); changed(true);
+  } })));
+  return box;
+}
+
+/** Drop empty optional bits so content.json stays tidy. */
+function tidy() {
+  for (const q of content.questLines) for (const st of q.stages ?? []) {
+    for (const k of ["intro", "outro"]) { st[k] = (st[k] ?? []).filter(l => l.text?.trim()); if (!st[k].length) delete st[k]; }
+    if (st.reward) { for (const k of Object.keys(st.reward)) if (st.reward[k] === "" || st.reward[k] === 0) delete st.reward[k]; if (!Object.keys(st.reward).length) delete st.reward; }
+    if (!st.story) delete st.story;
+  }
+  for (const x of [...content.npcs, ...content.enemies]) {
+    for (const k of Object.keys(x.dialogue ?? {})) if (!x.dialogue[k].length) delete x.dialogue[k];
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Translations: flat overlays in content/i18n/<lang>.json (key format: see ContentI18n.kt)
+// ---------------------------------------------------------------------------------------------
+const TEXT_FIELDS = new Set(["name", "title", "description", "summary", "story", "text", "itemPlural"]);
+const TEXT_LISTS = new Set(["messages", "dialogue"]);
+const digits = s => /^\d+$/.test(s);
+function isText(path) {
+  const named = path.filter(p => !digits(p)), last = path[path.length - 1];
+  const field = digits(last) ? named[named.length - 1] : last;
+  if (field === undefined) return false;
+  if (named.length >= 2 && named[named.length - 2] === "collect" && field === "item") return true;
+  return TEXT_FIELDS.has(field) || (named.some(n => TEXT_LISTS.has(n)) && digits(last));
+}
+function textKeys(root) {
+  const out = [];
+  const walk = (v, path) => {
+    if (Array.isArray(v)) v.forEach((x, i) => walk(x, [...path, (x && typeof x === "object" && typeof x.id === "string") ? x.id : String(i)]));
+    else if (v && typeof v === "object") { for (const [k, x] of Object.entries(v)) if (!k.startsWith("$")) walk(x, [...path, k]); }
+    else if (typeof v === "string" && path.length && isText(path)) out.push([path.join("."), v]);
+  };
+  walk(root, []);
+  return out;
+}
+
+async function loadLang(l) {
+  overlay = await fetch(`/api/i18n/${l}`).then(r => r.json());
+  lang = l; overlayDirty = false;
+}
+
+async function renderTranslations() {
+  if (lang === null && langs.length) await loadLang(langs[0]);
+  const keys = textKeys(content);
+  const done = keys.filter(([k]) => overlay[k]?.trim()).length;
+  const add = el("input", { placeholder: "new language, e.g. es or pt-BR" });
+  $("left").replaceChildren(
+    el("p", { className: "sub", textContent: "Content translations. English in content.json is the source; anything untranslated falls back to it. App UI strings live in res/values-<lang>/strings.xml." }),
+    el("ul", { className: "items langs" }, langs.map(l => el("li", { className: l === lang ? "sel" : "", onclick: async () => {
+      if (overlayDirty && !confirm("Discard unsaved translation changes?")) return;
+      await loadLang(l); render();
+    } }, el("span", { textContent: l }), el("small", { textContent: l === lang ? `${done}/${keys.length}` : "" })))),
+    el("div", { className: "mini", style: "margin-top:8px" }, add, el("button", { className: "act", type: "button", textContent: "+ Add", onclick: async () => {
+      const l = add.value.trim();
+      if (!/^[a-z]{2,3}(-[A-Z]{2})?$/.test(l)) return alert("Use a language tag like es, fr, pt-BR.");
+      if (!langs.includes(l)) langs.push(l);
+      await loadLang(l); render();
+    } })));
+  if (!lang) {
+    $("center").replaceChildren(el("p", { textContent: "Add a language on the left to start translating." }));
+    $("preview").replaceChildren();
+    return;
+  }
+  const search = el("input", { placeholder: "Search keys or text…", value: trSearch, oninput: e => { trSearch = e.target.value; renderTranslations().then(() => { const i = $("trSearch"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); } });
+  search.id = "trSearch";
+  const which = el("select", { onchange: e => { trFilter = e.target.value; renderTranslations(); } },
+    [["missing", "Untranslated"], ["all", "All"], ["done", "Translated"]].map(([v, t]) => el("option", { value: v, textContent: t, selected: v === trFilter })));
+  const q = trSearch.toLowerCase();
+  const rows = keys.filter(([k, src]) => {
+    const has = !!overlay[k]?.trim();
+    if (trFilter === "missing" && has) return false;
+    if (trFilter === "done" && !has) return false;
+    return !q || k.toLowerCase().includes(q) || src.toLowerCase().includes(q) || (overlay[k] ?? "").toLowerCase().includes(q);
+  });
+  const shown = rows.slice(0, 300);
+  const table = el("table", { className: "tr" }, shown.map(([k, src]) => {
+    const tr = el("tr", { className: overlay[k]?.trim() ? "" : "missing" },
+      el("td", { className: "k" }, el("span", { textContent: src }), el("code", { textContent: k })),
+      el("td", {}, el("textarea", { value: overlay[k] ?? "", placeholder: src, oninput: e => {
+        overlay[k] = e.target.value; overlayDirty = true; setDirty(true);
+        tr.className = e.target.value.trim() ? "" : "missing";
+      } })));
+    return tr;
+  }));
+  $("center").replaceChildren(
+    el("h2", { textContent: `${lang} · ${done} of ${keys.length} translated` }),
+    el("div", { className: "meter" }, el("span", { style: `width:${keys.length ? (100 * done / keys.length) : 0}%` })),
+    el("div", { className: "row-tools", style: "margin-top:12px" }, search, which),
+    rows.length > shown.length ? el("p", { className: "sub", textContent: `Showing 300 of ${rows.length}; search to narrow down.` }) : "",
+    table);
+  const stale = Object.keys(overlay).filter(k => !k.startsWith("$") && !keys.some(([x]) => x === k));
+  const lostHero = keys.filter(([k, src]) => src.includes("{hero}") && overlay[k]?.trim() && !overlay[k].includes("{hero}"));
+  $("preview").replaceChildren(
+    el("p", { textContent: "Keep {hero} wherever the source has it. Keys follow content ids, so renaming an id orphans its translations." }),
+    stale.length ? el("p", { className: "bad", textContent: `${stale.length} orphaned key(s) (source renamed or removed): ${stale.slice(0, 5).join(", ")}${stale.length > 5 ? "…" : ""}` }) : "",
+    lostHero.length ? el("p", { className: "bad", textContent: `Missing {hero}: ${lostHero.map(([k]) => k).join(", ")}` }) : "");
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -402,23 +783,71 @@ async function renderPreview() {
   } else if (tab === "quests") {
     p.replaceChildren(el("p", {}, el("span", { style: `display:inline-block;width:14px;height:14px;border-radius:50%;background:${PALETTE[x.color ?? 0]};margin-right:6px` }),
       `${x.icon ?? "Star"} · ${x.title}`));
+  } else if (tab === "npcs") {
+    const nodes = [await spritePreview(x.sprite, 32, 32, 5)];
+    const say = x.dialogue?.greeting?.[0] ?? x.dialogue?.idle?.[0];
+    if (say) nodes.push(el("div", { className: "bubble" }, el("strong", { textContent: x.name + ": " }), say.replaceAll("{hero}", "Aria")));
+    const gives = content.questLines.filter(q => q.npc === x.id).map(q => q.title);
+    nodes.push(el("p", { className: "sub", textContent: gives.length ? `Gives: ${gives.join(", ")}` : "Gives no quests yet." }));
+    p.replaceChildren(...nodes);
+  } else if (tab === "enemies") {
+    const nodes = [await spritePreview(x.sprite, 48, 48, 4)];
+    const say = x.dialogue?.appear?.[0];
+    if (say) nodes.push(el("div", { className: "bubble" }, el("strong", { textContent: x.name + ": " }), say.replaceAll("{hero}", "Aria")));
+    const turns = Math.ceil((x.hp ?? 0) / 10);
+    nodes.push(el("p", { className: "sub", textContent: `Roughly ${turns} medium habits (10 XP each) or ${x.hp ?? 0} focus minutes to defeat.` }));
+    const used = content.questLines.filter(q => (q.stages ?? []).some(s => s.boss === x.id)).map(q => q.title);
+    nodes.push(el("p", { className: "sub", textContent: used.length ? `Fought in: ${used.join(", ")}` : "Not used in any quest line yet." }));
+    p.replaceChildren(...nodes);
+  } else if (tab === "questLines") {
+    const npc = content.npcs.find(n => n.id === x.npc);
+    const flow = el("ol", { className: "flow" }, (x.stages ?? []).map(st => {
+      const k = stageKind(st);
+      const goal = k === "boss" ? `Defeat ${content.enemies.find(e => e.id === st.boss)?.name ?? st.boss} (${content.enemies.find(e => e.id === st.boss)?.hp ?? "?"} HP)`
+        : k === "collect" ? `Collect ${st.collect.amount} ${st.collect.itemPlural || st.collect.item}`
+        : `${st.objective.mode === "REACH" ? "Reach" : "Gain"} ${st.objective.amount} ${st.objective.stat}`;
+      const reward = [st.reward?.xp ? st.reward.xp + " XP" : "", st.reward?.coins ? st.reward.coins + " coins" : "", st.reward?.item ?? ""].filter(Boolean).join(", ");
+      return el("li", {}, el("strong", { textContent: st.title }), el("div", { className: "sub", textContent: goal + (reward ? ` → ${reward}` : "") }),
+        el("div", { className: "sub", textContent: `${(st.intro ?? []).length} intro / ${(st.outro ?? []).length} outro line(s)` }));
+    }));
+    const first = x.stages?.[0]?.intro?.[0];
+    p.replaceChildren(await spritePreview(npc?.sprite, 32, 32, 4), flow,
+      first ? el("div", { className: "bubble" }, el("strong", { textContent: (content.npcs.find(n => n.id === first.speaker)?.name ?? first.speaker) + ": " }), first.text.replaceAll("{hero}", "Aria")) : "");
   } else p.replaceChildren();
+}
+
+async function spritePreview(name, w, h, scale) {
+  const c = el("canvas", { className: "px", width: w, height: h }); c.style.width = `${w * scale}px`; c.style.height = `${h * scale}px`;
+  const g = c.getContext("2d"); g.imageSmoothingEnabled = false;
+  const im = name ? await img(name) : null;
+  if (im) g.drawImage(im, 0, 0, w, h, 0, 0, w, h);
+  return im ? c : el("p", { className: "sub", textContent: name ? `${name}.png doesn't exist yet: Regenerate art.` : "No sprite set." });
 }
 
 // ---------------------------------------------------------------------------------------------
 // I/O
 // ---------------------------------------------------------------------------------------------
 async function load() {
-  [content, schema, sprites] = await Promise.all(["/api/content", "/api/schema", "/api/sprites"].map(u => fetch(u).then(r => r.json())));
+  [content, schema, sprites, langs] = await Promise.all(["/api/content", "/api/schema", "/api/sprites", "/api/i18n"].map(u => fetch(u).then(r => r.json())));
+  for (const k of ["questLines", "npcs", "enemies"]) content[k] ??= [];
+  savedJson = JSON.stringify(content);
   setDirty(false); status("Loaded"); render();
 }
 
 async function save() {
+  if (overlayDirty && lang) {
+    const r = await fetch(`/api/i18n/${lang}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(overlay) });
+    const j = await r.json();
+    if (!r.ok) return status(j.error, "bad");
+    overlayDirty = false; if (!langs.includes(lang)) langs.push(lang);
+    if (!contentDirty()) { setDirty(false); return status(`Saved ${j.count} translation(s) to ${j.saved}`, "ok"); }
+  }
+  tidy();
   const issues = validate();
   if (issues.length && !confirm(`${issues.length} problem(s) found. CI will reject these. Save anyway?`)) return;
   const r = await fetch("/api/content", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(content) });
   const j = await r.json();
-  if (r.ok) { setDirty(false); status(`Saved to ${j.saved}`, "ok"); } else status(j.error, "bad");
+  if (r.ok) { savedJson = JSON.stringify(content); setDirty(false); status(`Saved to ${j.saved}`, "ok"); render(); } else status(j.error, "bad");
 }
 
 async function regenerate() {

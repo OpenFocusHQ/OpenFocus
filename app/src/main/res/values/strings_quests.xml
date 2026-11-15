@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Quest engine messages (snackbars). %1$s = names/titles from content. -->
+    <string name="quest_scroll_bought">Bought the quest scroll: %1$s</string>
+    <string name="quest_started">Quest started: %1$s</string>
+    <string name="quest_hit">You hit %1$s for %2$d! (%3$d/%4$d HP left)</string>
+    <string name="quest_strike">%1$s strikes you for %2$d HP!</string>
+    <string name="quest_strike_taunt">%1$s strikes you for %2$d HP! “%3$s”</string>
+    <string name="quest_found">Found: %1$s! (%2$d/%3$d)</string>
+    <string name="quest_stage_done">Stage complete: %1$s</string>
+    <string name="quest_stage_done_item">Stage complete: %1$s · new item: %2$s</string>
+    <string name="quest_done">Quest complete: %1$s!</string>
+
+    <!-- Quests screen -->
+    <string name="quests_title">Quests</string>
+    <string name="quests_open">Open quests</string>
+    <string name="quest_board">Quest board</string>
+    <string name="quest_current">Current quest</string>
+    <string name="quest_none_title">No quest underway</string>
+    <string name="quest_none_body">Pick a quest from the board. Your habits, focus sessions and resisted temptations move it forward.</string>
+    <string name="quest_accept">Start quest</string>
+    <string name="quest_buy_scroll">Buy scroll · %1$d coins</string>
+    <string name="quest_not_enough_coins">Not enough coins for this scroll yet.</string>
+    <string name="quest_locked_level">Unlocks at level %1$d</string>
+    <string name="quest_locked_requires">Finish “%1$s” first</string>
+    <string name="quest_locked_busy">Finish or leave your current quest first</string>
+    <string name="quest_repeatable">Repeatable</string>
+    <plurals name="quest_completed_times">
+        <item quantity="one">Completed once</item>
+        <item quantity="other">Completed %1$d times</item>
+    </plurals>
+    <string name="quest_completed">Completed</string>
+    <plurals name="quest_stages">
+        <item quantity="one">%1$d stage</item>
+        <item quantity="other">%1$d stages</item>
+    </plurals>
+    <string name="quest_from">from %1$s</string>
+    <string name="quest_stage_of">Stage %1$d of %2$d</string>
+    <string name="quest_leave">Leave quest</string>
+    <string name="quest_leave_title">Leave this quest?</string>
+    <string name="quest_leave_body">Your progress on “%1$s” will be lost. Coins spent on the scroll are not refunded.</string>
+    <string name="quest_leave_confirm">Leave</string>
+    <string name="quest_talk">Talk</string>
+    <string name="quest_boss_hp">%1$d / %2$d HP</string>
+    <string name="quest_boss_goal">Defeat the boss</string>
+    <string name="quest_boss_hint">Complete habits, focus and resist temptations to deal damage.</string>
+    <string name="quest_boss_strikes">Missed dailies and slips let it strike back for %1$d HP each.</string>
+    <string name="quest_boss_gentle">Gentle mode is on: it can\'t hurt you.</string>
+    <string name="quest_collect_progress">%1$d / %2$d %3$s</string>
+    <string name="quest_collect_hint">Finishing habits and focus sessions can turn these up.</string>
+    <string name="quest_objective_progress">%1$d / %2$d</string>
+    <string name="quest_reward">Reward: %1$s</string>
+    <string name="quest_reward_xp">%1$d XP</string>
+    <string name="quest_reward_coins">%1$d coins</string>
+    <string name="dialogue_continue">Tap to continue</string>
+    <string name="dialogue_you">You</string>
+    <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
+
+    <!-- Objective goals by stat. GAIN = "do N more"; REACH = "get to N". -->
+    <string name="objective_gain_level">Gain %1$d levels</string>
+    <string name="objective_gain_habitCompletions">Complete %1$d habits</string>
+    <string name="objective_gain_bestHabitStreak">Raise your best streak by %1$d days</string>
+    <string name="objective_gain_focusMinutes">Focus for %1$d minutes</string>
+    <string name="objective_gain_focusSessions">Finish %1$d focus sessions</string>
+    <string name="objective_gain_goalsCompleted">Complete %1$d goals</string>
+    <string name="objective_gain_milestonesDone">Reach %1$d milestones</string>
+    <string name="objective_gain_temptationsResisted">Resist %1$d temptations</string>
+    <string name="objective_gain_shortsBlocked">Skip %1$d short-video feeds</string>
+    <string name="objective_gain_rewardsRedeemed">Redeem %1$d rewards</string>
+    <string name="objective_gain_itemsOwned">Collect %1$d items</string>
+    <string name="objective_reach_level">Reach level %1$d</string>
+    <string name="objective_reach_habitCompletions">Reach %1$d habit completions</string>
+    <string name="objective_reach_bestHabitStreak">Reach a %1$d-day streak</string>
+    <string name="objective_reach_focusMinutes">Reach %1$d focus minutes in total</string>
+    <string name="objective_reach_focusSessions">Reach %1$d focus sessions in total</string>
+    <string name="objective_reach_goalsCompleted">Reach %1$d completed goals</string>
+    <string name="objective_reach_milestonesDone">Reach %1$d milestones in total</string>
+    <string name="objective_reach_temptationsResisted">Reach %1$d temptations resisted</string>
+    <string name="objective_reach_shortsBlocked">Reach %1$d feeds skipped</string>
+    <string name="objective_reach_rewardsRedeemed">Reach %1$d rewards redeemed</string>
+    <string name="objective_reach_itemsOwned">Own %1$d items</string>
+</resources>

@@ -1,5 +1,7 @@
 package org.openfocus.app.blocking
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -151,7 +153,7 @@ fun pauseColors(c: PauseColors): Pair<Color, Color> {
 /** The pause screen's icon: the pixel shield, or an outline icon tinted with the foreground colour. */
 @Composable
 fun PauseIconView(icon: PauseIcon, tint: Color, modifier: Modifier = Modifier) {
-    if (icon.vector == null) PixelSprite(SpriteCatalog.shield, SpriteCatalog.IDLE, modifier, contentDescription = "Shield")
+    if (icon.vector == null) PixelSprite(SpriteCatalog.shield, SpriteCatalog.IDLE, modifier, contentDescription = stringResource(R.string.shield))
     else Icon(icon.vector, contentDescription = icon.label, tint = tint, modifier = modifier)
 }
 
@@ -178,7 +180,7 @@ fun PauseScreenContent(
             Box(Modifier.fillMaxSize().safeDrawingPadding()) {
                 if (s.showCoins) {
                     IconButton(onClick = onOpenCoins, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
-                        Icon(Icons.Filled.Redeem, contentDescription = "Use coins", tint = fg)
+                        Icon(Icons.Filled.Redeem, contentDescription = stringResource(R.string.use_coins), tint = fg)
                     }
                 }
 
@@ -263,7 +265,7 @@ private fun ContinueButton(s: PauseState, fg: Color, onClick: () -> Unit) {
             Box(Modifier.fillMaxHeight().fillMaxWidth(1f - s.progress).align(Alignment.CenterEnd).background(fg.copy(alpha = 0.18f)))
         }
         Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Continue in app", style = MaterialTheme.typography.titleMedium.copy(fontFamily = Body, fontWeight = FontWeight.Medium), color = fg)
+            Text(stringResource(R.string.continue_in_app), style = MaterialTheme.typography.titleMedium.copy(fontFamily = Body, fontWeight = FontWeight.Medium), color = fg)
             if (!ready) Text("${s.secondsLeft}", style = MaterialTheme.typography.titleMedium.copy(fontFamily = Body), color = fg)
         }
     }
@@ -289,7 +291,7 @@ fun UnlockCard(sheet: UnlockSheet, onPick: (String) -> Unit, onDismiss: () -> Un
                         Text(sheet.title, style = MaterialTheme.typography.titleMedium.copy(fontFamily = Body, fontWeight = FontWeight.Medium))
                         sheet.subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
-                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "Close") }
+                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close)) }
                 }
                 HorizontalDivider()
                 Column(Modifier.verticalScroll(rememberScrollState()).padding(vertical = 4.dp)) {

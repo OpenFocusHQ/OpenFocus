@@ -2,6 +2,12 @@ package org.openfocus.app.core.content
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.openfocus.app.data.db.Difficulty
 import org.openfocus.app.data.db.HabitFrequency
 import org.openfocus.app.data.db.HabitKind
@@ -236,22 +242,88 @@ data class GameContentData(
     fun itemsIn(slot: String) = items.filter { it.slot == slot }
 }
 
-/** Loads content.json once from the classpath (works in the APK and in plain JVM tests). */
+/**
+ * Loads content.json once per language from the classpath (works in the APK and in plain JVM
+ * tests). Translations live in `content/i18n/<lang>.json` as flat `key -> text` overlays; see
+ * [ContentI18n] for the key format. Missing keys fall back to the English source.
+ */
 object GameContent {
     const val RESOURCE = "content/content.json"
+    const val I18N_DIR = "content/i18n"
 
     val json = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = false }
 
-    @Volatile private var override: GameContentData? = null
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, GameContentData>()
 
-    val current: GameContentData by lazy { override ?: load() }
+    /** Content for the current default locale (per-app language on Android 13+ updates it). */
+    val current: GameContentData get() = forLocale(java.util.Locale.getDefault())
+
+    fun forLocale(locale: java.util.Locale): GameContentData =
+        cache.getOrPut(locale.toLanguageTag()) { load(candidates(locale)) }
+
+    /** Most specific first: `pt-BR`, then `pt`. English is the source, so it needs no overlay. */
+    fun candidates(locale: java.util.Locale): List<String> =
+        listOfNotNull(locale.language.takeIf { locale.country.isNotEmpty() }?.let { "$it-${locale.country}" }, locale.language)
+            .filter { it.isNotEmpty() && locale.language != "en" }
 
     fun parse(text: String): GameContentData = json.decodeFromString(GameContentData.serializer(), text)
 
-    private fun load(): GameContentData {
-        val stream = GameContent::class.java.classLoader?.getResourceAsStream(RESOURCE)
-            ?: error("$RESOURCE missing from the classpath")
-        return stream.bufferedReader().use { parse(it.readText()) }
+    fun read(path: String): String? =
+        GameContent::class.java.classLoader?.getResourceAsStream(path)?.bufferedReader()?.use { it.readText() }
+
+    private fun load(langs: List<String>): GameContentData {
+        val base = read(RESOURCE) ?: error("$RESOURCE missing from the classpath")
+        // Least specific first so `pt-BR` wins over `pt`.
+        val overlay = langs.reversed().mapNotNull { read("$I18N_DIR/$it.json") }
+            .fold(emptyMap<String, String>()) { acc, text -> acc + ContentI18n.parseOverlay(text) }
+        if (overlay.isEmpty()) return parse(base)
+        return json.decodeFromJsonElement(GameContentData.serializer(), ContentI18n.apply(json.parseToJsonElement(base), overlay))
+    }
+}
+
+/**
+ * Key format for content translations. Every player-facing string in content.json gets a stable
+ * dotted key built from its path, with list entries named by their `id` when they have one:
+ *
+ *     items.hat_party.name
+ *     questLines.first_ascent.stages.pack.intro.0.text
+ *     npcs.mira.dialogue.greeting.1
+ *     messages.resist.3
+ *
+ * Only text fields are translatable ([isText]); ids, colours and numbers never are.
+ */
+object ContentI18n {
+    private val TEXT_FIELDS = setOf("name", "title", "description", "summary", "story", "text", "itemPlural")
+    private val TEXT_LISTS = setOf("messages", "dialogue")
+
+    fun isText(path: List<String>): Boolean {
+        val named = path.filterNot { it.all(Char::isDigit) }
+        val field = path.last().takeUnless { it.all(Char::isDigit) } ?: named.lastOrNull() ?: return false
+        if (named.size >= 2 && named[named.size - 2] == "collect" && field == "item") return true
+        return field in TEXT_FIELDS || named.any { it in TEXT_LISTS } && path.last().all(Char::isDigit)
+    }
+
+    /** All translatable strings, `key -> English source`, in file order. */
+    fun keys(root: JsonElement): LinkedHashMap<String, String> {
+        val out = LinkedHashMap<String, String>()
+        walk(root, emptyList()) { path, value -> if (isText(path)) out[path.joinToString(".")] = value; null }
+        return out
+    }
+
+    fun apply(root: JsonElement, overlay: Map<String, String>): JsonElement =
+        walk(root, emptyList()) { path, _ -> if (isText(path)) overlay[path.joinToString(".")]?.takeIf { it.isNotBlank() } else null }
+
+    fun parseOverlay(text: String): Map<String, String> =
+        Json.parseToJsonElement(text).jsonObject.filterKeys { !it.startsWith("$") }.mapValues { it.value.jsonPrimitive.content }
+
+    private fun segment(e: JsonElement, i: Int): String =
+        ((e as? JsonObject)?.get("id") as? JsonPrimitive)?.takeIf { it.isString }?.content ?: i.toString()
+
+    /** Rebuilds the tree, replacing each string leaf with `replace(path, value)` when non-null. */
+    private fun walk(e: JsonElement, path: List<String>, replace: (List<String>, String) -> String?): JsonElement = when (e) {
+        is JsonObject -> JsonObject(e.mapValues { (k, v) -> if (k.startsWith("$")) v else walk(v, path + k, replace) })
+        is JsonArray -> JsonArray(e.mapIndexed { i, v -> walk(v, path + segment(v, i), replace) })
+        is JsonPrimitive -> if (e.isString && path.isNotEmpty()) replace(path, e.content)?.let(::JsonPrimitive) ?: e else e
     }
 }
 

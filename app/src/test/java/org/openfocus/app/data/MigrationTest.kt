@@ -35,7 +35,7 @@ class MigrationTest {
             db.execSQL("INSERT INTO rewards (id, ownerId, title, cost, icon, timesRedeemed, deleted, updatedAt) VALUES ('r1', 'p1', 'Cake', 40, 'Cake', 2, 0, 0)")
             db.execSQL("INSERT INTO block_rules (packageName, label, mode, dailyLimitMinutes, enabled, updatedAt) VALUES ('com.example.feed', 'Feed', 'ALWAYS', 30, 1, 0)")
         }
-        helper.runMigrationsAndValidate(name, 6, true).close()
+        helper.runMigrationsAndValidate(name, 7, true).close()
 
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java, name)
             .allowMainThreadQueries().build()
@@ -58,6 +58,8 @@ class MigrationTest {
         assertNull(reward.unlockPackage)
         assertEquals(0, reward.unlockMinutes)
         assertEquals(2, reward.timesRedeemed)
+        // v7: quest progress starts empty.
+        assertNull(runBlocking { db.questDao().active() })
         db.close()
     }
 }

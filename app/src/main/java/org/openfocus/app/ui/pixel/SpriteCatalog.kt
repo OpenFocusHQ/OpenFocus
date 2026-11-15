@@ -5,7 +5,9 @@ import androidx.compose.ui.unit.IntOffset
 import org.openfocus.app.R
 import org.openfocus.app.core.Achievements
 import org.openfocus.app.core.ShopCatalog
+import org.openfocus.app.core.content.EnemyDef
 import org.openfocus.app.core.content.ItemDef
+import org.openfocus.app.core.content.NpcDef
 import org.openfocus.app.core.content.SlotKind
 
 /** An animation: [frames] frames on [row], starting at column [col] (for icon atlases). */
@@ -109,6 +111,12 @@ object SpriteCatalog {
             SlotKind.BACKDROP -> backdropSheet(name, item.frames, item.fps)
         }
     }
+
+    /** 32x32 NPC portrait from content.json (`npcs[].sprite`). */
+    fun npcSheet(npc: NpcDef): SpriteSheet? = npc.sprite?.let { named(it, 32, 32, still) }
+
+    /** 48x48 enemy with a two-frame idle bob (`enemies[].sprite`). */
+    fun enemySheet(enemy: EnemyDef): SpriteSheet? = enemy.sprite?.let { named(it, 48, 48, mapOf(IDLE to SpriteAnim(0, 2, 2f))) }
 
     /** Backdrop shown when none is equipped. */
     val defaultBackdrop: SpriteSheet?

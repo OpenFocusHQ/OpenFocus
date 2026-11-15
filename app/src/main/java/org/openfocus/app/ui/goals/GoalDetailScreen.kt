@@ -1,5 +1,7 @@
 package org.openfocus.app.ui.goals
 
+import org.openfocus.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -72,9 +74,9 @@ fun GoalDetailScreen(nav: NavController, id: String) {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, "More") }
                 DropdownMenu(menu, { menu = false }) {
                     val st = state?.goal?.status
-                    if (st == GoalStatus.ACTIVE) DropdownMenuItem(text = { Text("Pause") }, onClick = { menu = false; scope.launch { c.goals.setStatus(id, GoalStatus.PAUSED) } })
-                    if (st == GoalStatus.PAUSED) DropdownMenuItem(text = { Text("Resume") }, onClick = { menu = false; scope.launch { c.goals.setStatus(id, GoalStatus.ACTIVE) } })
-                    DropdownMenuItem(text = { Text("Delete") }, onClick = { menu = false; confirmDelete = true })
+                    if (st == GoalStatus.ACTIVE) DropdownMenuItem(text = { Text(stringResource(R.string.pause)) }, onClick = { menu = false; scope.launch { c.goals.setStatus(id, GoalStatus.PAUSED) } })
+                    if (st == GoalStatus.PAUSED) DropdownMenuItem(text = { Text(stringResource(R.string.resume)) }, onClick = { menu = false; scope.launch { c.goals.setStatus(id, GoalStatus.ACTIVE) } })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.delete)) }, onClick = { menu = false; confirmDelete = true })
                 }
             },
         )
@@ -94,7 +96,7 @@ fun GoalDetailScreen(nav: NavController, id: String) {
             if (g.why.isNotBlank()) {
                 Card(shape = RoundedCornerShape(16.dp)) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Why this matters", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.why_this_matters), style = MaterialTheme.typography.labelLarge)
                         Text(g.why, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
@@ -106,10 +108,10 @@ fun GoalDetailScreen(nav: NavController, id: String) {
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            Text("Effort so far: ${s.habitCompletions} linked habit check-ins · ${formatMinutes(s.focusMinutes)} focused",
+            Text(stringResource(R.string.effort_so_far_linked_habit_check, s.habitCompletions, formatMinutes(s.focusMinutes)),
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-            SectionHeader("Camps (milestones)")
+            SectionHeader(stringResource(R.string.camps_milestones))
             s.milestones.forEach { m ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(m.done, { scope.launch { c.goals.toggleMilestone(m.id) } })
@@ -118,25 +120,25 @@ fun GoalDetailScreen(nav: NavController, id: String) {
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(newMilestone, { newMilestone = it }, Modifier.weight(1f), label = { Text("Add a milestone") }, singleLine = true)
+                OutlinedTextField(newMilestone, { newMilestone = it }, Modifier.weight(1f), label = { Text(stringResource(R.string.add_a_milestone)) }, singleLine = true)
                 IconButton(onClick = {
                     val t = newMilestone; newMilestone = ""
                     scope.launch { c.goals.addMilestone(id, t, s.milestones.size) }
                 }) { Icon(Icons.Filled.Add, "Add") }
             }
-            Text("+${GameRules.MILESTONE_XP} XP per camp · +${GameRules.GOAL_XP} XP at the summit", style = MaterialTheme.typography.labelSmall)
+            Text(stringResource(R.string.xp_per_camp_xp_at_the, GameRules.MILESTONE_XP, GameRules.GOAL_XP), style = MaterialTheme.typography.labelSmall)
             if (g.status != GoalStatus.COMPLETED) {
-                Button(onClick = { scope.launch { c.goals.complete(id) } }, modifier = Modifier.fillMaxWidth()) { Text("I reached the summit!") }
+                Button(onClick = { scope.launch { c.goals.complete(id) } }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.i_reached_the_summit)) }
             }
         }
     }
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete goal?") },
-            text = { Text("Milestones will be removed. Linked habits stay.") },
-            confirmButton = { TextButton(onClick = { confirmDelete = false; scope.launch { c.goals.delete(id); nav.popBackStack() } }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.delete_goal)) },
+            text = { Text(stringResource(R.string.milestones_will_be_removed_linked_habits)) },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; scope.launch { c.goals.delete(id); nav.popBackStack() } }) { Text(stringResource(R.string.delete)) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
