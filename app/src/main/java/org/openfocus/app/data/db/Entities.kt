@@ -269,3 +269,21 @@ fun ProfileEntity.equippedMap(): Map<String, String> {
 
 fun ProfileEntity.withEquipped(map: Map<String, String>): ProfileEntity =
     copy(equipped = kotlinx.serialization.json.Json.encodeToString(kotlinx.serialization.serializer<Map<String, String>>(), map))
+
+enum class QuestStatus { ACTIVE, COMPLETED, ABANDONED }
+
+/** Progress through a quest line from content.json (one row per line the player has started). */
+@Entity(tableName = "quest_progress")
+data class QuestProgressEntity(
+    @PrimaryKey val lineId: String,
+    val stageIndex: Int = 0,
+    /** Boss: damage dealt. Collect: items found. Objective: unused (computed from stats). */
+    val progress: Int = 0,
+    /** Stat value when the stage started, for "gain" objectives. */
+    val baseline: Int = 0,
+    val status: QuestStatus = QuestStatus.ACTIVE,
+    val startedAt: Long = System.currentTimeMillis(),
+    val completedAt: Long? = null,
+    val timesCompleted: Int = 0,
+    val updatedAt: Long = System.currentTimeMillis(),
+)

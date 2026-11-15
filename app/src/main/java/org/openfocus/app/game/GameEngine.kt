@@ -35,7 +35,17 @@ object EventTypes {
     const val LEVEL_UP = "level_up"
     const val FAINTED = "fainted"
     const val PERFECT_DAY = "perfect_day"
+    const val QUEST_STARTED = "quest_started"
+    const val QUEST_STAGE_DONE = "quest_stage_done"
+    const val QUEST_DONE = "quest_done"
+    const val BOSS_STRIKE = "boss_strike"
+
+    /** Events caused by quests themselves; quest listeners ignore these to avoid feedback loops. */
+    val QUEST_EVENTS = setOf(QUEST_STARTED, QUEST_STAGE_DONE, QUEST_DONE, BOSS_STRIKE)
 }
+
+/** What just happened, as seen by listeners such as the quest engine. */
+data class GameEvent(val type: String, val refId: String?, val xp: Int, val coins: Int, val hp: Int)
 
 /** What happened as a result of an action, used by the UI to celebrate (or console). */
 data class GameFeedback(
@@ -60,6 +70,12 @@ class GameEngine(private val db: AppDatabase) {
     private val _feedback = MutableSharedFlow<GameFeedback>(extraBufferCapacity = 16)
     val feedback: SharedFlow<GameFeedback> = _feedback.asSharedFlow()
 
+    /** Called after every [apply] (outside the lock), e.g. so quests can react to habits and focus. */
+    val listeners = java.util.concurrent.CopyOnWriteArrayList<suspend (GameEvent) -> Unit>()
+
+    /** Show a message (snackbar) without changing any stats. */
+    fun notify(message: String) { if (message.isNotBlank()) _feedback.tryEmit(GameFeedback(message)) }
+
     /** Guards first-launch profile creation so concurrent callers can't each create one. */
     private val createLock = Mutex()
 
@@ -80,6 +96,8 @@ class GameEngine(private val db: AppDatabase) {
         if (emit && (withAchievements.message.isNotBlank() || withAchievements.achievements.isNotEmpty())) {
             _feedback.tryEmit(withAchievements)
         }
+        val event = GameEvent(type, refId, xp, coins, hp)
+        listeners.forEach { runCatching { it(event) } }
         return withAchievements
     }
 

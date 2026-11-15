@@ -17,4 +17,6 @@ class Converters {
     @TypeConverter fun blockMode(v: String): BlockMode = BlockMode.valueOf(v)
     @TypeConverter fun blockGate(v: BlockGate): String = v.name
     @TypeConverter fun blockGate(v: String): BlockGate = BlockGate.valueOf(v)
+    @TypeConverter fun questStatus(v: QuestStatus): String = v.name
+    @TypeConverter fun questStatus(v: String): QuestStatus = QuestStatus.valueOf(v)
 }

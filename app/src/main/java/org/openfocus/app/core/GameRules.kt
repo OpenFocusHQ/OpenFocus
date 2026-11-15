@@ -106,6 +106,26 @@ object GameRules {
     fun skipWaitCost(waitSeconds: Int, unlocksToday: Int, per10s: Int = DEFAULT_SKIP_COST_PER_10S): Int =
         maxOf(3, (waitSeconds + 9) / 10) * per10s * (1 + unlocksToday)
 
+    // ---- Quests (Habitica-style) ----
+
+    /** Damage a habit deals to a boss: its XP (so harder habits and streaks hit harder). */
+    fun habitDamage(xp: Int): Int = xp.coerceAtLeast(1)
+
+    /** Damage from a focus session: one point per minute focused. */
+    fun focusDamage(xp: Int): Int = (xp / FOCUS_XP_PER_MINUTE).coerceAtLeast(1)
+
+    const val RESIST_DAMAGE = 5
+    const val MILESTONE_DAMAGE = 25
+    const val GOAL_DAMAGE = 100
+
+    /** Chance (0..1) that an action drops a collectable during a collection quest. */
+    fun dropChance(eventType: String): Double = when (eventType) {
+        "habit_done" -> 0.4
+        "focus_done", "milestone_done", "goal_done" -> 1.0
+        "resisted" -> 0.25
+        else -> 0.0
+    }
+
     fun formatWait(seconds: Int): String = when {
         seconds < 60 -> "${seconds}s"
         seconds % 60 == 0 -> "${seconds / 60} min"

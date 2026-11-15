@@ -173,7 +173,8 @@ class HabitRepository(
         if (missed > 0) {
             val msg = if (gentle) "Yesterday got away from you ($missed missed). New day, fresh start!"
             else "You missed $missed habit${if (missed > 1) "s" else ""} and lost $totalDamage HP. " + Encouragement.comeback()
-            game.apply(EventTypes.HABIT_MISSED, null, hp = -totalDamage, message = msg)
+            // refId carries the number of missed habits so quest bosses can strike back once per miss.
+            game.apply(EventTypes.HABIT_MISSED, missed.toString(), hp = -totalDamage, message = msg)
         } else if (perfectStreak > 0) {
             game.apply(EventTypes.PERFECT_DAY, null, xp = 10, coins = 3, message = "Perfect day streak: $perfectStreak!")
         }

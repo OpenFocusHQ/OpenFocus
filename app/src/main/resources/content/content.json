@@ -472,6 +472,426 @@
       "starter": true
     }
   ],
+  "questLines": [
+    {
+      "id": "first_ascent",
+      "title": "The First Ascent",
+      "summary": "Mira offers to take you up the foothills — if you can prove you'll show up.",
+      "npc": "mira",
+      "unlockLevel": 1,
+      "requires": null,
+      "stages": [
+        {
+          "id": "pack",
+          "title": "Pack your bag",
+          "story": "Every climb starts at home. Mira hands you an empty pack: \"Fill it with small habits. Three will do.\"",
+          "intro": [
+            {
+              "speaker": "mira",
+              "text": "So you want to see the summit, {hero}?"
+            },
+            {
+              "speaker": "hero",
+              "text": "I think so. Where do I start?"
+            },
+            {
+              "speaker": "mira",
+              "text": "Small. Do three of your habits. Any three. Then we'll talk about trails."
+            }
+          ],
+          "objective": {
+            "stat": "habitCompletions",
+            "mode": "GAIN",
+            "amount": 3
+          },
+          "outro": [
+            {
+              "speaker": "mira",
+              "text": "Three! Most people stop at the first one. Come on."
+            }
+          ],
+          "reward": {
+            "xp": 40,
+            "coins": 15
+          }
+        },
+        {
+          "id": "switchbacks",
+          "title": "The switchbacks",
+          "story": "The path zig-zags upward. Mira walks in silence and you notice how loud your phone has been.",
+          "intro": [
+            {
+              "speaker": "mira",
+              "text": "The switchbacks are where people quit. Not because they're steep — because they're boring."
+            },
+            {
+              "speaker": "mira",
+              "text": "Give me 25 minutes of real focus. No feeds."
+            }
+          ],
+          "objective": {
+            "stat": "focusMinutes",
+            "mode": "GAIN",
+            "amount": 25
+          },
+          "outro": [
+            {
+              "speaker": "mira",
+              "text": "See? Boredom passed. The view didn't."
+            }
+          ],
+          "reward": {
+            "xp": 60,
+            "coins": 20
+          }
+        },
+        {
+          "id": "first_camp",
+          "title": "First camp",
+          "story": "You reach a ledge with a fire pit. Mira points at the peak far above: \"That's yours. Name it.\"",
+          "intro": [
+            {
+              "speaker": "mira",
+              "text": "Every climber needs a peak of their own. What's yours, {hero}?"
+            },
+            {
+              "speaker": "mira",
+              "text": "Set a long-term goal and reach its first milestone."
+            }
+          ],
+          "objective": {
+            "stat": "milestonesDone",
+            "mode": "GAIN",
+            "amount": 1
+          },
+          "outro": [
+            {
+              "speaker": "mira",
+              "text": "First camp. I'll leave you a lantern — and a hat for the cold."
+            },
+            {
+              "speaker": "hero",
+              "text": "Thanks, Mira."
+            }
+          ],
+          "reward": {
+            "xp": 120,
+            "coins": 40,
+            "item": "hat_beanie"
+          }
+        }
+      ]
+    },
+    {
+      "id": "quiet_mind",
+      "title": "The Quiet Peak",
+      "summary": "A hermit lives above the clouds, where the scroll-spirits can't follow.",
+      "npc": "oren",
+      "unlockLevel": 3,
+      "requires": "first_ascent",
+      "stages": [
+        {
+          "id": "silence",
+          "title": "Silence the spirits",
+          "story": "Oren says the scroll-spirits feed on every swipe. Starve them.",
+          "intro": [
+            {
+              "speaker": "oren",
+              "text": "You hear them, don't you? Little voices: just one more video."
+            },
+            {
+              "speaker": "oren",
+              "text": "Close a paused app five times. Each time, they get quieter."
+            }
+          ],
+          "objective": {
+            "stat": "temptationsResisted",
+            "mode": "GAIN",
+            "amount": 5
+          },
+          "outro": [
+            {
+              "speaker": "oren",
+              "text": "Quieter already. Good."
+            }
+          ],
+          "reward": {
+            "xp": 80,
+            "coins": 25
+          }
+        },
+        {
+          "id": "spirit",
+          "title": "Face the Scroll Spirit",
+          "story": "The spirit you've been starving finally shows itself, thin and furious.",
+          "intro": [
+            {
+              "speaker": "oren",
+              "text": "There it is. Every habit you finish, every minute you focus, is a blow."
+            },
+            {
+              "speaker": "scroll_spirit",
+              "text": "Just one more video, {hero}…"
+            }
+          ],
+          "boss": "scroll_spirit",
+          "outro": [
+            {
+              "speaker": "oren",
+              "text": "Gone. It'll be back some day — they always are. So will you."
+            }
+          ],
+          "reward": {
+            "xp": 120,
+            "coins": 40
+          }
+        },
+        {
+          "id": "long_sit",
+          "title": "The long sit",
+          "story": "Oren hands you a cushion worn smooth by years of sitting.",
+          "intro": [
+            {
+              "speaker": "oren",
+              "text": "Now the hard part. Two focus sessions. Finish both."
+            }
+          ],
+          "objective": {
+            "stat": "focusSessions",
+            "mode": "GAIN",
+            "amount": 2
+          },
+          "outro": [
+            {
+              "speaker": "oren",
+              "text": "The peak was never up there, {hero}. It was this."
+            }
+          ],
+          "reward": {
+            "xp": 150,
+            "coins": 50,
+            "item": "armour_leather"
+          }
+        }
+      ]
+    },
+    {
+      "id": "slime_hunt",
+      "title": "The Procrastislime",
+      "summary": "A sticky blob is oozing over the trail. Habitica rules: finish tasks to hit it, miss dailies and it hits back.",
+      "npc": "mira",
+      "unlockLevel": 2,
+      "requires": null,
+      "cost": 60,
+      "repeatable": true,
+      "stages": [
+        {
+          "id": "fight",
+          "title": "Unstick the trail",
+          "story": "The Procrastislime blocks the path, whispering about tomorrow.",
+          "intro": [
+            {
+              "speaker": "mira",
+              "text": "Ugh, a Procrastislime. Hit it with real work — it hates that."
+            }
+          ],
+          "boss": "procrastislime",
+          "outro": [
+            {
+              "speaker": "mira",
+              "text": "Trail's clear. Nice swing, {hero}."
+            }
+          ],
+          "reward": {
+            "xp": 200,
+            "coins": 60
+          }
+        }
+      ]
+    },
+    {
+      "id": "lost_markers",
+      "title": "Lost trail markers",
+      "summary": "A storm scattered the markers. Collect them as you go about your day.",
+      "npc": "mira",
+      "unlockLevel": 1,
+      "requires": "first_ascent",
+      "cost": 0,
+      "repeatable": false,
+      "stages": [
+        {
+          "id": "gather",
+          "title": "Gather the markers",
+          "story": "Bright flags lie half-buried in the snow along your daily routes.",
+          "intro": [
+            {
+              "speaker": "mira",
+              "text": "Keep an eye out. They turn up when you do the things you said you'd do."
+            }
+          ],
+          "collect": {
+            "item": "trail marker",
+            "itemPlural": "trail markers",
+            "icon": "Flag",
+            "amount": 8
+          },
+          "outro": [
+            {
+              "speaker": "mira",
+              "text": "All eight! The next climbers owe you one."
+            }
+          ],
+          "reward": {
+            "xp": 150,
+            "coins": 50
+          }
+        }
+      ]
+    },
+    {
+      "id": "golem",
+      "title": "The Doubt Golem",
+      "summary": "A hulking golem of every 'I can't'. A long fight for the stubborn.",
+      "npc": "oren",
+      "unlockLevel": 5,
+      "requires": "quiet_mind",
+      "cost": 150,
+      "repeatable": true,
+      "stages": [
+        {
+          "id": "fight",
+          "title": "Topple the golem",
+          "story": "Stone grinds on stone as the Doubt Golem rises from the scree.",
+          "intro": [
+            {
+              "speaker": "oren",
+              "text": "Doubt is heavy, but it's slow. Keep hitting."
+            }
+          ],
+          "boss": "doubt_golem",
+          "outro": [
+            {
+              "speaker": "oren",
+              "text": "Rubble. Remember how that felt, {hero}."
+            }
+          ],
+          "reward": {
+            "xp": 400,
+            "coins": 120,
+            "item": "armour_iron"
+          }
+        }
+      ]
+    }
+  ],
+  "npcs": [
+    {
+      "id": "mira",
+      "name": "Mira",
+      "title": "Trail guide",
+      "color": "#2BB3A3",
+      "skin": "medium",
+      "hat": "hat_beanie",
+      "sprite": "px_npc_mira",
+      "dialogue": {
+        "greeting": [
+          "Morning, {hero}! The trail's dry today.",
+          "Back again? Good. Mountains reward the stubborn.",
+          "Boots on, {hero}. One step, then another."
+        ],
+        "idle": [
+          "No quest right now? Look at the board — someone always needs a hand.",
+          "Rest is part of the climb too."
+        ],
+        "comeback": [
+          "Missed a day? Happens to every climber. Let's go."
+        ]
+      }
+    },
+    {
+      "id": "oren",
+      "name": "Oren",
+      "title": "Hermit of the quiet peak",
+      "color": "#5B4BC4",
+      "skin": "deep",
+      "hat": "hat_wizard",
+      "sprite": "px_npc_oren",
+      "dialogue": {
+        "greeting": [
+          "Ah. The noisy valley let you go for a while.",
+          "Sit. Breathe. Then we talk."
+        ],
+        "idle": [
+          "The scroll-spirits are loud today. Don't feed them."
+        ]
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "id": "scroll_spirit",
+      "name": "The Scroll Spirit",
+      "description": "A hungry wisp that feeds on every swipe.",
+      "hp": 120,
+      "strength": 3,
+      "color": "#9B59B6",
+      "shape": "ghost",
+      "sprite": "px_enemy_scroll_spirit",
+      "dialogue": {
+        "appear": [
+          "Just one more video, {hero}… just one more…"
+        ],
+        "hit": [
+          "Ooh, you missed one. I'm getting stronger!"
+        ],
+        "defeat": [
+          "Nooo… so… boring… *poof*"
+        ]
+      }
+    },
+    {
+      "id": "procrastislime",
+      "name": "Procrastislime",
+      "description": "A sticky blob that turns 'now' into 'later'.",
+      "hp": 200,
+      "strength": 4,
+      "color": "#3E8E5E",
+      "shape": "slime",
+      "sprite": "px_enemy_procrastislime",
+      "dialogue": {
+        "appear": [
+          "Why today? Tomorrow is so comfy…"
+        ],
+        "hit": [
+          "Later, later, later!"
+        ],
+        "defeat": [
+          "Fine… do it now… *blorp*"
+        ]
+      }
+    },
+    {
+      "id": "doubt_golem",
+      "name": "The Doubt Golem",
+      "description": "Built from every 'I can't'. Slow, heavy, and beatable.",
+      "hp": 400,
+      "strength": 6,
+      "color": "#8E91A6",
+      "shape": "golem",
+      "sprite": "px_enemy_doubt_golem",
+      "dialogue": {
+        "appear": [
+          "You? Climb that? Ha."
+        ],
+        "hit": [
+          "See? You're not the type."
+        ],
+        "defeat": [
+          "Perhaps… you are… the type…"
+        ]
+      }
+    }
+  ],
   "titles": [
     {
       "minLevel": 1,

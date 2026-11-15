@@ -12,9 +12,9 @@ import androidx.room.TypeConverters
         ProfileEntity::class, HabitEntity::class, HabitLogEntity::class, GoalEntity::class,
         MilestoneEntity::class, FocusSessionEntity::class, BlockRuleEntity::class,
         BlockScheduleEntity::class, AchievementEntity::class, RewardEntity::class,
-        InventoryEntity::class, ActivityEventEntity::class,
+        InventoryEntity::class, ActivityEventEntity::class, QuestProgressEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // v2: profiles.skinTone
@@ -22,6 +22,7 @@ import androidx.room.TypeConverters
         AutoMigration(from = 3, to = 4), // v4: block_rules.allowCoins
         AutoMigration(from = 4, to = 5), // v5: profiles.equipped (slot -> item JSON)
         AutoMigration(from = 5, to = 6), // v6: rewards.unlockPackage / unlockMinutes
+        AutoMigration(from = 6, to = 7), // v7: quest_progress
     ],
 )
 @TypeConverters(Converters::class)
@@ -32,6 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun focusDao(): FocusDao
     abstract fun blockDao(): BlockDao
     abstract fun gameDao(): GameDao
+    abstract fun questDao(): QuestDao
 
     companion object {
         fun build(context: Context): AppDatabase =

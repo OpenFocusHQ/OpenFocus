@@ -184,3 +184,18 @@ interface GameDao {
     @Query("UPDATE activity_events SET syncedAt = :at WHERE id IN (:ids)")
     suspend fun markSynced(ids: List<String>, at: Long)
 }
+
+@Dao
+interface QuestDao {
+    @Query("SELECT * FROM quest_progress")
+    fun observeAll(): Flow<List<QuestProgressEntity>>
+
+    @Query("SELECT * FROM quest_progress WHERE status = 'ACTIVE' LIMIT 1")
+    suspend fun active(): QuestProgressEntity?
+
+    @Query("SELECT * FROM quest_progress WHERE lineId = :id")
+    suspend fun get(id: String): QuestProgressEntity?
+
+    @Upsert
+    suspend fun upsert(p: QuestProgressEntity)
+}

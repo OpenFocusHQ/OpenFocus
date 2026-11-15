@@ -10,6 +10,7 @@ import org.openfocus.app.data.prefs.SettingsStore
 import org.openfocus.app.data.repo.BlockRepository
 import org.openfocus.app.data.repo.GoalRepository
 import org.openfocus.app.data.repo.HabitRepository
+import org.openfocus.app.data.repo.QuestRepository
 import org.openfocus.app.data.repo.ShopRepository
 import org.openfocus.app.data.sync.OfflineSyncGateway
 import org.openfocus.app.data.sync.SyncGateway
@@ -30,6 +31,7 @@ class AppContainer(context: Context) {
     val shop = ShopRepository(db, game, settings)
     val focus = FocusManager(appContext, db, game, settings, appScope)
     val usage = UsageTracker(appContext)
+    val quests = QuestRepository(db, game, settings).also { q -> game.listeners += { e -> q.onEvent(e) } }
 
     /** Swap for a real implementation to enable online features. */
     val sync: SyncGateway = OfflineSyncGateway
